@@ -4,7 +4,7 @@
 # sans serveur.
 #
 #   APK downloads   telechargements des APK (mise a jour de l'appli, ou installation a la main)
-#   update checks   telechargements de latest-release.json : un par verification de mise a jour
+#   update checks   telechargements de tunturo-release.json (latest-release.json avant le renommage Tunturo) : un par verification de mise a jour
 #
 # Ce ne sont pas des utilisateurs uniques : un appareil qui verifie a chaque lancement compte autant de
 # fois, et les essais du developpeur y sont comptes. Une release garde son compteur du temps ou elle etait
@@ -53,7 +53,7 @@ fetch_releases() {
             .tag_name,
             .published_at[0:10],
             ([.assets[] | select(.name | endswith(".apk")) | .download_count] | add // 0),
-            ([.assets[] | select(.name == "latest-release.json") | .download_count] | add // 0)
+            ([.assets[] | select(.name == "tunturo-release.json" or .name == "latest-release.json") | .download_count] | add // 0)
         ] | @tsv
     '
 }

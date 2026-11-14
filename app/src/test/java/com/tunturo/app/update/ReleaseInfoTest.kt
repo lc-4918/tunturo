@@ -1,7 +1,9 @@
 package com.tunturo.app.update
 
 import kotlinx.serialization.json.Json
+import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -12,7 +14,7 @@ import org.junit.Test
 class ReleaseInfoTest {
     private val json = Json { ignoreUnknownKeys = true }
 
-    /** Copie conforme de ce que produit l'etape "Generate latest-release.json". */
+    /** Copie conforme de ce que produit l'etape "Generate tunturo-release.json". */
     private val fromCi = """
         {
           "version": "1.2.3",
@@ -129,5 +131,18 @@ class ReleaseInfoTest {
         assertEquals(4, r.apkUrls.size)
         assertTrue(r.urlFor(listOf("arm64-v8a", "armeabi-v7a")).endsWith("-arm64-v8a.apk"))
         assertTrue(r.urlFor(listOf("armeabi-v7a")).endsWith("-armeabi-v7a.apk"))
+    }
+
+    /**
+     * Le nom du manifeste lu par l'app doit etre celui que la CI joint a la Release, et ne doit pas
+     * redevenir latest-release.json, que lisent les Trailog deja installees.
+     */
+    @Test fun `l'app lit le manifeste que publie la CI, sous un nom propre a Tunturo`() {
+        val workflow = listOf("../.github/workflows/build-release.yml", ".github/workflows/build-release.yml")
+            .map(::File).first { it.exists() }.readText()
+        assertTrue(UpdateManager.MANIFEST_URL.endsWith("/releases/latest/download/${UpdateManager.MANIFEST_FILE_NAME}"))
+        assertTrue(workflow.contains("/${UpdateManager.MANIFEST_FILE_NAME}"))
+        assertFalse(workflow.contains("latest-release.json"))
+        assertEquals("tunturo-release.json", UpdateManager.MANIFEST_FILE_NAME)
     }
 }

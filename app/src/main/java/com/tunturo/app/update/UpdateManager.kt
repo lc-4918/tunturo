@@ -14,7 +14,7 @@ import kotlinx.serialization.json.Json
 import java.net.HttpURLConnection
 import java.net.URL
 
-/** Contenu de latest-release.json, publie par la CI a chaque tag (cf. .github/workflows/build-release.yml). */
+/** Contenu de tunturo-release.json, publie par la CI a chaque tag (cf. .github/workflows/build-release.yml). */
 @Serializable
 data class ReleaseInfo(
     val version: String,
@@ -57,8 +57,14 @@ object UpdateManager {
      * CDN, donc pas de quota contrairement a l'API (60 requetes/h par IP). Suivre les redirections est
      * indispensable ici (cf. instanceFollowRedirects plus bas).
      */
-    private const val MANIFEST_URL =
-        "https://github.com/lc-4918/tunturo/releases/latest/download/latest-release.json"
+    /**
+     * Nom propre a Tunturo : les Trailog deja installees lisent latest-release.json sur ce meme depot
+     * (GitHub redirige l'ancienne adresse). Un nom distinct leur evite de se voir proposer l'APK d'un
+     * autre paquet, dont l'installation echouerait. Doit rester celui que publie la CI.
+     */
+    internal const val MANIFEST_FILE_NAME = "tunturo-release.json"
+    internal const val MANIFEST_URL =
+        "https://github.com/lc-4918/tunturo/releases/latest/download/$MANIFEST_FILE_NAME"
     private const val CONNECT_TIMEOUT_MS = 15_000
     private const val READ_TIMEOUT_MS = 20_000
 

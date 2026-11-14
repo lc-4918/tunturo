@@ -46,7 +46,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      # fetch-depth: 0 : le changelog (cf. Generate latest-release.json) parcourt l'historique entre le
+      # fetch-depth: 0 : le changelog (cf. Generate tunturo-release.json) parcourt l'historique entre le
       # tag precedent et celui-ci ; un checkout superficiel n'aurait ni les commits ni les tags.
       - uses: actions/checkout@v7
         with:
@@ -83,7 +83,7 @@ jobs:
       # Release ci-dessous, et non commite sur main : GitHub le sert alors depuis son CDN via l'URL stable
       # /releases/latest/download/, sans quota (contrairement a l'API, 60 requetes/h par IP) et sans que la
       # CI ait a pousser sur main.
-      - name: Generate latest-release.json
+      - name: Generate tunturo-release.json
         env:
           TAG: ${{ github.ref_name }}
         run: |
@@ -120,8 +120,8 @@ jobs:
                 --arg d "$(date -u +%Y-%m-%d)" --arg u "$APK_URL" --argjson au "$APK_URLS" \
                 --arg cl "$CHANGELOG" \
                 '{version:$v, versionCode:$c, releaseDate:$d, apkUrl:$u, apkUrls:$au, changelog:$cl}' \
-            > "$RUNNER_TEMP/latest-release.json"
-          cat "$RUNNER_TEMP/latest-release.json"
+            > "$RUNNER_TEMP/tunturo-release.json"
+          cat "$RUNNER_TEMP/tunturo-release.json"
 
       # La release est publiee sous l'identite du PAT fourni, et non sous celle du GITHUB_TOKEN de
       # l'execution : ce dernier appartient a github-actions[bot], qui apparaissait alors comme auteur de
@@ -138,4 +138,4 @@ jobs:
           generate_release_notes: true
           files: |
             app/build/outputs/apk/release/*.apk
-            ${{ runner.temp }}/latest-release.json
+            ${{ runner.temp }}/tunturo-release.json

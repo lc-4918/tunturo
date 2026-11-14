@@ -400,7 +400,7 @@ gagne un un jour. Écrire un point toutes les deux secondes demande exactement l
 
 ### Mises à jour : manifeste en asset de Release
 
-La CI joint `latest-release.json` à la Release ; l'app le lit à l'URL stable
+La CI joint `tunturo-release.json` à la Release ; l'app le lit à l'URL stable
 `/releases/latest/download/`.
 
 Pourquoi pas l'API GitHub : 60 requêtes par heure et par IP en anonyme, ce qui compte derrière le

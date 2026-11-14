@@ -12,7 +12,7 @@ qui est poussé :
 - **Un push sur une branche** -> build d'un APK **debug**, disponible en artifact GitHub Actions.
 - **Un push d'un tag `vX.Y.Z`** -> build d'un APK **release signé**, publié comme
   **GitHub Release** téléchargeable publiquement, accompagné du manifeste
-  `latest-release.json` qui permet à l'app de se savoir périmée.
+  `tunturo-release.json` qui permet à l'app de se savoir périmée.
 
 GitHub Releases fait ainsi office de **"store"** : les utilisateurs téléchargent
 directement l'APK depuis la page Releases du dépôt, sans passer par le Play Store.
@@ -58,7 +58,7 @@ release officielle. L'APK debug n'est pas signé avec la clé de release.
    `KEYSTORE_PATH` / `KEYSTORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD`
    (voir la config `signingConfigs` dans `app/build.gradle.kts`).
 5. Suppression du keystore temporaire.
-6. Génération de **`latest-release.json`** dans un fichier temporaire (voir section 6).
+6. Génération de **`tunturo-release.json`** dans un fichier temporaire (voir section 6).
 7. Création d'une **GitHub Release** portant le nom du tag, avec changelog généré
    automatiquement à partir des commits, et les pièces jointes téléchargeables : les APK
    release et le manifeste. La CI ne pousse **aucun commit** sur `main`.
@@ -115,7 +115,7 @@ un manifeste que l'app consulte elle-même.
 
 ### Le manifeste
 
-L'étape **Generate latest-release.json** produit ce fichier, publié comme **asset de la Release**
+L'étape **Generate tunturo-release.json** produit ce fichier, publié comme **asset de la Release**
 aux côtés de l'APK :
 
 ```json
@@ -145,7 +145,7 @@ checkout superficiel n'aurait ni les commits ni les tags. S'il n'existe pas de t
 (premier tag du dépôt), la liste part du début de l'historique.
 
 L'app le lit à l'URL stable
-`https://github.com/lc-4918/tunturo/releases/latest/download/latest-release.json`, que GitHub
+`https://github.com/lc-4918/tunturo/releases/latest/download/tunturo-release.json`, que GitHub
 redirige (302) vers l'asset de la dernière release, servi par son CDN.
 
 **Pourquoi un asset plutôt qu'un fichier commité ou l'API GitHub :** le CDN de téléchargement
@@ -197,6 +197,13 @@ plus aucune mise à jour et doit être remplacée à la main depuis la page Rele
 choix assumé, le parc en `0.2.0` se limitant au développeur. Les installations en `v0.2.1` et
 au-delà lisent l'asset de release et se mettront à jour normalement.
 
+Au passage de Trailog à Tunturo (TL-11), le manifeste est devenu `tunturo-release.json`. Les
+Trailog déjà installées (paquet `fr.lc4918.trailog`) lisent toujours `latest-release.json` sur ce
+même dépôt, GitHub redirigeant l'ancienne adresse : sous l'ancien nom, elles se seraient vu
+proposer l'APK d'un autre paquet, dont l'installation échoue. Avec le nouveau nom, elles ne
+trouvent plus de manifeste et ne voient plus de mise à jour, ce qui est voulu (pas de migration,
+TL-18 abandonné). Le test `ReleaseInfoTest` vérifie que l'app et la CI utilisent bien le même nom.
+
 ## 7. Bonnes pratiques
 
 - **Versioning** : respecter le format `vMAJOR.MINOR.PATCH` (Semantic Versioning).
@@ -208,5 +215,5 @@ au-delà lisent l'asset de release et se mettront à jour normalement.
   toujours passer par les secrets GitHub Actions.
 - **Vérifier le manifeste après une release** : la Release peut être verte et le manifeste
   faux. Contrôler que
-  [`latest-release.json`](https://github.com/lc-4918/tunturo/releases/latest/download/latest-release.json)
+  [`tunturo-release.json`](https://github.com/lc-4918/tunturo/releases/latest/download/tunturo-release.json)
   annonce la bonne version et que son `apkUrl` répond bien.

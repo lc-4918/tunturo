@@ -33,13 +33,13 @@ val appVersionName = gitVersion.removePrefix("v")
 
 android {
     namespace = "com.tunturo.app"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
 
     defaultConfig {
         applicationId = "com.tunturo.app"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = appVersionCode.coerceAtLeast(1)
         versionName = appVersionName
         vectorDrawables { useSupportLibrary = true }

@@ -205,7 +205,8 @@ installations existantes.
 | Coroutines | kotlinx-coroutines | 1.9.0 |
 | Sérialisation | kotlinx-serialization | 1.7.3 |
 | Images | Coil 3 | 3.1.0 |
-| Build | AGP | 8.7.3 |
+| Build | AGP | 8.9.3 |
+| Build | compileSdk / targetSdk | 36 (Android 16, exige par Google Play depuis le 31/08/2026) |
 | Langage | Kotlin | 2.1.0 |
 
 ## 8. Styling & Conventions

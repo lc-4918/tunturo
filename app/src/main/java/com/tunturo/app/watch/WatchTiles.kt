@@ -12,7 +12,7 @@ import kotlin.math.pow
 import kotlin.math.tan
 
 /**
- * Pavage des tuiles de la montre Garmin (application Trailog Garmin, depot prive).
+ * Pavage des tuiles de la montre Garmin (application Tunturo de la montre, depot prive).
  *
  * La montre affiche des tuiles de [WATCH_TILE_PIXELS] px posees sur une grille a l'echelle d'un zoom, le
  * **niveau de detail** de l'envoi ([Detail]). Une tuile montre fait la moitie d'une tuile standard de 256 px du

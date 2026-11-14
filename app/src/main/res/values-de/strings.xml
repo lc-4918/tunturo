@@ -798,7 +798,7 @@
     <string name="watch_link_connected">%1$s: verbunden</string>
     <string name="watch_send_confirm">Senden</string>
     <string name="watch_send_failed">Die Übertragung konnte nicht starten. Möglicherweise läuft bereits eine andere.</string>
-    <string name="watch_send_instructions">Öffne Trailog auf der Uhr und starte die Synchronisierung. Das Telefon muss über Garmin Connect mit der Uhr verbunden bleiben.</string>
+    <string name="watch_send_instructions">Öffne Tunturo auf der Uhr und starte die Synchronisierung. Das Telefon muss über Garmin Connect mit der Uhr verbunden bleiben.</string>
     <string name="watch_send_waiting">Warten auf die Uhr</string>
     <string name="watch_send_progress">%1$d / %2$d Kacheln von der Uhr empfangen</string>
     <string name="watch_send_stop">Senden beenden</string>

@@ -4,7 +4,7 @@ package com.tunturo.app.watch
  * Ce que le Bluetooth du telephone dit de la montre, tel que la fenetre d'envoi l'affiche.
  *
  * Du plus grave au plus favorable. Le Bluetooth ne dit que si la montre est jointe au telephone : il ne dit
- * pas si l'application Trailog y est installee, ni si Garmin Connect relaie bien ses requetes.
+ * pas si l'application Tunturo y est installee, ni si Garmin Connect relaie bien ses requetes.
  */
 sealed interface WatchLink {
     /** Pas encore lu. */

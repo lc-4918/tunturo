@@ -18,7 +18,7 @@ class HttpReply(val status: Int, val contentType: String, val body: ByteArray) {
  * Ce que la montre demande au telephone, et ce qu'il repond. Sans reseau ni Android : le serveur
  * ([WatchTileServer]) ne fait que transporter.
  *
- * Le protocole, cote montre dans l'application Trailog Garmin :
+ * Le protocole, cote montre dans l'application Tunturo de la montre :
  * - `GET /watch/manifest` : nom de l'envoi, zoom, taille des tuiles, palette, nombre de tuiles, de points de
  *   trace et de virages.
  * - `GET /watch/track?from=F&count=C` : les points F a F+C-1 de la trace, `[[latitude, longitude, distance], ...]`

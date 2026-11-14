@@ -800,7 +800,7 @@
     <string name="watch_link_connected">%1$s : connectée</string>
     <string name="watch_send_confirm">Envoyer</string>
     <string name="watch_send_failed">L\'envoi n\'a pas pu s\'ouvrir. Un autre envoi est peut-être déjà en cours.</string>
-    <string name="watch_send_instructions">Sur la montre, ouvrez Trailog et lancez la synchronisation. Le téléphone doit rester connecté à la montre par Garmin Connect.</string>
+    <string name="watch_send_instructions">Sur la montre, ouvrez Tunturo et lancez la synchronisation. Le téléphone doit rester connecté à la montre par Garmin Connect.</string>
     <string name="watch_send_waiting">En attente de la montre</string>
     <string name="watch_send_progress">%1$d / %2$d tuiles reçues par la montre</string>
     <string name="watch_send_stop">Arrêter l\'envoi</string>

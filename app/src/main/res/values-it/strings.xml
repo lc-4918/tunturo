@@ -798,7 +798,7 @@
     <string name="watch_link_connected">%1$s: connesso</string>
     <string name="watch_send_confirm">Invia</string>
     <string name="watch_send_failed">Impossibile avviare l\'invio. Forse ne è già in corso un altro.</string>
-    <string name="watch_send_instructions">Sull\'orologio, apri Trailog e avvia la sincronizzazione. Il telefono deve restare collegato all\'orologio tramite Garmin Connect.</string>
+    <string name="watch_send_instructions">Sull\'orologio, apri Tunturo e avvia la sincronizzazione. Il telefono deve restare collegato all\'orologio tramite Garmin Connect.</string>
     <string name="watch_send_waiting">In attesa dell\'orologio</string>
     <string name="watch_send_progress">%1$d / %2$d tessere ricevute dall\'orologio</string>
     <string name="watch_send_stop">Interrompi l\'invio</string>

@@ -798,7 +798,7 @@
     <string name="watch_link_connected">%1$s: conectado</string>
     <string name="watch_send_confirm">Enviar</string>
     <string name="watch_send_failed">No se pudo iniciar el envío. Puede que ya haya otro en curso.</string>
-    <string name="watch_send_instructions">En el reloj, abre Trailog e inicia la sincronización. El teléfono debe seguir conectado al reloj mediante Garmin Connect.</string>
+    <string name="watch_send_instructions">En el reloj, abre Tunturo e inicia la sincronización. El teléfono debe seguir conectado al reloj mediante Garmin Connect.</string>
     <string name="watch_send_waiting">Esperando al reloj</string>
     <string name="watch_send_progress">%1$d / %2$d teselas recibidas por el reloj</string>
     <string name="watch_send_stop">Detener el envío</string>

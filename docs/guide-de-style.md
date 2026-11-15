@@ -9,7 +9,7 @@ Où elle est appliquée :
 | Support | Couleurs | Police | Logo et icône |
 |---|---|---|---|
 | Android | `app/.../ui/theme/Color.kt` (TunturoLight, TunturoDark) | `Type.kt`, `res/font/outfit_*.ttf` | `res/drawable/ic_tunturo_logo.xml`, `tools/app-icon/generate_icon.py` |
-| Trailmap | `front/src/styles.scss`, variables `--tm-*` | `front/public/fonts/Outfit-*.ttf` | favicon pas encore refait |
+| Trailmap | `front/src/styles.scss`, variables `--tm-*` | `front/public/fonts/Outfit-*.ttf` | `front/public/favicon/`, généré par `generate_icon.py --web` |
 | Montre | pas encore (MW-8) | pas encore | pas encore |
 
 Maquette de référence : "Tunturo - identite" (https://claude.ai/artifact/GtTztQCUknhkzx6YneUNGj),
@@ -154,7 +154,11 @@ Couleurs du logo : primary sur fond clair, primaryContainer (#D5EC9C) sur fond s
 - Icône à thème (Android 13 et plus) : le même dessin en une couleur, le système le colore.
 - Android 7 : PNG ronds et carrés arrondis, à toutes les densités.
 - Écran de démarrage : le logo clair sur le disque vert de l'icône, fond gris foncé #2C2C2E.
-- Tout se régénère par `python3 tools/app-icon/generate_icon.py` : changer le script, pas les fichiers.
+- Site Trailmap : même icône en carré arrondi ; pour les favicons (32 px et moins), logo à 80 % et trait de 3,4,
+  sans quoi les courbes se brouillent. Favicon SVG et ICO, icône d'écran d'accueil iOS et Android,
+  `theme-color` #536525.
+- Tout se régénère par `python3 tools/app-icon/generate_icon.py --web ~/Projets/trailmap/front/public/favicon` :
+  changer le script, pas les fichiers.
 
 ## 5. Formes et espacements
 
@@ -182,7 +186,6 @@ de Material sont pleines et massives (la poubelle). Un trait, 24 dp, bouts et an
 
 ## 8. Reste à appliquer
 
-- Trailmap : favicon et icône du site au logo B1 (TM-3).
 - Fond de carte Trailmap aux couleurs de l'identité (TM-11b).
 - Montre (MW-8) : la montre est limitée à 64 couleurs ; chaque couleur du guide y sera ramenée à la plus
   proche de sa palette, sans couleur arbitraire.

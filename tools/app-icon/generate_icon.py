@@ -6,8 +6,12 @@ Ecrit, sous app/src/main/res :
 - drawable/ic_launcher_monochrome.xml : le meme en une couleur, pour l'icone a theme d'Android 13 ;
 - mipmap-*/ic_launcher.png et ic_launcher_round.png : les icones figees d'Android 7 (sans icone adaptative).
 
-Usage : python3 tools/app-icon/generate_icon.py (depuis la racine du depot). Pillow requis pour les PNG.
+Avec --web DOSSIER, ecrit aussi les icones du site Trailmap (favicon.svg, favicon.ico, PNG 16 a 512,
+apple-touch-icon) dans DOSSIER, typiquement ~/Projets/trailmap/front/public/favicon.
+
+Usage : python3 tools/app-icon/generate_icon.py [--web DOSSIER] (depuis la racine du depot). Pillow requis.
 """
+import argparse
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -86,8 +90,13 @@ def cubic_points(start, first, second, end, steps=48):
     return points
 
 
-def legacy_icon(size, round_shape):
-    """Une icone figee : la zone visible de l'icone adaptative, en rond ou en carre arrondi."""
+def legacy_icon(size, round_shape, corner=0.22, logo_fraction=0.62, stroke_width=STROKE):
+    """Une icone figee : la zone visible de l'icone adaptative, en rond ou en carre arrondi.
+
+    [logo_fraction] est la part de la largeur prise par le logo ; [stroke_width] le trait, dans le carre
+    de 64 du dessin. Les favicons grossissent l'un et l'autre : a 16 px, le dessin de l'icone se brouille.
+    """
+    scale = logo_fraction * VISIBLE / 47.0
     supersampling = 8
     full = size * supersampling
     image = Image.new("RGBA", (full, full), (0, 0, 0, 0))
@@ -95,15 +104,15 @@ def legacy_icon(size, round_shape):
     if round_shape:
         draw.ellipse((0, 0, full - 1, full - 1), fill=BACKGROUND)
     else:
-        draw.rounded_rectangle((0, 0, full - 1, full - 1), radius=full * 0.22, fill=BACKGROUND)
+        draw.rounded_rectangle((0, 0, full - 1, full - 1), radius=full * corner, fill=BACKGROUND)
     # Dans la zone visible, un point du logo (x, y) tombe en (x * SCALE + decalage) sur 72.
     unit = full / VISIBLE
 
     def place(point):
-        return ((VISIBLE / 2 + (point[0] - LOGO_CENTER[0]) * SCALE) * unit,
-                (VISIBLE / 2 + (point[1] - LOGO_CENTER[1]) * SCALE) * unit)
+        return ((VISIBLE / 2 + (point[0] - LOGO_CENTER[0]) * scale) * unit,
+                (VISIBLE / 2 + (point[1] - LOGO_CENTER[1]) * scale) * unit)
 
-    stroke = STROKE * SCALE * unit
+    stroke = stroke_width * scale * unit
     for contour in CONTOURS:
         polyline = [contour[0]]
         for index in range(1, len(contour), 3):
@@ -114,13 +123,51 @@ def legacy_icon(size, round_shape):
         for x, y in placed[::6]:
             draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=FOREGROUND)
     summit_x, summit_y = place(SUMMIT[:2])
-    summit_radius = SUMMIT[2] * SCALE * unit
+    summit_radius = SUMMIT[2] * scale * unit
     draw.ellipse((summit_x - summit_radius, summit_y - summit_radius,
                   summit_x + summit_radius, summit_y + summit_radius), fill=FOREGROUND)
     return image.resize((size, size), Image.LANCZOS)
 
 
+# Les favicons (32 px et moins) : logo a 80 % du carre, trait de 3,4 comme le logo du menu lateral.
+FAVICON_FRACTION = 0.8
+FAVICON_STROKE = 3.4
+
+
+def favicon_svg():
+    """Le favicon vectoriel : carre arrondi vert, logo clair, a la taille des petits favicons."""
+    scale = FAVICON_FRACTION * VISIBLE / 47.0
+    translate_x = VISIBLE / 2 - LOGO_CENTER[0] * scale
+    translate_y = VISIBLE / 2 - LOGO_CENTER[1] * scale
+    summit_x, summit_y, summit_radius = SUMMIT
+    paths = "".join(f'<path d="{path_data(contour)}"/>' for contour in CONTOURS)
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">'
+            f'<rect width="72" height="72" rx="16" fill="{BACKGROUND}"/>'
+            f'<g transform="translate({translate_x:.4f} {translate_y:.4f}) scale({scale:.4f})">'
+            f'<g fill="none" stroke="{FOREGROUND}" stroke-width="{FAVICON_STROKE:g}">{paths}</g>'
+            f'<circle cx="{summit_x:g}" cy="{summit_y:g}" r="{summit_radius:g}" fill="{FOREGROUND}"/></g></svg>\n')
+
+
+def web_icons(folder):
+    """Les icones du site : favicons (petits, logo grossi), icones d'ecran d'accueil (logo de l'app)."""
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "favicon.svg").write_text(favicon_svg())
+    small = {size: legacy_icon(size, round_shape=False, logo_fraction=FAVICON_FRACTION, stroke_width=FAVICON_STROKE)
+             for size in (16, 32, 48)}
+    small[16].save(folder / "favicon-16x16.png", optimize=True)
+    small[32].save(folder / "favicon-32x32.png", optimize=True)
+    big = legacy_icon(256, round_shape=False, logo_fraction=FAVICON_FRACTION, stroke_width=FAVICON_STROKE)
+    big.save(folder / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
+    # iOS arrondit lui-meme les coins : un carre plein, sans transparence.
+    legacy_icon(180, round_shape=False, corner=0).convert("RGB").save(folder / "apple-touch-icon.png", optimize=True)
+    for size in (192, 512):
+        legacy_icon(size, round_shape=False).save(folder / f"android-chrome-{size}x{size}.png", optimize=True)
+
+
 def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--web", type=Path, help="dossier ou ecrire aussi les icones du site Trailmap")
+    arguments = parser.parse_args()
     (RESOURCES / "drawable/ic_launcher_foreground.xml").write_text(vector_drawable(
         FOREGROUND, "Calque avant de l'icone Tunturo : logo B1 en esquisse, couleur primaryContainer de Mousse."))
     (RESOURCES / "drawable/ic_launcher_monochrome.xml").write_text(vector_drawable(
@@ -129,6 +176,8 @@ def main():
         folder = RESOURCES / f"mipmap-{density}"
         legacy_icon(size, round_shape=False).save(folder / "ic_launcher.png", optimize=True)
         legacy_icon(size, round_shape=True).save(folder / "ic_launcher_round.png", optimize=True)
+    if arguments.web:
+        web_icons(arguments.web)
 
 
 if __name__ == "__main__":

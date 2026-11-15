@@ -23,11 +23,30 @@ internal val InterFamily = FontFamily(
     Font(R.font.inter_bold, FontWeight.Bold),
 )
 
+/**
+ * Outfit, la police du nom "Tunturo" (cf. BrandName.kt), en quatre graisses statiques comme Inter.
+ *
+ * Elle ne couvre que l'alphabet latin : un nom de lieu en grec ou en cyrillique retombe sur la police du
+ * systeme. Licence : assets/licenses/outfit-OFL.txt.
+ */
+internal val OutfitFamily = FontFamily(
+    Font(R.font.outfit_regular, FontWeight.Normal),
+    Font(R.font.outfit_medium, FontWeight.Medium),
+    Font(R.font.outfit_semibold, FontWeight.SemiBold),
+    Font(R.font.outfit_bold, FontWeight.Bold),
+)
+
+/**
+ * La police de toute l'interface. **A l'essai depuis le 2026-11-15** : Outfit partout, demande de Luc
+ * "pour voir". Pour revenir a Inter, remettre InterFamily ici (ses fichiers sont gardes pour cela).
+ */
+internal val AppFontFamily: FontFamily = OutfitFamily
+
 private fun style(
     size: Float, lineHeight: Float, weight: FontWeight,
     letterSpacing: TextUnit = 0.sp, features: String? = null,
 ) = TextStyle(
-    fontFamily = InterFamily, fontWeight = weight, fontSize = size.sp, lineHeight = lineHeight.sp,
+    fontFamily = AppFontFamily, fontWeight = weight, fontSize = size.sp, lineHeight = lineHeight.sp,
     letterSpacing = letterSpacing, fontFeatureSettings = features,
 )
 

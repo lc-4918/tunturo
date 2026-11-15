@@ -95,15 +95,19 @@ class ThemeTest {
         }
     }
 
-    /** Chaque style de texte est en Inter : aucun ne retombe sur la police du systeme. */
-    @Test fun `tous les styles sont en Inter`() {
+    /**
+     * Chaque style de texte est dans la police de l'application - Outfit a l'essai depuis le 2026-11-15,
+     * Inter avant : aucun ne retombe sur la police du systeme.
+     */
+    @Test fun `tous les styles sont dans la police de l'application, Outfit`() {
         val t = TunturoTypography
         val styles = listOf(
             t.displayLarge, t.displayMedium, t.displaySmall, t.headlineLarge, t.headlineMedium,
             t.headlineSmall, t.titleLarge, t.titleMedium, t.titleSmall, t.bodyLarge, t.bodyMedium,
             t.bodySmall, t.labelLarge, t.labelMedium, t.labelSmall,
         )
-        styles.forEach { assertEquals(InterFamily, it.fontFamily) }
+        assertEquals(OutfitFamily, AppFontFamily)
+        styles.forEach { assertEquals(AppFontFamily, it.fontFamily) }
         // Les totaux ne dansent pas quand une valeur change : chiffres a chasse fixe.
         assertEquals("tnum", t.titleSmall.fontFeatureSettings)
     }

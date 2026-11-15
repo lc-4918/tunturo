@@ -1300,7 +1300,7 @@ internal fun DrawerContent(
                 Modifier.testTag("drawer_close"))
         }
         // Les gestes de la bibliotheque, sans bande grise : c'est l'aplat du bouton "Importer" qui les
-        // designe, et le filet dessous qui les separe de l'arborescence.
+        // designe. Pas de filet entre l'en-tete et l'arborescence (essai valide par Luc, 2026-11-15).
         //
         // "Importer" est le geste qu'on vient chercher ici : il porte l'aplat. "Dossier" a le sien en
         // contour, et son libelle plutot que l'icone seule - une icone de dossier "plus" ne se lisait
@@ -1348,8 +1348,6 @@ internal fun DrawerContent(
             LaunchedEffect(Unit) { searchFocus.requestFocus() }
             SearchField(searchQuery, searchFocus) { searchQuery = it }
         }
-        // Plus de filet entre l'en-tete et l'arborescence : essai demande par Luc (2026-11-15), a retablir
-        // s'il ne convient pas - HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant).
 
         /*
          * Un toucher dans l'arborescence rend le focus au tiroir, donc referme le clavier.

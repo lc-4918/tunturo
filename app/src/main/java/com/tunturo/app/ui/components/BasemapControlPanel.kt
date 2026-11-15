@@ -299,8 +299,7 @@ fun BasemapControlPanel(
                 // que les panneaux du calcul d'itineraire et du tableau de bord.
                 SheetCloseButton(onClick = onClose, modifier = Modifier.align(Alignment.TopEnd))
             }
-            // Plus de filet sous l'en-tete : essai demande par Luc (2026-11-15), a retablir s'il ne convient
-            // pas - HorizontalDivider().
+            // Pas de filet sous l'en-tete (essai valide par Luc, 2026-11-15).
             combinedBasemapChildren(null, folders, providers, composites).forEach { item ->
                 key(basemapNodeKey(item)) {
                     BasemapNode(item, folders, providers, composites, 0, dctx, currentBasemapId, onSelect)

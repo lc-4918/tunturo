@@ -10,21 +10,11 @@ import androidx.compose.ui.unit.sp
 import com.tunturo.app.R
 
 /**
- * Inter, embarquee en quatre graisses statiques plutot qu'en police variable : celle-ci ne se regle
- * qu'a partir d'Android 8, et l'application descend a Android 7.
+ * Outfit, la police de toute l'interface et du nom "Tunturo" (cf. BrandName.kt). Choix de Luc, TM-3,
+ * 2026-11-15 : elle a remplace Inter, retiree de l'application.
  *
- * Les fichiers sont reduits aux alphabets latin, grec et cyrillique : les noms de lieux rendus par le
- * geocodeur peuvent en venir, le reste retombe sur la police du systeme. Licence : assets/licenses.
- */
-internal val InterFamily = FontFamily(
-    Font(R.font.inter_regular, FontWeight.Normal),
-    Font(R.font.inter_medium, FontWeight.Medium),
-    Font(R.font.inter_semibold, FontWeight.SemiBold),
-    Font(R.font.inter_bold, FontWeight.Bold),
-)
-
-/**
- * Outfit, la police du nom "Tunturo" (cf. BrandName.kt), en quatre graisses statiques comme Inter.
+ * Quatre graisses statiques plutot qu'une police variable : celle-ci ne se regle qu'a partir d'Android 8,
+ * et l'application descend a Android 7. Embarquee : l'application fonctionne hors ligne.
  *
  * Elle ne couvre que l'alphabet latin : un nom de lieu en grec ou en cyrillique retombe sur la police du
  * systeme. Licence : assets/licenses/outfit-OFL.txt.
@@ -36,10 +26,7 @@ internal val OutfitFamily = FontFamily(
     Font(R.font.outfit_bold, FontWeight.Bold),
 )
 
-/**
- * La police de toute l'interface. **A l'essai depuis le 2026-11-15** : Outfit partout, demande de Luc
- * "pour voir". Pour revenir a Inter, remettre InterFamily ici (ses fichiers sont gardes pour cela).
- */
+/** La police de toute l'interface. */
 internal val AppFontFamily: FontFamily = OutfitFamily
 
 private fun style(

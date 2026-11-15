@@ -49,6 +49,9 @@
     <string name="backup_not_a_backup">Fitxategi hau ez da Tunturo babeskopia. Ez da ezer aldatu.</string>
     <string name="backup_too_recent">Babeskopia hau bertsio berriago batekoa da. Ez da ezer aldatu.</string>
     <string name="backup_restore_failed">Berreskuratzeak huts egin du. Ez da ezer aldatu.</string>
+    <string name="backup_writing">Babeskopia egiten</string>
+    <string name="backup_restoring">Berreskuratzen</string>
+    <string name="backup_keep_open">Geratu aplikazioan amaitu arte: eteten bada, artxiboa osatu gabe geratzen da.</string>
     <string name="edit_toolbar">Editatu ibilbideak</string>
     <string name="action_join_track">Lotu beste zati batekin</string>
     <string name="action_undo">Desegin azken aldaketa</string>

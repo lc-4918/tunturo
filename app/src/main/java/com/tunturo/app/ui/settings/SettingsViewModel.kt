@@ -58,6 +58,11 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _status = MutableStateFlow<String?>(null)
     val status = _status.asStateFlow()
+
+    /** La sauvegarde ou la restauration en cours, null sinon : l'ecran la montre tant qu'elle dure
+     *  (cf. BackupProgressDialog). Dans le ViewModel pour survivre a une rotation de l'ecran. */
+    private val _backupWork = MutableStateFlow<BackupWork?>(null)
+    val backupWork = _backupWork.asStateFlow()
     fun clearStatus() { _status.value = null }
     fun showStatus(res: Int) { _status.value = getApplication<Application>().getString(res) }
 
@@ -161,15 +166,18 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
      * pas de sauvegarde du tout.
      */
     fun writeBackup(uri: Uri, onDone: (Boolean) -> Unit) = viewModelScope.launch {
+        _backupWork.value = BackupWork.WRITING
         val ok = runCatching {
             val app = getApplication<Application>()
             app.contentResolver.openOutputStream(uri)?.use { repo.writeBackup(it) } ?: error("flux nul")
         }.isSuccess
+        _backupWork.value = null
         onDone(ok)
     }
 
     /** Relit une sauvegarde. L'application doit redémarrer derrière (cf. TunturoRepository.restoreBackup). */
     fun restoreBackup(uri: Uri, onDone: (RestoreOutcome) -> Unit) = viewModelScope.launch {
+        _backupWork.value = BackupWork.RESTORING
         val outcome = runCatching {
             val app = getApplication<Application>()
             val result = app.contentResolver.openInputStream(uri)?.use { repo.restoreBackup(it) }
@@ -180,6 +188,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
                 null -> RestoreOutcome.FAILED
             }
         }.getOrDefault(RestoreOutcome.FAILED)
+        _backupWork.value = null
         onDone(outcome)
     }
     fun saveProvider(p: ProviderEntity) = viewModelScope.launch { repo.providers.upsert(p) }

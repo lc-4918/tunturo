@@ -14,6 +14,7 @@ import coil3.gif.GifDecoder
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.svg.SvgDecoder
 import com.tunturo.app.data.LocalePrefs
+import com.tunturo.app.data.repo.LocalImagePath
 import com.tunturo.app.data.repo.TunturoRepository
 import com.tunturo.app.update.UpdateManager
 import com.tunturo.app.watch.WatchExportService
@@ -70,6 +71,8 @@ open class TunturoApp : Application(), SingletonImageLoader.Factory {
         super.onCreate()
         initMapEngine()
         repository = TunturoRepository(this)
+        // Les chemins d'images d'une sauvegarde Trailog designent le dossier de Trailog (cf. LocalImagePath).
+        LocalImagePath.imagesDirectory = java.io.File(filesDir, "images")
         startBackgroundWork()
     }
 

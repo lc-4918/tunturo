@@ -131,6 +131,7 @@ fun SettingsScreen(
     val providers by vm.providers.collectAsState()
     val composites by vm.composites.collectAsState()
     val status by vm.status.collectAsState()
+    val backupWork by vm.backupWork.collectAsState()
     /*
      * Les reglages arrivent de la base, et l'ecran ne tient rien a dire en les attendant.
      *
@@ -218,6 +219,7 @@ fun SettingsScreen(
             dismissButton = { TextButton(onClick = { restoreTarget = false }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
+    backupWork?.let { BackupProgressDialog(it) }
     restoreDone?.let { outcome ->
         AlertDialog(
             onDismissRequest = { restoreDone = null },

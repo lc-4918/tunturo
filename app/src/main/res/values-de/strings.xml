@@ -49,6 +49,9 @@
     <string name="backup_not_a_backup">Diese Datei ist keine Tunturo-Sicherung. Es wurde nichts geändert.</string>
     <string name="backup_too_recent">Diese Sicherung stammt aus einer neueren Version. Es wurde nichts geändert.</string>
     <string name="backup_restore_failed">Wiederherstellung fehlgeschlagen. Es wurde nichts geändert.</string>
+    <string name="backup_writing">Sicherung läuft</string>
+    <string name="backup_restoring">Wiederherstellung läuft</string>
+    <string name="backup_keep_open">Bleib bis zum Ende in der App: Wird der Vorgang unterbrochen, bleibt das Archiv unvollständig.</string>
     <string name="edit_toolbar">Spuren bearbeiten</string>
     <string name="action_join_track">Mit anderem Abschnitt verbinden</string>
     <string name="action_undo">Letzte Bearbeitung rückgängig</string>

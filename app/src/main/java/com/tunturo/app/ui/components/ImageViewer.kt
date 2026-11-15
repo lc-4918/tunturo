@@ -29,11 +29,14 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import com.tunturo.app.R
+import com.tunturo.app.data.repo.LocalImagePath
 import java.io.File
 
-/** Modèle Coil pour une source d'image locale (chemin fichier) ou distante (URL http/https). */
+/** Modèle Coil pour une source d'image locale (chemin fichier) ou distante (URL http/https). Un chemin
+ *  local mort venu d'une sauvegarde Trailog est redirigé vers notre dossier d'images (cf. LocalImagePath). */
 fun imageModel(source: String): Any =
-    if (source.startsWith("http://") || source.startsWith("https://")) source else File(source)
+    if (source.startsWith("http://") || source.startsWith("https://")) source
+    else File(LocalImagePath.resolve(source))
 
 /**
  * Popup plein écran pour agrandir une image, sur fond sombre couvrant tout l'écran.

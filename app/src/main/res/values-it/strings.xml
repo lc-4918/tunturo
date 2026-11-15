@@ -49,6 +49,9 @@
     <string name="backup_not_a_backup">Questo file non è un backup Tunturo. Nulla è stato modificato.</string>
     <string name="backup_too_recent">Questo backup viene da una versione più recente. Nulla è stato modificato.</string>
     <string name="backup_restore_failed">Ripristino fallito. Nulla è stato modificato.</string>
+    <string name="backup_writing">Backup in corso</string>
+    <string name="backup_restoring">Ripristino in corso</string>
+    <string name="backup_keep_open">Resta nell\'app fino alla fine: se interrotto, l\'archivio resta incompleto.</string>
     <string name="edit_toolbar">Modificare le tracce</string>
     <string name="action_join_track">Unisci a un altro segmento</string>
     <string name="action_undo">Annulla l\'ultima modifica</string>

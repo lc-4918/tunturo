@@ -250,7 +250,7 @@ private fun rememberPinnedImageFillsWidth(path: String, painter: AsyncImagePaint
         if (path.startsWith("http://") || path.startsWith("https://")) null
         else runCatching {
             val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            BitmapFactory.decodeFile(path, o)
+            BitmapFactory.decodeFile(com.tunturo.app.data.repo.LocalImagePath.resolve(path), o)
             if (o.outWidth > 0 && o.outHeight > 0) o.outWidth.toFloat() / o.outHeight else null
         }.getOrNull()
     }

@@ -49,6 +49,9 @@
     <string name="backup_not_a_backup">Aquest fitxer no és una còpia de Tunturo. No s\'ha modificat res.</string>
     <string name="backup_too_recent">Aquesta còpia ve d\'una versió més recent. No s\'ha modificat res.</string>
     <string name="backup_restore_failed">La restauració ha fallat. No s\'ha modificat res.</string>
+    <string name="backup_writing">Còpia de seguretat en curs</string>
+    <string name="backup_restoring">Restauració en curs</string>
+    <string name="backup_keep_open">Queda\'t a l\'aplicació fins al final: si s\'interromp, l\'arxiu queda incomplet.</string>
     <string name="edit_toolbar">Edita les traces</string>
     <string name="action_join_track">Uneix a un altre segment</string>
     <string name="action_undo">Desfés l\'última edició</string>

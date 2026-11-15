@@ -49,6 +49,9 @@
     <string name="backup_not_a_backup">This file is not a Tunturo backup. Nothing was changed.</string>
     <string name="backup_too_recent">This backup comes from a newer version of the app. Nothing was changed.</string>
     <string name="backup_restore_failed">Restore failed. Nothing was changed.</string>
+    <string name="backup_writing">Backup in progress</string>
+    <string name="backup_restoring">Restore in progress</string>
+    <string name="backup_keep_open">Stay in the app until it finishes: if interrupted, the archive is left incomplete.</string>
     <string name="edit_toolbar">Edit tracks</string>
     <string name="action_join_track">Join to another segment</string>
     <string name="action_undo">Undo the last edit</string>

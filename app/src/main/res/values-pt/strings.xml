@@ -49,6 +49,9 @@
     <string name="backup_not_a_backup">Este ficheiro não é uma cópia Tunturo. Nada foi alterado.</string>
     <string name="backup_too_recent">Esta cópia vem de uma versão mais recente. Nada foi alterado.</string>
     <string name="backup_restore_failed">A restauração falhou. Nada foi alterado.</string>
+    <string name="backup_writing">Cópia de segurança em curso</string>
+    <string name="backup_restoring">Restauro em curso</string>
+    <string name="backup_keep_open">Fique na aplicação até ao fim: se for interrompida, o arquivo fica incompleto.</string>
     <string name="edit_toolbar">Editar os trilhos</string>
     <string name="action_join_track">Juntar a outro segmento</string>
     <string name="action_undo">Anular a última edição</string>

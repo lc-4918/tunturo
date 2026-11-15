@@ -20,8 +20,8 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 object TrialTheme {
 
-    /** La palette posee tant que Luc n'en a pas choisi une autre : la recommandation de la planche. */
-    const val DEFAULT = "ruska"
+    /** La palette posee par defaut : Mousse, pressentie par Luc le 2026-11-15. */
+    const val DEFAULT = "mousse"
 
     /** Une palette d'essai : son identifiant enregistre, son nom affiche, et ses deux jeux. */
     class Palette(val id: String, val displayName: String, val light: ColorScheme, val dark: ColorScheme)

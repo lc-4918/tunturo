@@ -80,6 +80,29 @@ class BrandAccentsTest {
         assertNull(secondaryBorder)
     }
 
+    @Test fun `les petits boutons prennent primary et onPrimary, translucides sur une image`() {
+        var opaque: Color? = null
+        var translucent: Color? = null
+        var content: Color? = null
+        TrialTheme.select(context, "mousse")
+        compose.setContent {
+            TunturoTheme {
+                opaque = smallButtonBackground()
+                translucent = smallButtonBackground(translucent = true)
+                content = smallButtonContent()
+            }
+        }
+        compose.waitForIdle()
+        val scheme = TrialTheme.colorScheme("mousse", dark = false)
+        assertEquals(scheme.primary, opaque)
+        assertEquals(scheme.primary.copy(alpha = TranslucentSmallButtonAlpha), translucent)
+        assertEquals(scheme.onPrimary, content)
+    }
+
+    @Test fun `la palette par defaut est Mousse`() {
+        assertEquals("mousse", TrialTheme.DEFAULT)
+    }
+
     @Test fun `le theme pose bien la palette choisie`() {
         TrialTheme.select(context, "glacier")
         var primary: Color? = null

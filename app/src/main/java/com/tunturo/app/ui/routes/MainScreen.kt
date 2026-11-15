@@ -1,7 +1,6 @@
 package com.tunturo.app.ui.routes
 
 import com.tunturo.app.ui.theme.LocalBrandAccents
-import androidx.compose.ui.graphics.toArgb
 import com.tunturo.app.ui.offline.basemapLabel
 import com.tunturo.app.ui.offline.offlineDownloadAvailable
 import android.annotation.SuppressLint
@@ -256,10 +255,7 @@ fun MainScreen(
     // la puce, le rouge des flèches et de la croix) - une couleur vide n'est pas un choix, c'est l'absence
     // de choix, et elle doit suivre le symbole quand on en change.
     val gpsMarker = GpsMarkerStyle.of(settings.gpsMarkerStyle)
-    // Avec une palette d'essai, le repere sans couleur reglee prend la couleur de marque (cf. BrandAccents).
-    val brandMarkerColor = if (LocalBrandAccents.current)
-        "#%06X".format(0xFFFFFF and MaterialTheme.colorScheme.primary.toArgb()) else null
-    val gpsMarkerColorReglee = settings.gpsMarkerColor.takeIf { it.isNotBlank() } ?: brandMarkerColor ?: gpsMarker.defaultColor
+    val gpsMarkerColorReglee = settings.gpsMarkerColor.takeIf { it.isNotBlank() } ?: gpsMarker.defaultColor
     /**
      * Le repere passe au GRIS quand il n'est plus suivi.
      *

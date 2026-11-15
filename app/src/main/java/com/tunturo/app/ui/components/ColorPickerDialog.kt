@@ -1,5 +1,10 @@
 package com.tunturo.app.ui.components
 
+import com.tunturo.app.ui.theme.PlannerColorGuard
+import com.tunturo.app.ui.theme.TrialTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -30,23 +35,36 @@ import com.tunturo.app.R
  * Une seule palette, commune : deux listes divergentes finiraient par offrir un rouge ici et un autre la,
  * pour des objets qui se regardent sur le meme fond.
  *
- * Sans le bleu de la couleur primaire du theme (#1F6FB2) : c'est celle du trace du planificateur, et une
- * trace de la bibliotheque ne doit pas s'y confondre.
+ * Les couleurs trop proches de celle du parcours calcule (la primary du theme) sont retirees du choix des
+ * traces et des dossiers : cf. PlannerColorGuard, et le parametre `excluded` de [ColorPickerDialog].
  */
 val MapPalette = listOf(
     "#1098AD", "#2F9E44", "#7CB342", "#F4B400", "#F08C00", "#E8590C", "#E03131",
     "#C2185B", "#9C36B5", "#6741D9", "#3949AB", "#00897B", "#6D4C41", "#546E7A", "#212121",
 )
 
-/** Choix d'une couleur dans la palette, la couleur courante portant sa coche. */
+/**
+ * Choix d'une couleur dans la palette, la couleur courante portant sa coche.
+ *
+ * @param excludeReserved retire les couleurs proches du parcours calcule : vrai pour une trace ou un
+ *   dossier, faux pour ce qui ne se dessine pas comme une trace (le repere de position).
+ */
 @Composable
-fun ColorPickerDialog(current: String, onPick: (String) -> Unit, onDismiss: () -> Unit) {
+fun ColorPickerDialog(
+    current: String, onPick: (String) -> Unit, onDismiss: () -> Unit, excludeReserved: Boolean = true,
+) {
+    // Relu a chaque changement de palette : le parcours calcule en change avec elle.
+    val paletteId by TrialTheme.selected.collectAsState()
+    val colors = remember(paletteId, excludeReserved) {
+        if (excludeReserved) PlannerColorGuard.allowed(MapPalette, PlannerColorGuard.plannerColors(paletteId))
+        else MapPalette
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.dialog_color_title)) },
         text = {
             Column {
-                MapPalette.chunked(4).forEach { row ->
+                colors.chunked(4).forEach { row ->
                     Row {
                         row.forEach { hex ->
                             Box(

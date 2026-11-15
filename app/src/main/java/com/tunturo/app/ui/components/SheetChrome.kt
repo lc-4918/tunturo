@@ -1,5 +1,7 @@
 package com.tunturo.app.ui.components
 
+import com.tunturo.app.ui.theme.smallButtonBackground
+import com.tunturo.app.ui.theme.smallButtonContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -102,11 +104,11 @@ fun SheetCloseButton(onClick: () -> Unit, modifier: Modifier = Modifier) =
 fun SheetRoundButton(icon: ImageVector, description: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Box(
         modifier.size(SheetCloseSize).clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .background(smallButtonBackground())
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, description, Modifier.size(22.dp), tint = MaterialTheme.colorScheme.onSurface)
+        Icon(icon, description, Modifier.size(22.dp), tint = smallButtonContent())
     }
 }
 

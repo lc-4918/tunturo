@@ -1,5 +1,7 @@
 package com.tunturo.app.ui.points
 
+import com.tunturo.app.ui.theme.smallButtonBackground
+import com.tunturo.app.ui.theme.smallButtonContent
 import android.content.Intent
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
@@ -266,14 +268,16 @@ private fun PlainHeaderButtons(onEdit: () -> Unit, onClose: () -> Unit) {
     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
         Row(Modifier.fillMaxWidth().padding(start = OverlayInset, end = OverlayInset, top = OverlayInset),
             verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onEdit, modifier = Modifier.size(OverlaySize)) {
+            IconButton(onClick = onEdit, modifier = Modifier.size(OverlaySize).clip(CircleShape)
+                .background(smallButtonBackground(translucent = true))) {
                 Icon(Icons.Outlined.Edit, stringResource(R.string.action_edit), Modifier.size(OverlayIconSize),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    tint = smallButtonContent())
             }
             Spacer(Modifier.weight(1f))
-            IconButton(onClick = onClose, modifier = Modifier.size(OverlaySize)) {
+            IconButton(onClick = onClose, modifier = Modifier.size(OverlaySize).clip(CircleShape)
+                .background(smallButtonBackground(translucent = true))) {
                 Icon(Icons.Filled.Close, stringResource(R.string.action_close), Modifier.size(OverlayIconSize),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    tint = smallButtonContent())
             }
         }
     }
@@ -322,9 +326,9 @@ internal fun OverlayIconButton(
     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
         IconButton(
             onClick = onClick,
-            modifier = modifier.size(OverlaySize).clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)),
+            modifier = modifier.size(OverlaySize).clip(CircleShape).background(smallButtonBackground(translucent = true)),
         ) {
-            Icon(icon, stringResource(descRes), tint = Color.White, modifier = Modifier.size(OverlayIconSize))
+            Icon(icon, stringResource(descRes), tint = smallButtonContent(), modifier = Modifier.size(OverlayIconSize))
         }
     }
 }

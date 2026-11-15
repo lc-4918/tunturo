@@ -1,5 +1,6 @@
 package com.tunturo.app.ui.theme
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
@@ -36,6 +37,21 @@ fun secondaryButtonColors(): ButtonColors =
     } else {
         ButtonDefaults.outlinedButtonColors()
     }
+
+/** Opacite d'un petit bouton pose sur une image, une miniature ou dans une infobulle : la vue reste lisible dessous. */
+const val TranslucentSmallButtonAlpha = 0.75f
+
+/**
+ * Le fond d'un petit bouton rond (croix, actualiser, agrandir, epingler...) : primary, comme le bouton
+ * "Calculer" de la planche des palettes ; translucide quand il est pose sur une image ou une miniature.
+ */
+@Composable
+fun smallButtonBackground(translucent: Boolean = false): Color =
+    MaterialTheme.colorScheme.primary.copy(alpha = if (translucent) TranslucentSmallButtonAlpha else 1f)
+
+/** Le dessin d'un petit bouton rond : onPrimary. */
+@Composable
+fun smallButtonContent(): Color = MaterialTheme.colorScheme.onPrimary
 
 /** Le contour d'un bouton secondaire : [default] sans accents de marque, aucun avec (l'aplat suffit). */
 @Composable

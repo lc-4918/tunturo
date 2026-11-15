@@ -518,6 +518,8 @@ private fun ringtonePickerIntent(ctx: android.content.Context, current: String):
             current = color,
             onPick = { vm.save(cur.copy(gpsMarkerColor = it)); pickColor = false },
             onDismiss = { pickColor = false },
+            // Le repere de position n'est pas une trace : toutes les couleurs lui restent permises.
+            excludeReserved = false,
         )
     }
 }

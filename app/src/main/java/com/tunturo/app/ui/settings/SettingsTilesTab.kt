@@ -1,5 +1,7 @@
 package com.tunturo.app.ui.settings
 
+import com.tunturo.app.ui.theme.smallButtonBackground
+import com.tunturo.app.ui.theme.smallButtonContent
 import com.tunturo.app.ui.offline.offlineDownloadAvailable
 import com.tunturo.app.ui.offline.basemapLabel
 import androidx.compose.material.icons.outlined.CloudDownload
@@ -475,9 +477,9 @@ private fun margesDePaire(premier: Boolean) = PaddingValues(
 @Composable private fun ThumbOverlayButton(icon: ImageVector, desc: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     IconButton(
         onClick = onClick,
-        modifier = modifier.size(28.dp).background(Color.White.copy(alpha = 0.3f), MaterialTheme.shapes.extraSmall),
+        modifier = modifier.size(28.dp).background(smallButtonBackground(translucent = true), MaterialTheme.shapes.extraSmall),
     ) {
-        Icon(icon, desc, tint = Color.Black, modifier = Modifier.size(18.dp))
+        Icon(icon, desc, tint = smallButtonContent(), modifier = Modifier.size(18.dp))
     }
 }
 

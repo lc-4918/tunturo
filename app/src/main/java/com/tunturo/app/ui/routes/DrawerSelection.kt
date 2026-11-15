@@ -1,5 +1,7 @@
 package com.tunturo.app.ui.routes
 
+import com.tunturo.app.ui.theme.secondaryButtonColors
+import com.tunturo.app.ui.theme.secondaryButtonBorder
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.ripple
@@ -165,6 +167,8 @@ internal fun SelectionHeader(
         }
         Spacer(Modifier.weight(1f))
         OutlinedButton(onClick = onCancel, modifier = Modifier.height(HeaderActionsHeight).testTag("selection_cancel"),
+            colors = secondaryButtonColors(),
+            border = secondaryButtonBorder(ButtonDefaults.outlinedButtonBorder(enabled = true)),
             contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
             Icon(Icons.Filled.Close, null, Modifier.size(18.dp))
             Spacer(Modifier.size(6.dp))

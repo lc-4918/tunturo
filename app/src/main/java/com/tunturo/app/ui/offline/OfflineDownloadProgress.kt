@@ -1,5 +1,7 @@
 package com.tunturo.app.ui.offline
 
+import com.tunturo.app.ui.theme.secondaryButtonColors
+import com.tunturo.app.ui.theme.secondaryButtonBorder
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -140,7 +142,8 @@ private fun RunningContent(state: OfflineDownloadState, onMinimize: () -> Unit, 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically) {
             OutlinedButton(onClick = onCancel, modifier = Modifier.height(44.dp),
-                border = BorderStroke(1.dp, scheme.outlineVariant)) {
+                colors = secondaryButtonColors(),
+                border = secondaryButtonBorder(BorderStroke(1.dp, scheme.outlineVariant))) {
                 Text(stringResource(R.string.action_cancel), color = scheme.error)
             }
             Button(onClick = onMinimize, modifier = Modifier.height(44.dp)) {

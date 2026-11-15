@@ -318,8 +318,8 @@ fun SettingsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = palette.card, titleContentColor = palette.label,
-                    navigationIconContentColor = palette.label),
+                    containerColor = palette.header, titleContentColor = palette.onHeader,
+                    navigationIconContentColor = palette.onHeader),
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },
@@ -333,26 +333,26 @@ fun SettingsScreen(
             // et c'est l'aplat d'accent qui dit lequel est ouvert - le meme aplat que les puces retenues,
             // plus bas, une seule facon de dire "retenu" sur tout l'ecran.
             Row(
-                Modifier.fillMaxWidth().background(palette.card).padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                Modifier.fillMaxWidth().background(palette.header).padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 tabs.forEachIndexed { i, (label, icon) ->
                     val selected = tab == i
                     Column(
                         Modifier.weight(1f).clip(MaterialTheme.shapes.medium)
-                            .background(if (selected) palette.accentContainer else Color.Transparent)
+                            .background(if (selected) palette.selected else Color.Transparent)
                             .clickable { tab = i }
                             .padding(vertical = 8.dp, horizontal = 2.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Icon(icon, null, Modifier.size(20.dp),
-                            tint = if (selected) palette.accentStrong else palette.subtle)
+                            tint = if (selected) palette.onSelected else palette.onHeaderSubtle)
                         // 12 sp (labelMedium) : plus petit, un onglet se devine plus qu'il ne se lit, et c'est
                         // la premiere chose qu'on lit de l'ecran.
                         Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1,
                             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                            color = if (selected) palette.accentStrong else palette.subtle)
+                            color = if (selected) palette.onSelected else palette.onHeaderSubtle)
                     }
                 }
             }

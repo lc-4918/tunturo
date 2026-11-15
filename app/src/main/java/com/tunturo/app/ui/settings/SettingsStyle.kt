@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.ColorScheme
+import com.tunturo.app.ui.theme.LocalBrandAccents
 import com.tunturo.app.ui.theme.TunturoLight
 
 /**
@@ -112,6 +113,20 @@ class SettingsPalette(
     val fieldBg: Color,
     /** Piste non remplie d'un curseur. */
     val track: Color,
+    /** Fond de la barre du haut et des onglets ; la carte, sauf accents de marque (cf. BrandAccents). */
+    val header: Color = card,
+    /** Ce qui se pose sur [header]. */
+    val onHeader: Color = label,
+    /** Ce qui se pose sur [header] sans etre retenu : onglet ferme. */
+    val onHeaderSubtle: Color = subtle,
+    /** Aplat d'un choix retenu (onglet, puce) et du bouton d'action d'une carte. */
+    val selected: Color = accentContainer,
+    /** Ce qui se pose sur [selected]. */
+    val onSelected: Color = accentStrong,
+    /** Aplat d'une puce retenue : tertiaryContainer avec les accents de marque, comme sur la planche. */
+    val chipSelected: Color = selected,
+    /** Ce qui se pose sur [chipSelected]. */
+    val onChipSelected: Color = onSelected,
 )
 
 /**
@@ -121,7 +136,7 @@ class SettingsPalette(
  * CLAIRE que le fond (blanche sur un fond bleute) ; en sombre aussi - plus claire que le fond presque noir
  * -, ce qui la fait monter d'un cran dans les conteneurs la ou le clair en descend.
  */
-internal fun settingsPaletteOf(c: ColorScheme, dark: Boolean) = SettingsPalette(
+internal fun settingsPaletteOf(c: ColorScheme, dark: Boolean, brand: Boolean = false) = SettingsPalette(
     screen = if (dark) c.surfaceContainerLowest else c.surfaceContainerLow,
     card = if (dark) c.surfaceContainerLow else c.surfaceContainerLowest,
     divider = if (dark) c.surfaceContainerHigh else c.surfaceContainer,
@@ -134,6 +149,13 @@ internal fun settingsPaletteOf(c: ColorScheme, dark: Boolean) = SettingsPalette(
     outline = c.outlineVariant,
     fieldBg = if (dark) c.surfaceContainerHigh else c.surfaceContainerLow,
     track = c.surfaceContainerHighest,
+    header = if (brand) c.primaryContainer else (if (dark) c.surfaceContainerLow else c.surfaceContainerLowest),
+    onHeader = if (brand) c.onPrimaryContainer else c.onSurface,
+    onHeaderSubtle = if (brand) c.onPrimaryContainer.copy(alpha = 0.72f) else c.onSurfaceVariant,
+    selected = if (brand) c.primary else c.primaryContainer,
+    onSelected = if (brand) c.onPrimary else c.onPrimaryContainer,
+    chipSelected = if (brand) c.tertiaryContainer else c.primaryContainer,
+    onChipSelected = if (brand) c.onTertiaryContainer else c.onPrimaryContainer,
 )
 
 private val LightSettingsPalette = settingsPaletteOf(TunturoLight, dark = false)
@@ -150,7 +172,8 @@ fun ProvideSettingsPalette(dark: Boolean, content: @Composable () -> Unit) {
     // Lue dans le theme EN COURS, et non dans TunturoLight/TunturoDark : l'ecran suit ainsi le theme
     // d'essai de TM-3 (cf. TrialTheme) comme le reste de l'application.
     val colorScheme = MaterialTheme.colorScheme
-    val palette = remember(colorScheme, dark) { settingsPaletteOf(colorScheme, dark) }
+    val brand = LocalBrandAccents.current
+    val palette = remember(colorScheme, dark, brand) { settingsPaletteOf(colorScheme, dark, brand) }
     CompositionLocalProvider(LocalSettingsPalette provides palette, content = content)
 }
 
@@ -724,14 +747,14 @@ fun SettingsChip(label: String, selected: Boolean, onClick: () -> Unit) {
     val p = settingsPalette
     Box(
         Modifier.clip(MaterialTheme.shapes.small)
-            .background(if (selected) p.accentContainer else Color.Transparent)
-            .border(1.dp, if (selected) p.accentContainer else p.outline, MaterialTheme.shapes.small)
+            .background(if (selected) p.chipSelected else Color.Transparent)
+            .border(1.dp, if (selected) p.chipSelected else p.outline, MaterialTheme.shapes.small)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
         // Le texte d'une puce libre suit le gris de la palette, et non un bleu-gris ecrit en dur : celui-ci
         // venait de la maquette claire, et disparaissait presque sur une carte sombre.
-        Text(label, style = MaterialTheme.typography.labelMedium, color = if (selected) p.accentStrong else p.subtle,
+        Text(label, style = MaterialTheme.typography.labelMedium, color = if (selected) p.onChipSelected else p.subtle,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal)
     }
 }
@@ -775,7 +798,7 @@ fun ColumnScopeMarker.CardButton(
     val p = settingsPalette
     Row(
         modifier.padding(margins)
-            .height(44.dp).clip(MaterialTheme.shapes.medium).background(p.accentContainer)
+            .height(44.dp).clip(MaterialTheme.shapes.medium).background(p.selected)
             .clickable(onClick = onClick)
             // Le "i" occupe la droite du bouton et pousse vers la gauche le groupe icone + libelle, qui
             // se centre avec lui : ce retrait rend au libelle une partie de ce que le "i" lui prend.
@@ -785,8 +808,8 @@ fun ColumnScopeMarker.CardButton(
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (icon != null) Icon(icon, null, Modifier.size(16.dp), tint = p.accentStrong)
-        Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = p.accentStrong)
+        if (icon != null) Icon(icon, null, Modifier.size(16.dp), tint = p.onSelected)
+        Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = p.onSelected)
         // Le "i" apres le libelle, dans le bouton : son propre tap le montre sans declencher le bouton -
         // c'est un enfant cliquable, et il consomme le geste avant que son parent ne le voie.
         if (info != null) InfoTip(info)
@@ -914,7 +937,7 @@ fun SettingsTextField(
 /** Bordure d'une carte de discipline, retenue ou non. */
 @Composable
 fun disciplineBorder(selected: Boolean): BorderStroke =
-    BorderStroke(1.dp, if (selected) settingsPalette.accentContainer else settingsPalette.outline)
+    BorderStroke(1.dp, if (selected) settingsPalette.selected else settingsPalette.outline)
 
 /**
  * Ligne a choix : le libelle, la valeur retenue, et le menu qui s'ouvre d'un tap sur la ligne entiere.

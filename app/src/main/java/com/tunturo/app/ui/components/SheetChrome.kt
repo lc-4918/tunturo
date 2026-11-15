@@ -1,5 +1,8 @@
 package com.tunturo.app.ui.components
 
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.runtime.CompositionLocalProvider
+import com.tunturo.app.ui.theme.brandHeader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -133,7 +136,12 @@ fun SheetTop(
     extraAction: (@Composable () -> Unit)? = null,
     header: @Composable RowScope.() -> Unit,
 ) {
-    Box(modifier.fillMaxWidth()) {
+    // Avec une palette d'essai, l'entete prend un aplat de la couleur de marque (cf. BrandAccents).
+    val brand = brandHeader()
+    val tinted = if (brand == null) Modifier
+        else Modifier.clip(MaterialTheme.shapes.large).background(brand.background).padding(horizontal = Spacing.s)
+    CompositionLocalProvider(LocalContentColor provides (brand?.content ?: LocalContentColor.current)) {
+    Box(modifier.fillMaxWidth().then(tinted)) {
         Column {
             SheetHandle(onCollapse = onCollapse, height = edgeGap, modifier = handleModifier)
             Row(
@@ -146,5 +154,6 @@ fun SheetTop(
             extraAction?.invoke()
             SheetCloseButton(onClick = onClose, modifier = closeModifier)
         }
+    }
     }
 }

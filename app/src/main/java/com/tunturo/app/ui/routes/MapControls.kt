@@ -190,7 +190,7 @@ internal fun BoxScope.MapTopLeftControls(
                 }
             }, modifier = chrome.buttonBackground) {
                 Icon(Icons.Filled.Straighten, stringResource(R.string.measure_title),
-                    tint = if (measure.picking) MapChromeActive else chrome.fg)
+                    tint = if (measure.picking) chrome.active else chrome.fg)
             }
         }
         // Retouche des traces : un bouton, et non une barre permanente. Ouvrir le mode est un
@@ -203,7 +203,7 @@ internal fun BoxScope.MapTopLeftControls(
                     // Un crayon plutot qu'un marteau : deux traits contre une silhouette
                     // pleine d'outils croises, illisible a 22 dp au-dessus d'une carte.
                     Icons.Outlined.Edit, stringResource(R.string.edit_toolbar),
-                    tint = if (edit.open) MapChromeActive else chrome.fg,
+                    tint = if (edit.open) chrome.active else chrome.fg,
                 )
             }
         }
@@ -468,7 +468,7 @@ internal fun BoxScope.MapBottomRightControls(
                                 MapFollow.FollowTap.DISARM -> R.string.action_follow_position_off
                             },
                         ),
-                        tint = if (suit) MapChromeActive else chrome.fg,
+                        tint = if (suit) chrome.active else chrome.fg,
                     )
                     // Disque central au bleu du point de position : la carte tient le repere au centre
                     // de l'ecran, et le bouton le porte. Le seul des trois etats ou il y a un point
@@ -519,7 +519,7 @@ internal fun BoxScope.MapBottomRightControls(
                     poiButtonBottomPx = p.y.toInt() + it.size.height
                 },
             ) {
-                val teinte = if (poi.visible || poi.bubbleOpen) MapChromeActive else chrome.fg
+                val teinte = if (poi.visible || poi.bubbleOpen) chrome.active else chrome.fg
                 /*
                  * L'attente prend la place du pictogramme, DANS le bouton.
                  *
@@ -562,7 +562,7 @@ internal fun BoxScope.MapBottomRightControls(
                     stringResource(R.string.content_desc_dashboard),
                     tint = when {
                         alerting -> OffTrackAlertColor
-                        dashboardOpen -> MapChromeActive
+                        dashboardOpen -> chrome.active
                         else -> chrome.fg
                     },
                 )
@@ -594,13 +594,13 @@ internal fun BoxScope.MapBottomRightControls(
                         planner.chooseProfile(RoutingProfile.of(settings.routingProfile))
                     }
                 }
-            }, modifier = chrome.buttonBackground) {
+            }, modifier = chrome.mainActionBackground) {
                 // Bleu tant qu'un trajet est en cours, comme le suivi de position et la couche
                 // des points d'intérêt : le bouton ne dit plus seulement "calculer un
                 // itinéraire", il dit aussi "il y en a un rangé là-dessous".
                 Icon(
                     Icons.Outlined.Directions, stringResource(R.string.planner_title),
-                    tint = if (planner.open) MapChromeActive else chrome.fg,
+                    tint = if (planner.open) chrome.active else chrome.mainActionFg,
                 )
             }
         }

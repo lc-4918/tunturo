@@ -29,6 +29,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import com.tunturo.app.ui.theme.LocalBrandAccents
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -100,6 +101,12 @@ data class MapChrome(
      * quel que soit le curseur.
      */
     val buttonBackground: Modifier,
+    /** Le dessin d'un bouton allume (suivi, mesure, panneau ouvert). */
+    val active: Color = MapChromeActive,
+    /** Le fond du bouton d'action principal (itineraire) ; celui des autres boutons sans accents de marque. */
+    val mainActionBackground: Modifier = buttonBackground,
+    /** Le dessin du bouton d'action principal. */
+    val mainActionFg: Color = fg,
 )
 
 /** Les ornements de la carte, tels que les reglages les decident. */
@@ -108,14 +115,30 @@ internal fun rememberMapChrome(settings: SettingsEntity): MapChrome {
     val dark = isDarkTheme(settings.theme)
     val size = settings.mapButtonSizeDp.dp
     val opacityPct = settings.controlButtonsOpacityPct
-    val bg = mapChromeBg(dark)
-    return remember(dark, size, opacityPct, bg) {
+    // Avec une palette d'essai, les couleurs de la planche des palettes (cf. BrandAccents) : les boutons sur
+    // surfaceContainerHigh avec un dessin primary, le bouton d'action principal sur primaryContainer, et le
+    // bouton allume en tertiary. Sinon le blanc et le noir, lisibles sur n'importe quel fond de carte.
+    val brand = LocalBrandAccents.current
+    val scheme = MaterialTheme.colorScheme
+    val bg = if (brand) scheme.surfaceContainerHigh else mapChromeBg(dark)
+    val fg = if (brand) scheme.primary else mapChromeFg(dark)
+    val active = if (brand) scheme.tertiary else MapChromeActive
+    val mainBg = if (brand) scheme.primaryContainer else bg
+    val mainFg = if (brand) scheme.onPrimaryContainer else fg
+    return remember(dark, size, opacityPct, bg, fg, active, mainBg, mainFg) {
+        val buttonBackground = if (opacityPct <= 0) Modifier
+            else Modifier.mapButtonBackground(bg.copy(alpha = opacityPct / 100f), size)
         MapChrome(
             dark = dark,
             bg = bg,
-            fg = mapChromeFg(dark),
-            buttonBackground = if (opacityPct <= 0) Modifier
-                else Modifier.mapButtonBackground(bg.copy(alpha = opacityPct / 100f), size),
+            fg = fg,
+            buttonBackground = buttonBackground,
+            active = active,
+            // Le bouton principal garde son aplat meme quand le reglage retire celui des autres : c'est lui
+            // que la planche distingue.
+            mainActionBackground = if (!brand) buttonBackground
+                else Modifier.mapButtonBackground(mainBg.copy(alpha = maxOf(opacityPct, 90) / 100f), size),
+            mainActionFg = mainFg,
         )
     }
 }

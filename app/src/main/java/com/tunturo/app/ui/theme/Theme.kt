@@ -3,6 +3,7 @@ package com.tunturo.app.ui.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 
@@ -21,8 +22,10 @@ fun TunturoTheme(themePref: String = "light", content: @Composable () -> Unit) {
         colorScheme = TrialTheme.colorScheme(trialTheme, isDarkTheme(themePref)),
         typography = TunturoTypography,
         shapes = TunturoShapes,
-        content = content,
-    )
+    ) {
+        // Les accents de marque ne s'allument qu'avec une palette d'essai (cf. BrandAccents).
+        CompositionLocalProvider(LocalBrandAccents provides (trialTheme != TrialTheme.CURRENT), content = content)
+    }
 }
 
 /** Le theme demande se resout-il en sombre ? "system" suit le reglage de l'appareil. */

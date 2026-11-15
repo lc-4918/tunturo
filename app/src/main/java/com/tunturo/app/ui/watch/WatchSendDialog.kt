@@ -1,5 +1,7 @@
 package com.tunturo.app.ui.watch
 
+import com.tunturo.app.ui.theme.secondaryButtonColors
+import com.tunturo.app.ui.theme.secondaryButtonBorder
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -244,7 +246,8 @@ private fun WatchSendSetupDialog(
         dismissButton = {
             OutlinedButton(
                 onClick = onDismiss, modifier = Modifier.height(44.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                colors = secondaryButtonColors(),
+                border = secondaryButtonBorder(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)),
             ) { Text(stringResource(R.string.action_cancel)) }
         },
     )

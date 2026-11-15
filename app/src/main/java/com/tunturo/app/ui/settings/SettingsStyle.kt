@@ -76,7 +76,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.ColorScheme
-import com.tunturo.app.ui.theme.LocalBrandAccents
 import com.tunturo.app.ui.theme.TunturoLight
 
 /**
@@ -114,7 +113,7 @@ class SettingsPalette(
     val fieldBg: Color,
     /** Piste non remplie d'un curseur. */
     val track: Color,
-    /** Fond de la barre du haut et des onglets ; la carte, sauf accents de marque (cf. BrandAccents). */
+    /** Fond de la barre du haut et des onglets : celui des cartes (un entete en aplat a ete refuse). */
     val header: Color = card,
     /** Ce qui se pose sur [header]. */
     val onHeader: Color = label,
@@ -124,7 +123,7 @@ class SettingsPalette(
     val selected: Color = accentContainer,
     /** Ce qui se pose sur [selected]. */
     val onSelected: Color = accentStrong,
-    /** Aplat d'une puce retenue : tertiaryContainer avec les accents de marque, comme sur la planche. */
+    /** Aplat d'une puce retenue : tertiaryContainer, comme sur la planche des palettes. */
     val chipSelected: Color = selected,
     /** Ce qui se pose sur [chipSelected]. */
     val onChipSelected: Color = onSelected,
@@ -134,24 +133,14 @@ class SettingsPalette(
  * Les roles de l'ecran, pris au jeu de couleurs de l'application.
  *
  * Seuls le fond, la carte, le filet et le champ different selon le theme : en clair, la carte est plus
- * CLAIRE que le fond (blanche sur un fond bleute) ; en sombre aussi - plus claire que le fond presque noir
- * -, ce qui la fait monter d'un cran dans les conteneurs la ou le clair en descend.
+ * CLAIRE que le fond ; en sombre aussi - plus claire que le fond presque noir -, ce qui la fait monter
+ * d'un cran dans les conteneurs la ou le clair en descend.
  */
-internal fun settingsPaletteOf(c: ColorScheme, dark: Boolean, brand: Boolean = false) = SettingsPalette(
-    // Avec la nouvelle identite, les cartes prennent une surface TEINTEE de la palette : surfaceContainerLowest
-    // est blanc pur (ou noir pur) dans tous les jeux de Material 3, et les cartes restaient blanches.
-    screen = when {
-        brand && dark -> c.surface
-        brand -> c.surfaceContainerHigh
-        dark -> c.surfaceContainerLowest
-        else -> c.surfaceContainerLow
-    },
-    card = when {
-        brand && dark -> c.surfaceContainerHigh
-        brand -> c.surfaceContainerLow
-        dark -> c.surfaceContainerLow
-        else -> c.surfaceContainerLowest
-    },
+internal fun settingsPaletteOf(c: ColorScheme, dark: Boolean) = SettingsPalette(
+    // Les cartes prennent une surface TEINTEE de la palette : surfaceContainerLowest est blanc pur (ou noir
+    // pur) dans tous les jeux de Material 3, et les cartes restaient blanches.
+    screen = if (dark) c.surface else c.surfaceContainerHigh,
+    card = if (dark) c.surfaceContainerHigh else c.surfaceContainerLow,
     divider = if (dark) c.surfaceContainerHigh else c.surfaceContainer,
     label = c.onSurface,
     subtle = c.onSurfaceVariant,
@@ -163,18 +152,13 @@ internal fun settingsPaletteOf(c: ColorScheme, dark: Boolean, brand: Boolean = f
     fieldBg = if (dark) c.surfaceContainerHigh else c.surfaceContainerLow,
     track = c.surfaceContainerHighest,
     // L'entete garde le fond des cartes : un entete en aplat de couleur a ete essaye et refuse (2026-11-15).
-    header = when {
-        brand && dark -> c.surfaceContainerHigh
-        brand -> c.surfaceContainerLow
-        dark -> c.surfaceContainerLow
-        else -> c.surfaceContainerLowest
-    },
+    header = if (dark) c.surfaceContainerHigh else c.surfaceContainerLow,
     onHeader = c.onSurface,
     onHeaderSubtle = c.onSurfaceVariant,
-    selected = if (brand) c.primary else c.primaryContainer,
-    onSelected = if (brand) c.onPrimary else c.onPrimaryContainer,
-    chipSelected = if (brand) c.tertiaryContainer else c.primaryContainer,
-    onChipSelected = if (brand) c.onTertiaryContainer else c.onPrimaryContainer,
+    selected = c.primary,
+    onSelected = c.onPrimary,
+    chipSelected = c.tertiaryContainer,
+    onChipSelected = c.onTertiaryContainer,
 )
 
 private val LightSettingsPalette = settingsPaletteOf(TunturoLight, dark = false)
@@ -188,11 +172,10 @@ val settingsPalette: SettingsPalette
 /** Pose la palette de l'ecran, tiree du jeu de couleurs clair ou sombre de l'application. */
 @Composable
 fun ProvideSettingsPalette(dark: Boolean, content: @Composable () -> Unit) {
-    // Lue dans le theme EN COURS, et non dans TunturoLight/TunturoDark : l'ecran suit ainsi le theme
-    // d'essai de TM-3 (cf. TrialTheme) comme le reste de l'application.
+    // Lue dans le theme EN COURS, et non dans TunturoLight/TunturoDark : un ecran pose dans un autre
+    // theme (un apercu, un test) garde ainsi ses couleurs.
     val colorScheme = MaterialTheme.colorScheme
-    val brand = LocalBrandAccents.current
-    val palette = remember(colorScheme, dark, brand) { settingsPaletteOf(colorScheme, dark, brand) }
+    val palette = remember(colorScheme, dark) { settingsPaletteOf(colorScheme, dark) }
     CompositionLocalProvider(LocalSettingsPalette provides palette, content = content)
 }
 

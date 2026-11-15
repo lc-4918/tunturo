@@ -73,7 +73,6 @@ open class TunturoApp : Application(), SingletonImageLoader.Factory {
         repository = TunturoRepository(this)
         // Les chemins d'images d'une sauvegarde Trailog designent le dossier de Trailog (cf. LocalImagePath).
         LocalImagePath.imagesDirectory = java.io.File(filesDir, "images")
-        com.tunturo.app.ui.theme.TrialTheme.load(this)
         startBackgroundWork()
     }
 

@@ -14,10 +14,19 @@ import org.junit.Test
 class PlannerColorGuardTest {
 
     /** Mousse : primary claire #536525, sombre #B9CF83 (export du Theme Builder du 2026-11-15). */
-    private val mousse = PlannerColorGuard.plannerColors("mousse")
+    private val mousse = PlannerColorGuard.plannerColors
+
+    /** Les primaires de Glacier, une palette essayee et ecartee : leurs voisines sont dans les palettes de traces. */
+    private val glacier = listOf("#006878", "#84D2E5")
 
     @Test fun `les couleurs reservees sont les deux primaires de la palette`() {
         assertEquals(listOf("#536525", "#B9CF83"), mousse)
+        assertEquals(mousse, PlannerColorGuard.plannerColors)
+    }
+
+    @Test fun `par defaut, la garde reserve les primaires du theme`() {
+        assertTrue(PlannerColorGuard.isReserved("#536525"))
+        assertEquals(MapPalette, PlannerColorGuard.allowed(MapPalette))
     }
 
     /** Le vert clair, a 26 de la primaire sombre de Mousse, reste permis : Luc l'a juge assez eloigne. */
@@ -38,8 +47,7 @@ class PlannerColorGuardTest {
 
     @Test fun `le choix de couleur des traces retire les couleurs reservees, et seulement elles`() {
         assertEquals(MapPalette, PlannerColorGuard.allowed(MapPalette, mousse))
-        val glacier = PlannerColorGuard.allowed(MapPalette, PlannerColorGuard.plannerColors("glacier"))
-        assertEquals(MapPalette - listOf("#546E7A", "#1098AD"), glacier)
+        assertEquals(MapPalette - listOf("#546E7A", "#1098AD"), PlannerColorGuard.allowed(MapPalette, glacier))
     }
 
     @Test fun `une couleur illisible n'est pas refusee`() {
@@ -47,7 +55,6 @@ class PlannerColorGuardTest {
     }
 
     @Test fun `l'import ne donne jamais une couleur reservee`() {
-        val glacier = PlannerColorGuard.plannerColors("glacier")
         val reservedInImport = TunturoRepository.Palette.colors.filter { PlannerColorGuard.isReserved(it, glacier) }
         assertTrue("la palette d'import doit avoir une couleur proche de Glacier", reservedInImport.isNotEmpty())
         val used = mutableListOf<String>()

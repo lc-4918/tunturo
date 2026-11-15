@@ -29,7 +29,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import com.tunturo.app.ui.theme.LocalBrandAccents
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -119,27 +118,23 @@ internal fun rememberMapChrome(settings: SettingsEntity): MapChrome {
     val dark = isDarkTheme(settings.theme)
     val size = settings.mapButtonSizeDp.dp
     val opacityPct = settings.controlButtonsOpacityPct
-    // Nouvelle identite (cf. BrandAccents) : les boutons de la carte sont ceux du bouton "Calculer" de la
-    // planche des palettes - aplat primary, dessin onPrimary. Allume, un bouton passe en primaryContainer
-    // et onPrimaryContainer. L'aplat ne descend pas sous 90 % : un dessin onPrimary (clair) sans fond se
-    // perdrait sur la carte. Sinon, l'ancien blanc et noir.
-    val brand = LocalBrandAccents.current
+    // Les boutons de la carte sont ceux du bouton "Calculer" de la planche des palettes (TM-3) : aplat
+    // primary, dessin onPrimary. Allume, un bouton passe en primaryContainer et onPrimaryContainer.
+    // L'aplat ne descend pas sous 90 % : un dessin onPrimary (clair) sans fond se perdrait sur la carte.
     val scheme = MaterialTheme.colorScheme
-    val bg = if (brand) scheme.primary else mapChromeBg(dark)
-    val fg = if (brand) scheme.onPrimary else mapChromeFg(dark)
-    val activeBg = if (brand) scheme.primaryContainer else bg
-    val active = if (brand) scheme.onPrimaryContainer else MapChromeActive
-    val alphaPct = if (brand) maxOf(opacityPct, 90) else opacityPct
+    val bg = scheme.primary
+    val fg = scheme.onPrimary
+    val activeBg = scheme.primaryContainer
+    val active = scheme.onPrimaryContainer
+    val alphaPct = maxOf(opacityPct, 90)
     return remember(dark, size, alphaPct, bg, fg, activeBg, active) {
-        val buttonBackground = if (alphaPct <= 0) Modifier
-            else Modifier.mapButtonBackground(bg.copy(alpha = alphaPct / 100f), size)
+        val buttonBackground = Modifier.mapButtonBackground(bg.copy(alpha = alphaPct / 100f), size)
         MapChrome(
             dark = dark,
             bg = bg,
             fg = fg,
             buttonBackground = buttonBackground,
-            activeButtonBackground = if (!brand) buttonBackground
-                else Modifier.mapButtonBackground(activeBg.copy(alpha = alphaPct / 100f), size),
+            activeButtonBackground = Modifier.mapButtonBackground(activeBg.copy(alpha = alphaPct / 100f), size),
             active = active,
         )
     }
@@ -175,17 +170,6 @@ internal fun MapBarAction(label: String, primary: Boolean = false, onClick: () -
 internal const val ControlButtonBgAlpha = 0.9f
 
 /**
- * Fond des ornements poses sur la carte - echelle graphique et boutons de controle - en theme sombre.
- *
- * Clair, ils s'ecrivent en noir sur blanc ; sombre, les deux s'echangent, faute de quoi un pave blanc
- * troue un ecran par ailleurs sombre et eblouit de nuit, quand on s'en sert le plus.
- *
- * Gris tres fonce et non noir : un aplat franchement noir sur un fond de carte sombre ne se lit plus
- * comme un objet POSE dessus mais comme un trou dedans, et ses angles arrondis disparaissent.
- */
-internal val MapChromeDarkBg = Color(0xFF202124)
-
-/**
  * Le dessin d'un bouton de carte ALLUME.
  *
  * Le bleu de la puce de position, et non l'accent du theme : celui-ci est un vert sombre, qui allume un
@@ -214,13 +198,6 @@ internal val OffTrackAlertColor = Color(0xFFB3261E)
  * en hexadecimal.
  */
 internal const val GpsStaleColor = "#8A8A8A"
-
-/** Le fond d'un ornement de carte selon le theme. */
-internal fun mapChromeBg(dark: Boolean): Color = if (dark) MapChromeDarkBg else Color.White
-
-/** Ce qui se dessine dessus : l'inverse exact du fond, sans demi-teinte - ces objets sont petits et se
- *  lisent par-dessus n'importe quel fond de carte. */
-internal fun mapChromeFg(dark: Boolean): Color = if (dark) Color.White else Color.Black
 
 /**
  * Fond d'un bouton pose sur la carte : un carre a peine adouci, resserre autour de l'icone.
@@ -305,15 +282,6 @@ internal val PoiBubbleAnchorWidth = 48.dp
 /** Ecart entre deux boutons poses sur la carte. Le triple de ce qu'il etait : les fonds arrondis se
  *  touchaient presque, et la colonne se lisait comme un seul bloc. */
 internal val MapControlSpacing = 24.dp
-
-/**
- * Bleu du disque de recentrage quand la position n'est plus au centre.
- *
- * Exactement celui du point de position pose sur la carte (cf. MapController.setUserLocation) : le bouton
- * reprend la teinte de ce qu'il vise, et les deux se repondent d'un bout a l'autre de l'ecran. Fixe et non
- * pris au theme, comme le point qu'il rappelle.
- */
-internal val RecenterDotColor = Color(0xFF4285F4)
 
 /**
  * Diametre du disque repeint au centre de l'icone "centrer sur ma position".

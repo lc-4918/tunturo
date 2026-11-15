@@ -952,7 +952,7 @@ class TunturoRepository(private val ctx: Context) {
      */
     object Palette {
         internal val colors = listOf("#E8590C","#2F9E44","#9C36B5","#1098AD","#F08C00","#C2255C","#5C7CFA")
-        fun pick(used: List<String>, reserved: List<String> = PlannerColorGuard.plannerColors()): String {
+        fun pick(used: List<String>, reserved: List<String> = PlannerColorGuard.plannerColors): String {
             val allowed = PlannerColorGuard.allowed(colors, reserved).ifEmpty { colors }
             return allowed.firstOrNull { it !in used } ?: allowed[used.size % allowed.size]
         }

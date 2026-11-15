@@ -1,6 +1,5 @@
 package com.tunturo.app.ui.routes
 
-import com.tunturo.app.ui.theme.LocalBrandAccents
 import com.tunturo.app.ui.offline.basemapLabel
 import com.tunturo.app.ui.offline.offlineDownloadAvailable
 import android.annotation.SuppressLint
@@ -943,8 +942,7 @@ fun MainScreen(
             // ses coins arrondis ne faisaient que laisser voir la carte aux deux angles de l'ecran.
             ModalDrawerSheet(Modifier.fillMaxWidth(), drawerShape = RectangleShape,
                 // Une surface teintee de la palette, et non surface, presque blanche dans tous les jeux.
-                drawerContainerColor = if (LocalBrandAccents.current) MaterialTheme.colorScheme.surfaceContainerLow
-                    else MaterialTheme.colorScheme.surface) {
+                drawerContainerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
                 DrawerContent(
                     folders = folders, layers = layers, settings = settings, vm = vm,
                     open = drawerState.isOpen,

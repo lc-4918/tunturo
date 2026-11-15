@@ -5,13 +5,12 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.toArgb
 import com.tunturo.app.ui.settings.settingsPaletteOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Le theme de l'application : complet, lisible, et sans teinte dans le sombre. */
+/** Le theme de l'application : la palette Mousse, complete et lisible. */
 class ThemeTest {
 
     /** Chaque role du jeu, par son nom : un getter sans argument qui rend une couleur (un Long en JVM). */
@@ -44,23 +43,24 @@ class ThemeTest {
     /** Garde-fou du test precedent : si la lecture des roles ne trouvait rien, il passerait a vide. */
     @Test fun `la lecture des roles trouve les surfaces`() {
         val r = roles(TunturoLight)
-        assertEquals(Color(0xFF16588F), r["Primary"])
-        assertEquals(Color(0xFFF2F6FA), r["SurfaceContainerLow"])
+        assertEquals(Color(0xFF536525), r["Primary"])
+        assertEquals(Color(0xFFF4F4E8), r["SurfaceContainerLow"])
         assertTrue(r.size >= 30)
     }
 
-    /** Le sombre est NOIR, pas bleu nuit : fonds, textes et filets sont des gris sans teinte. */
-    @Test fun `le sombre est fait de gris neutres`() {
-        val d = TunturoDark
-        for (c in listOf(
-            d.background, d.surface, d.surfaceDim, d.surfaceBright, d.surfaceVariant,
-            d.surfaceContainerLowest, d.surfaceContainerLow, d.surfaceContainer,
-            d.surfaceContainerHigh, d.surfaceContainerHighest,
-            d.onSurface, d.onSurfaceVariant, d.outline, d.outlineVariant,
-        )) {
-            val argb = c.toArgb()
-            val r = argb shr 16 and 0xFF; val g = argb shr 8 and 0xFF; val b = argb and 0xFF
-            assertTrue("%08X".format(argb), r == g && g == b)
+    /** Mousse, du Theme Builder : primaires claire et sombre de l'export du 2026-11-15. */
+    @Test fun `le theme est la palette Mousse`() {
+        assertEquals(Color(0xFF536525), TunturoLight.primary)
+        assertEquals(Color(0xFFB9CF83), TunturoDark.primary)
+        assertEquals(Color(0xFFD5EC9C), TunturoLight.primaryContainer)
+    }
+
+    /** Les textes prennent la couleur de la palette, et non les gris presque neutres de Material 3. */
+    @Test fun `les textes sont teintes de la palette`() {
+        for (scheme in listOf(TunturoLight, TunturoDark)) {
+            assertEquals(scheme.onPrimaryContainer, scheme.onSurface)
+            assertEquals(scheme.onPrimaryContainer, scheme.onBackground)
+            assertEquals(scheme.secondary, scheme.onSurfaceVariant)
         }
     }
 
@@ -95,10 +95,7 @@ class ThemeTest {
         }
     }
 
-    /**
-     * Chaque style de texte est dans la police de l'application - Outfit a l'essai depuis le 2026-11-15,
-     * Inter avant : aucun ne retombe sur la police du systeme.
-     */
+    /** Chaque style de texte est dans la police de l'application, Outfit : aucun ne retombe sur celle du systeme. */
     @Test fun `tous les styles sont dans la police de l'application, Outfit`() {
         val t = TunturoTypography
         val styles = listOf(

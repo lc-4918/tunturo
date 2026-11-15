@@ -1,7 +1,6 @@
 package com.tunturo.app.ui.routes
 
 import androidx.compose.material3.MaterialTheme
-import com.tunturo.app.ui.theme.LocalBrandAccents
 import com.tunturo.app.data.db.BasemapControlMode
 import com.tunturo.app.ui.offline.RoutingDownloadIndicator
 import androidx.compose.foundation.Canvas
@@ -472,12 +471,11 @@ internal fun BoxScope.MapBottomRightControls(
                         ),
                         tint = chrome.buttonForeground(suit),
                     )
-                    // Disque central au bleu du point de position : la carte tient le repere au centre
+                    // Disque central en primary, la couleur des boutons : la carte tient le repere au centre
                     // de l'ecran, et le bouton le porte. Le seul des trois etats ou il y a un point
                     // sous la croix - les deux autres portent la croix vide.
                     if (suit && positionCentered) {
-                        // Avec la nouvelle identite, le point prend la couleur du repere GPS : primary.
-                        val dotColor = if (LocalBrandAccents.current) MaterialTheme.colorScheme.primary else RecenterDotColor
+                        val dotColor = MaterialTheme.colorScheme.primary
                         Canvas(Modifier.size(MyLocationDotSize)) { drawCircle(color = dotColor) }
                     }
                 }

@@ -27,12 +27,11 @@ object PlannerColorGuard {
     /** L'ecart en dessous duquel une couleur de trace se confond avec le parcours calcule. */
     const val MinimumDistance = 20.0
 
-    /** Les couleurs du parcours calcule pour la palette [paletteId], en "#RRGGBB" : claire puis sombre. */
-    fun plannerColors(paletteId: String = TrialTheme.selected.value): List<String> =
-        listOf(false, true).map { dark -> hexOf(TrialTheme.colorScheme(paletteId, dark).primary.toArgb()) }
+    /** Les couleurs du parcours calcule, en "#RRGGBB" : la primaire claire puis la sombre. */
+    val plannerColors: List<String> = listOf(TunturoLight, TunturoDark).map { hexOf(it.primary.toArgb()) }
 
     /** [color] est-elle trop proche de l'une des [reserved] ? Une couleur illisible n'est pas refusee. */
-    fun isReserved(color: String, reserved: List<String> = plannerColors()): Boolean {
+    fun isReserved(color: String, reserved: List<String> = plannerColors): Boolean {
         val lab = labOf(color) ?: return false
         return reserved.any { reservedColor ->
             val other = labOf(reservedColor) ?: return@any false
@@ -41,7 +40,7 @@ object PlannerColorGuard {
     }
 
     /** Les [colors] qu'une trace peut prendre, dans leur ordre. */
-    fun allowed(colors: List<String>, reserved: List<String> = plannerColors()): List<String> =
+    fun allowed(colors: List<String>, reserved: List<String> = plannerColors): List<String> =
         colors.filterNot { isReserved(it, reserved) }
 
     /** L'ecart Delta E 1976 entre deux couleurs "#RRGGBB", ou null si l'une ne se lit pas. */

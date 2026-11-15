@@ -1,7 +1,6 @@
 package com.tunturo.app.ui.components
 
 import com.tunturo.app.ui.theme.PlannerColorGuard
-import com.tunturo.app.ui.theme.TrialTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -53,11 +52,8 @@ val MapPalette = listOf(
 fun ColorPickerDialog(
     current: String, onPick: (String) -> Unit, onDismiss: () -> Unit, excludeReserved: Boolean = true,
 ) {
-    // Relu a chaque changement de palette : le parcours calcule en change avec elle.
-    val paletteId by TrialTheme.selected.collectAsState()
-    val colors = remember(paletteId, excludeReserved) {
-        if (excludeReserved) PlannerColorGuard.allowed(MapPalette, PlannerColorGuard.plannerColors(paletteId))
-        else MapPalette
+    val colors = remember(excludeReserved) {
+        if (excludeReserved) PlannerColorGuard.allowed(MapPalette) else MapPalette
     }
     AlertDialog(
         onDismissRequest = onDismiss,

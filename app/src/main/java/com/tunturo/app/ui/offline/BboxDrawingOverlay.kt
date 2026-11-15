@@ -1,7 +1,6 @@
 package com.tunturo.app.ui.offline
 
 import com.tunturo.app.ui.theme.secondaryButtonColors
-import com.tunturo.app.ui.theme.secondaryButtonBorder
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -176,7 +175,7 @@ fun BoxScope.BboxEditorOverlay(
             verticalAlignment = Alignment.CenterVertically) {
             OutlinedButton(onClick = onCancel, modifier = Modifier.height(44.dp),
                 colors = secondaryButtonColors(),
-                border = secondaryButtonBorder(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant))) {
+                border = null) {
                 Text(stringResource(R.string.action_cancel))
             }
             Button(

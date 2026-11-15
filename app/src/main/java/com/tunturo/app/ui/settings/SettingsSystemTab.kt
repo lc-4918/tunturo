@@ -61,6 +61,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.material3.Icon
 import com.tunturo.app.data.db.MinMapButtonSizeDp
 import com.tunturo.app.data.db.MaxMapButtonSizeDp
+import com.tunturo.app.ui.theme.TrialTheme
 import com.tunturo.app.ui.theme.TunturoIcons
 
 /**
@@ -120,6 +121,15 @@ import com.tunturo.app.ui.theme.TunturoIcons
                 })
             },
         ) { vm.save(cur.copy(theme = it)) }
+        // Le theme d'essai de TM-3 : mode expert seulement, et temporaire (cf. TrialTheme).
+        if (cur.expertMode) {
+            RowDivider()
+            val trialTheme by TrialTheme.selected.collectAsState()
+            PickRow(
+                stringResource(R.string.settings_label_trial_theme), trialTheme, TrialTheme.choices,
+                optionLabel = { TrialTheme.displayName(it) ?: stringResource(R.string.trial_theme_current) },
+            ) { TrialTheme.select(ctx, it) }
+        }
         RowDivider()
         PickRow(
             stringResource(R.string.settings_label_language), currentLang,

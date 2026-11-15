@@ -75,7 +75,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.ColorScheme
-import com.tunturo.app.ui.theme.TunturoDark
 import com.tunturo.app.ui.theme.TunturoLight
 
 /**
@@ -138,7 +137,6 @@ internal fun settingsPaletteOf(c: ColorScheme, dark: Boolean) = SettingsPalette(
 )
 
 private val LightSettingsPalette = settingsPaletteOf(TunturoLight, dark = false)
-private val DarkSettingsPalette = settingsPaletteOf(TunturoDark, dark = true)
 
 private val LocalSettingsPalette = staticCompositionLocalOf { LightSettingsPalette }
 
@@ -149,7 +147,10 @@ val settingsPalette: SettingsPalette
 /** Pose la palette de l'ecran, tiree du jeu de couleurs clair ou sombre de l'application. */
 @Composable
 fun ProvideSettingsPalette(dark: Boolean, content: @Composable () -> Unit) {
-    val palette = if (dark) DarkSettingsPalette else LightSettingsPalette
+    // Lue dans le theme EN COURS, et non dans TunturoLight/TunturoDark : l'ecran suit ainsi le theme
+    // d'essai de TM-3 (cf. TrialTheme) comme le reste de l'application.
+    val colorScheme = MaterialTheme.colorScheme
+    val palette = remember(colorScheme, dark) { settingsPaletteOf(colorScheme, dark) }
     CompositionLocalProvider(LocalSettingsPalette provides palette, content = content)
 }
 

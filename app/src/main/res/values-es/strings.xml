@@ -482,6 +482,8 @@
     <string name="settings_label_waypoints">Waypoints</string>
     <string name="settings_label_tracks">Trazas</string>
     <string name="settings_label_theme">Tema</string>
+    <string name="settings_label_trial_theme">Tema de prueba</string>
+    <string name="trial_theme_current">Actual</string>
     <string name="settings_label_language">Idioma</string>
     <string name="settings_label_units">Unidades</string>
     <string name="settings_label_updates">Actualizaciones</string>

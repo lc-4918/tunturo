@@ -482,6 +482,8 @@
     <string name="settings_label_waypoints">Bidepuntuak</string>
     <string name="settings_label_tracks">Arrastoak</string>
     <string name="settings_label_theme">Gaia</string>
+    <string name="settings_label_trial_theme">Proba-gaia</string>
+    <string name="trial_theme_current">Unekoa</string>
     <string name="settings_label_language">Hizkuntza</string>
     <string name="settings_label_units">Unitateak</string>
     <string name="settings_label_updates">Eguneraketak</string>

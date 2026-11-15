@@ -109,14 +109,11 @@
     <string name="action_center_on_location">Centrar en mi posición</string>
     <string name="action_follow_position_on">Seguir mi posición</string>
     <string name="action_follow_position_off">Dejar de seguir mi posición</string>
-    <string name="action_reset_avatar">Restablecer avatar</string>
     <string name="action_pin_image">Fijar como imagen de portada</string>
     <string name="action_unpin_image">Quitar fijación</string>
     <string name="label_pinned_image">Imagen de portada</string>
     <string name="action_create_composite">Compuesto</string>
     <string name="action_reset_defaults">Restablecer valores predeterminados</string>
-    <string name="action_change_avatar">Cambiar avatar</string>
-    <string name="action_load_image_from_phone">Cargar una imagen</string>
     <string name="action_manage_providers">Gestionar proveedores</string>
     <string name="action_offline_download">Mapa sin conexión</string>
     <string name="offline_action_back">Volver</string>
@@ -226,7 +223,7 @@
     <string name="dialog_edit_bubble_title">Editar la burbuja informativa</string>
 
     <!-- Menú lateral -->
-    <string name="drawer_default_title">Biblioteca</string>
+    <string name="drawer_default_title">Tunturo</string>
     <!-- Nom du dossier du jeu de demonstration seme au premier lancement -->
     <string name="demo_folder_name">Demo</string>
 
@@ -238,9 +235,7 @@
     <string name="settings_tab_tiles">Teselas</string>
 
     <!-- Ajustes: Sistema -->
-    <string name="settings_section_avatar">Avatar</string>
     <string name="settings_section_language">Idioma</string>
-    <string name="avatar_url_placeholder">https://...</string>
     <string name="settings_section_units">Unidades</string>
     <string name="unit_metric">Métrico</string>
     <string name="unit_imperial">Imperial</string>
@@ -398,7 +393,7 @@
     <!-- Restablecimiento -->
     <string name="settings_section_reset">Restablecimiento</string>
     <string name="action_reset_all_settings">Restablecer todos los ajustes</string>
-    <string name="dialog_reset_all_settings_text">Esta acción restaura todos los ajustes (idioma, tema, avatar, ajustes del mapa...). Se conservan las URL y claves API de los proveedores, los mapas base compuestos creados por el usuario y los archivos MBTiles importados.</string>
+    <string name="dialog_reset_all_settings_text">Esta acción restaura todos los ajustes (idioma, tema, ajustes del mapa...). Se conservan las URL y claves API de los proveedores, los mapas base compuestos creados por el usuario y los archivos MBTiles importados.</string>
 
     <!-- Importación/exportación de proveedores -->
     <string name="dialog_import_providers_title">¿Importar los proveedores?</string>
@@ -489,7 +484,6 @@
     <string name="settings_label_map_button_size">Tamaño de los botones</string>
     <string name="settings_label_marker_size">Tamaño de los marcadores</string>
     <string name="settings_label_bubble_position">Posición</string>
-    <string name="settings_label_avatar">Avatar</string>
     <string name="settings_label_side_title">Título del menú lateral</string>
     <string name="settings_sw_planner_step_numbers">Números de las etapas en la lista</string>
     <string name="settings_sw_gps_recenter">Recentrar en la posición</string>

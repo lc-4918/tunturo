@@ -1,5 +1,6 @@
 package com.tunturo.app.ui.settings
 
+import com.tunturo.app.ui.theme.brandedText
 import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -42,7 +43,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
     val ctx = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.app_name)) },
+        title = { Text(brandedText(stringResource(R.string.app_name))) },
         text = {
             Column {
                 Text(stringResource(R.string.about_version, BuildConfig.VERSION_NAME))

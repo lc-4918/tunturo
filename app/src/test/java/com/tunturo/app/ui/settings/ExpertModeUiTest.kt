@@ -56,7 +56,7 @@ class ExpertModeUiTest {
     }
 
     private fun avatars() =
-        compose.onAllNodesWithTag("settings_avatar", useUnmergedTree = true).fetchSemanticsNodes()
+        compose.onAllNodesWithTag("settings_logo", useUnmergedTree = true).fetchSemanticsNodes()
 
     /**
      * Amene a l'ecran la ligne portant ce texte, et attend qu'elle y soit.
@@ -74,7 +74,7 @@ class ExpertModeUiTest {
     /** Un appui sur l'avatar, une fois l'ecran compose : meme attente, meme raison (cf. [septAppuis]). */
     private fun unAppui() {
         compose.waitUntil(5_000) { avatars().isNotEmpty() }
-        compose.onNodeWithTag("settings_avatar", useUnmergedTree = true).performClick()
+        compose.onNodeWithTag("settings_logo", useUnmergedTree = true).performClick()
     }
 
     @Test fun `sept appuis sur le titre montrent puis cachent les options expertes`() {
@@ -166,7 +166,6 @@ class ExpertModeUiTest {
         onglet(R.string.settings_tab_general)
         assertFalse("dossiers", present(R.string.settings_section_import_folder))
         assertFalse("sauvegarde", present(R.string.settings_backup_create))
-        assertFalse("avatar", present(R.string.settings_label_avatar))
     }
 
     @Test fun `trajets et systeme montrent leurs reglages experts en mode expert`() {
@@ -177,7 +176,6 @@ class ExpertModeUiTest {
         onglet(R.string.settings_tab_general)
         assertTrue("dossiers", present(R.string.settings_section_import_folder))
         assertTrue("sauvegarde", present(R.string.settings_backup_create))
-        assertTrue("avatar", present(R.string.settings_label_avatar))
     }
 
     /** L'affichage de la carte (echelle, rotation, fonds) n'apparait qu'en mode expert. */

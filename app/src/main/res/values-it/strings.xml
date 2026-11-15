@@ -109,14 +109,11 @@
     <string name="action_center_on_location">Centra sulla mia posizione</string>
     <string name="action_follow_position_on">Segui la mia posizione</string>
     <string name="action_follow_position_off">Non seguire più la mia posizione</string>
-    <string name="action_reset_avatar">Ripristina avatar</string>
     <string name="action_pin_image">Fissa come immagine di copertina</string>
     <string name="action_unpin_image">Rimuovi fissaggio</string>
     <string name="label_pinned_image">Immagine di copertina</string>
     <string name="action_create_composite">Composito</string>
     <string name="action_reset_defaults">Ripristina i valori predefiniti</string>
-    <string name="action_change_avatar">Cambia avatar</string>
-    <string name="action_load_image_from_phone">Carica un\'immagine</string>
     <string name="action_manage_providers">Gestisci fornitori</string>
     <string name="action_offline_download">Mappa offline</string>
     <string name="offline_action_back">Indietro</string>
@@ -226,7 +223,7 @@
     <string name="dialog_edit_bubble_title">Modifica il fumetto informativo</string>
 
     <!-- Menu laterale -->
-    <string name="drawer_default_title">Biblioteca</string>
+    <string name="drawer_default_title">Tunturo</string>
     <!-- Nom du dossier du jeu de demonstration seme au premier lancement -->
     <string name="demo_folder_name">Demo</string>
 
@@ -238,9 +235,7 @@
     <string name="settings_tab_tiles">Tessere</string>
 
     <!-- Impostazioni: Sistema -->
-    <string name="settings_section_avatar">Avatar</string>
     <string name="settings_section_language">Lingua</string>
-    <string name="avatar_url_placeholder">https://...</string>
     <string name="settings_section_units">Unità</string>
     <string name="unit_metric">Metrico</string>
     <string name="unit_imperial">Imperiale</string>
@@ -398,7 +393,7 @@
     <!-- Ripristino -->
     <string name="settings_section_reset">Ripristino</string>
     <string name="action_reset_all_settings">Ripristina tutte le impostazioni</string>
-    <string name="dialog_reset_all_settings_text">Questa azione ripristina tutte le impostazioni (lingua, tema, avatar, impostazioni della mappa...). URL e chiavi API dei fornitori, le mappe di base composite create dall\'utente e i file MBTiles importati vengono conservati.</string>
+    <string name="dialog_reset_all_settings_text">Questa azione ripristina tutte le impostazioni (lingua, tema, impostazioni della mappa...). URL e chiavi API dei fornitori, le mappe di base composite create dall\'utente e i file MBTiles importati vengono conservati.</string>
 
     <!-- Importazione/esportazione dei fornitori -->
     <string name="dialog_import_providers_title">Importare i fornitori?</string>
@@ -489,7 +484,6 @@
     <string name="settings_label_map_button_size">Dimensione dei pulsanti</string>
     <string name="settings_label_marker_size">Dimensione dei marcatori</string>
     <string name="settings_label_bubble_position">Posizione</string>
-    <string name="settings_label_avatar">Avatar</string>
     <string name="settings_label_side_title">Titolo del menu laterale</string>
     <string name="settings_sw_planner_step_numbers">Numeri delle tappe nell\'elenco</string>
     <string name="settings_sw_gps_recenter">Centra sulla posizione</string>

@@ -109,14 +109,11 @@
     <string name="action_center_on_location">Zentratu nire kokapenean</string>
     <string name="action_follow_position_on">Nire kokapena jarraitu</string>
     <string name="action_follow_position_off">Utzi nire kokapena jarraitzeari</string>
-    <string name="action_reset_avatar">Berrezarri avatarra</string>
     <string name="action_pin_image">Ainguratu azal-irudi gisa</string>
     <string name="action_unpin_image">Kendu ainguratzea</string>
     <string name="label_pinned_image">Azaleko irudia</string>
     <string name="action_create_composite">Konposatua</string>
     <string name="action_reset_defaults">Berrezarri balio lehenetsiak</string>
-    <string name="action_change_avatar">Aldatu avatarra</string>
-    <string name="action_load_image_from_phone">Kargatu irudi bat</string>
     <string name="action_manage_providers">Kudeatu hornitzaileak</string>
     <string name="action_offline_download">Lineaz kanpoko mapa</string>
     <string name="offline_action_back">Atzera</string>
@@ -226,7 +223,7 @@
     <string name="dialog_edit_bubble_title">Editatu informazio-burbuila</string>
 
     <!-- Alboko menua -->
-    <string name="drawer_default_title">Liburutegia</string>
+    <string name="drawer_default_title">Tunturo</string>
     <!-- Nom du dossier du jeu de demonstration seme au premier lancement -->
     <string name="demo_folder_name">Demo</string>
 
@@ -238,9 +235,7 @@
     <string name="settings_tab_tiles">Lauzak</string>
 
     <!-- Ezarpenak: Sistema -->
-    <string name="settings_section_avatar">Avatarra</string>
     <string name="settings_section_language">Hizkuntza</string>
-    <string name="avatar_url_placeholder">https://...</string>
     <string name="settings_section_units">Unitateak</string>
     <string name="unit_metric">Metrikoa</string>
     <string name="unit_imperial">Inperiala</string>
@@ -398,7 +393,7 @@
     <!-- Berrezarpena -->
     <string name="settings_section_reset">Berrezarpena</string>
     <string name="action_reset_all_settings">Berrezarri ezarpen guztiak</string>
-    <string name="dialog_reset_all_settings_text">Ekintza honek ezarpen guztiak berrezartzen ditu (hizkuntza, gaia, avatarra, maparen ezarpenak...). Hornitzaileen URLak eta API gakoak, erabiltzaileak sortutako oinarrizko mapa konposatuak eta inportatutako MBTiles fitxategiak mantendu egingo dira.</string>
+    <string name="dialog_reset_all_settings_text">Ekintza honek ezarpen guztiak berrezartzen ditu (hizkuntza, gaia, maparen ezarpenak...). Hornitzaileen URLak eta API gakoak, erabiltzaileak sortutako oinarrizko mapa konposatuak eta inportatutako MBTiles fitxategiak mantendu egingo dira.</string>
 
     <!-- Hornitzaileen inportazioa/esportazioa -->
     <string name="dialog_import_providers_title">Hornitzaileak inportatu?</string>
@@ -489,7 +484,6 @@
     <string name="settings_label_map_button_size">Botoien tamaina</string>
     <string name="settings_label_marker_size">Markatzaileen tamaina</string>
     <string name="settings_label_bubble_position">Kokapena</string>
-    <string name="settings_label_avatar">Avatarra</string>
     <string name="settings_label_side_title">Alboko menuaren izenburua</string>
     <string name="settings_sw_planner_step_numbers">Urratsen zenbakiak zerrendan</string>
     <string name="settings_sw_gps_recenter">Kokapenean zentratu</string>

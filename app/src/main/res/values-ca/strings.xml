@@ -109,14 +109,11 @@
     <string name="action_center_on_location">Centra en la meva posició</string>
     <string name="action_follow_position_on">Segueix la meva posició</string>
     <string name="action_follow_position_off">Deixa de seguir la meva posició</string>
-    <string name="action_reset_avatar">Restableix l\'avatar</string>
     <string name="action_pin_image">Fixa com a imatge de portada</string>
     <string name="action_unpin_image">Desfixa</string>
     <string name="label_pinned_image">Imatge de portada</string>
     <string name="action_create_composite">Compost</string>
     <string name="action_reset_defaults">Restableix els valors per defecte</string>
-    <string name="action_change_avatar">Canvia l\'avatar</string>
-    <string name="action_load_image_from_phone">Carrega una imatge</string>
     <string name="action_manage_providers">Gestiona els proveïdors</string>
     <string name="action_offline_download">Mapa sense connexió</string>
     <string name="offline_action_back">Enrere</string>
@@ -226,7 +223,7 @@
     <string name="dialog_edit_bubble_title">Edita la bombolla informativa</string>
 
     <!-- Menú lateral -->
-    <string name="drawer_default_title">Biblioteca</string>
+    <string name="drawer_default_title">Tunturo</string>
     <!-- Nom du dossier du jeu de demonstration seme au premier lancement -->
     <string name="demo_folder_name">Demo</string>
 
@@ -238,9 +235,7 @@
     <string name="settings_tab_tiles">Tessel·les</string>
 
     <!-- Configuració: Sistema -->
-    <string name="settings_section_avatar">Avatar</string>
     <string name="settings_section_language">Idioma</string>
-    <string name="avatar_url_placeholder">https://...</string>
     <string name="settings_section_units">Unitats</string>
     <string name="unit_metric">Mètric</string>
     <string name="unit_imperial">Imperial</string>
@@ -398,7 +393,7 @@
     <!-- Restabliment -->
     <string name="settings_section_reset">Restabliment</string>
     <string name="action_reset_all_settings">Restableix tots els ajustos</string>
-    <string name="dialog_reset_all_settings_text">Aquesta acció restableix tots els ajustos (idioma, tema, avatar, ajustos del mapa...). Es conserven les URL i claus API dels proveïdors, els mapes base compostos creats per l\'usuari i els fitxers MBTiles importats.</string>
+    <string name="dialog_reset_all_settings_text">Aquesta acció restableix tots els ajustos (idioma, tema, ajustos del mapa...). Es conserven les URL i claus API dels proveïdors, els mapes base compostos creats per l\'usuari i els fitxers MBTiles importats.</string>
 
     <!-- Importació/exportació de proveïdors -->
     <string name="dialog_import_providers_title">Vols importar els proveïdors?</string>
@@ -489,7 +484,6 @@
     <string name="settings_label_map_button_size">Mida dels botons</string>
     <string name="settings_label_marker_size">Mida dels marcadors</string>
     <string name="settings_label_bubble_position">Posició</string>
-    <string name="settings_label_avatar">Avatar</string>
     <string name="settings_label_side_title">Títol del menú lateral</string>
     <string name="settings_sw_planner_step_numbers">Números de les etapes a la llista</string>
     <string name="settings_sw_gps_recenter">Recentra a la posició</string>

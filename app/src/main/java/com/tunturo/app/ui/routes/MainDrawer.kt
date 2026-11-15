@@ -1,5 +1,7 @@
 package com.tunturo.app.ui.routes
 
+import com.tunturo.app.ui.components.SheetRoundButton
+import com.tunturo.app.ui.theme.brandedText
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.LocalContentColor
 import com.tunturo.app.data.FolderExpansionPrefs
@@ -1278,25 +1280,24 @@ internal fun DrawerContent(
     LaunchedEffect(open) { if (!open) { selection.cancel(); bulles.close() } }
     CompositionLocalProvider(LocalDrawerSelection provides selection, LocalTooltipHolder provides bulles) {
     Column(Modifier.fillMaxSize().statusBarsPadding().closesTooltips(bulles)) {
-        // En-tete, sur deux lignes : les reglages, le titre et la croix ; puis les gestes de la bibliotheque.
+        // En-tete, sur deux lignes : le logo, le titre et la croix ; puis les gestes de la bibliotheque, la roue
+        // crantee des reglages au bout, apres la loupe (demande de Luc, 2026-11-15).
         Row(
-            Modifier.fillMaxWidth().height(56.dp).padding(start = Spacing.s, end = Spacing.s, top = Spacing.s),
+            Modifier.fillMaxWidth().height(64.dp).padding(start = Spacing.l, end = Spacing.l, top = Spacing.s),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.s),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.m),
         ) {
-            // Une roue crantee, pas l'avatar : ici le bouton mene aux reglages, et c'est l'action qui doit
-            // se lire. L'avatar reste en tete de l'ecran des reglages, ou il designe bien quelqu'un.
-            HeaderIconButton(Icons.Outlined.Settings, stringResource(R.string.settings_title), onClick = onSettings)
-            // Titre d'ecran : le meme style que celui des autres ecrans de l'application.
-            // Fallback traduit si le titre personnalise est vide, au lieu de ne rien afficher.
-            val title = settings.customTitle.ifBlank { stringResource(R.string.drawer_default_title) }
-                ?: stringResource(R.string.drawer_default_title)
-            // Le logo B1 devant le titre, comme sur la planche des palettes (esquisse, TM-3).
-            Icon(painterResource(R.drawable.ic_tunturo_logo), null, Modifier.size(28.dp),
+            // Titre d'ecran : "Tunturo" par defaut, dans la police du nom s'il le contient (cf. brandedText).
+            val title = DrawerTitle.resolve(settings.customTitle, stringResource(R.string.drawer_default_title))
+            // Le logo B1, volontairement grand : c'est l'enseigne de l'application (esquisse, TM-3).
+            Icon(painterResource(R.drawable.ic_tunturo_logo), null, Modifier.size(40.dp),
                 tint = MaterialTheme.colorScheme.primary)
-            Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 1,
+            Text(brandedText(title), style = MaterialTheme.typography.headlineSmall, maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-            HeaderIconButton(Icons.Filled.Close, stringResource(R.string.action_close_menu), onClick = onClose)
+            // La meme croix que les panneaux du calcul d'itineraire et du tableau de bord ; son libelle dit
+            // ce qu'elle ferme, pour TalkBack comme pour ne pas la confondre avec celle d'un panneau ouvert.
+            SheetRoundButton(Icons.Filled.Close, stringResource(R.string.action_close_menu), onClose,
+                Modifier.testTag("drawer_close"))
         }
         // Les gestes de la bibliotheque, sans bande grise : c'est l'aplat du bouton "Importer" qui les
         // designe, et le filet dessous qui les separe de l'arborescence.
@@ -1332,6 +1333,9 @@ internal fun DrawerContent(
                 // a l'ecran ne dise pourquoi elle est incomplete.
                 if (!searchOpen) { searchQuery = ""; focusManager.clearFocus() }
             }
+            // Les reglages, apres la loupe : un petit bouton rond aux couleurs du theme.
+            SheetRoundButton(Icons.Outlined.Settings, stringResource(R.string.settings_title), onSettings,
+                Modifier.testTag("drawer_settings"))
         }
 
         // Recherche : elle remplace l'arbre par la liste a plat de ce qu'elle trouve, plutot que de
@@ -1344,7 +1348,8 @@ internal fun DrawerContent(
             LaunchedEffect(Unit) { searchFocus.requestFocus() }
             SearchField(searchQuery, searchFocus) { searchQuery = it }
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        // Plus de filet entre l'en-tete et l'arborescence : essai demande par Luc (2026-11-15), a retablir
+        // s'il ne convient pas - HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant).
 
         /*
          * Un toucher dans l'arborescence rend le focus au tiroir, donc referme le clavier.

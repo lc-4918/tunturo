@@ -188,8 +188,13 @@ class TunturoRepository(private val ctx: Context) {
             db.providers().upsertAll(Providers.defaults())
             db.composites().upsertAll(Composites.defaults())
         }
-        if (db.settings().get() == null) {
+        val current = db.settings().get()
+        if (current == null) {
             db.settings().upsert(SettingsEntity(customTitle = ctx.getString(R.string.drawer_default_title)))
+        } else if (current.customTitle.trim() in com.tunturo.app.ui.routes.DrawerTitle.LegacyDefaults) {
+            // L'ancien titre par defaut ("Bibliotheque"), ecrit en base au premier lancement : il n'a jamais
+            // ete choisi, il cede la place au nouveau, "Tunturo" (cf. DrawerTitle).
+            db.settings().upsert(current.copy(customTitle = ctx.getString(R.string.drawer_default_title)))
         }
         seedDemoIfNeeded()
     }

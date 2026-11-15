@@ -1,5 +1,7 @@
 package com.tunturo.app.ui.settings
 
+import androidx.compose.ui.res.painterResource
+import com.tunturo.app.ui.theme.brandedText
 import androidx.core.net.toUri
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DropdownMenu
@@ -86,7 +88,6 @@ import androidx.compose.material3.MaterialTheme
 import com.tunturo.app.data.backup.BackupFileName
 import com.tunturo.app.data.repo.StoragePaths
 import com.tunturo.app.ui.components.BusySpinner
-import com.tunturo.app.ui.components.Avatar
 import com.tunturo.app.ui.theme.isDarkTheme
 import kotlinx.coroutines.launch
 
@@ -172,15 +173,12 @@ fun SettingsScreen(
             vm.save(cur.copy(importDir = it.toString()))
         }
     }
-    val avatarPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let { vm.importAvatarImage(it) }
-    }
 
     // ---------- sauvegarde et restauration ----------
     val scope = rememberCoroutineScope()
     val expertTaps = remember { ExpertTaps() }
-    // Le menu de l'avatar : "A propos" et "Aide".
-    var menuAvatar by remember { mutableStateOf(false) }
+    // Le menu du logo : "A propos" et "Aide".
+    var logoMenuOpen by remember { mutableStateOf(false) }
     var aboutOuvert by remember { mutableStateOf(false) }
     val expertOn = stringResource(R.string.settings_expert_on)
     val expertOff = stringResource(R.string.settings_expert_off)
@@ -225,12 +223,12 @@ fun SettingsScreen(
             onDismissRequest = { restoreDone = null },
             title = { Text(stringResource(R.string.settings_backup_restore)) },
             text = {
-                Text(stringResource(when (outcome) {
+                Text(brandedText(stringResource(when (outcome) {
                     RestoreOutcome.OK -> R.string.backup_restored
                     RestoreOutcome.NOT_A_BACKUP -> R.string.backup_not_a_backup
                     RestoreOutcome.UNSUPPORTED_FORMAT -> R.string.backup_too_recent
                     RestoreOutcome.FAILED -> R.string.backup_restore_failed
-                }))
+                })))
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -292,24 +290,27 @@ fun SettingsScreen(
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back), Modifier.size(22.dp)) } },
                 actions = {
                     Box {
-                    Avatar(
-                        cur.avatarSource, size = 32.dp,
-                        modifier = Modifier.padding(end = 14.dp).testTag("settings_avatar").clickable(
+                    // Le logo Tunturo, nu : ni rond ni fond. Il ouvre "A propos" et "Aide" (l'avatar qu'il
+                    // remplace a ete retire de l'application le 2026-11-15).
+                    Icon(
+                        painterResource(R.drawable.ic_tunturo_logo), stringResource(R.string.about_title),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(end = 14.dp).size(32.dp).testTag("settings_logo").clickable(
                             interactionSource = remember { MutableInteractionSource() }, indication = null,
                         ) {
-                            menuAvatar = true
+                            logoMenuOpen = true
                         },
                     )
-                    DropdownMenu(expanded = menuAvatar, onDismissRequest = { menuAvatar = false }) {
+                    DropdownMenu(expanded = logoMenuOpen, onDismissRequest = { logoMenuOpen = false }) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.about_title)) },
-                            onClick = { menuAvatar = false; aboutOuvert = true },
+                            onClick = { logoMenuOpen = false; aboutOuvert = true },
                             modifier = Modifier.testTag("menu_about"),
                         )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.help_title)) },
                             onClick = {
-                                menuAvatar = false
+                                logoMenuOpen = false
                                 runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, HelpUrl.toUri())) }
                             },
                             modifier = Modifier.testTag("menu_help"),
@@ -444,7 +445,6 @@ fun SettingsScreen(
                                     onPickImportDir = { importDirPicker.launch(null) },
                                     onPickMbtilesFolder = { treePicker.launch(null) },
                                     onPickBrouterFolder = { brouterDirPicker.launch(null) },
-                                    onPickAvatar = { avatarPicker.launch("image/*") },
                                     onBackup = { backupWriter.launch(BackupFileName.of(System.currentTimeMillis())) },
                                     onRestore = { restoreTarget = true })
                             }

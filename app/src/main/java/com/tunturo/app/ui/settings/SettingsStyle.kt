@@ -1,5 +1,6 @@
 package com.tunturo.app.ui.settings
 
+import com.tunturo.app.ui.theme.brandedText
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.ui.text.Placeholder
@@ -437,14 +438,14 @@ private val InfoTipSize = 28.dp
  */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-fun InfoTip(text: String) {
+fun InfoTip(text: String, tint: Color = settingsPalette.subtle) {
     val state = androidx.compose.material3.rememberTooltipState(isPersistent = true)
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     androidx.compose.material3.TooltipBox(
         positionProvider = androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(),
         tooltip = {
             PlainTooltip(caretSize = androidx.compose.material3.TooltipDefaults.caretSize) {
-                Text(text, modifier = Modifier.padding(4.dp).testTag("info_tip_text"))
+                Text(brandedText(text), modifier = Modifier.padding(4.dp).testTag("info_tip_text"))
             }
         },
         state = state,
@@ -455,7 +456,7 @@ fun InfoTip(text: String) {
                 .testTag("info_tip"),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Outlined.Info, contentDescription = text, Modifier.size(16.dp), tint = settingsPalette.subtle)
+            Icon(Icons.Outlined.Info, contentDescription = text, Modifier.size(16.dp), tint = tint)
         }
     }
 }
@@ -830,7 +831,8 @@ fun ColumnScopeMarker.CardButton(
         Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = p.onSelected)
         // Le "i" apres le libelle, dans le bouton : son propre tap le montre sans declencher le bouton -
         // c'est un enfant cliquable, et il consomme le geste avant que son parent ne le voie.
-        if (info != null) InfoTip(info)
+        // Il prend la couleur du libelle : sur l'aplat primary du bouton, le gris des autres "i" ne se voyait plus.
+        if (info != null) InfoTip(info, tint = p.onSelected)
     }
 }
 

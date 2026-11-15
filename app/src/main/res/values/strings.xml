@@ -109,14 +109,11 @@
     <string name="action_center_on_location">Centrer sur ma position</string>
     <string name="action_follow_position_on">Suivre ma position</string>
     <string name="action_follow_position_off">Ne plus suivre ma position</string>
-    <string name="action_reset_avatar">Réinitialiser l\'avatar</string>
     <string name="action_pin_image">Épingler comme image de garde</string>
     <string name="action_unpin_image">Désépingler</string>
     <string name="label_pinned_image">Image de garde</string>
     <string name="action_create_composite">Composite</string>
     <string name="action_reset_defaults">Réinitialiser les valeurs par défaut</string>
-    <string name="action_change_avatar">Changer l\'avatar</string>
-    <string name="action_load_image_from_phone">Charger une image</string>
     <string name="action_manage_providers">Gérer les fournisseurs</string>
     <string name="action_offline_download">Carte hors-ligne</string>
     <string name="offline_action_back">Retour</string>
@@ -226,7 +223,7 @@
     <string name="dialog_edit_bubble_title">Éditer l\'infobulle</string>
 
     <!-- Menu latéral -->
-    <string name="drawer_default_title">Bibliothèque</string>
+    <string name="drawer_default_title">Tunturo</string>
     <!-- Nom du dossier du jeu de demonstration seme au premier lancement -->
     <string name="demo_folder_name">Demo</string>
 
@@ -238,9 +235,7 @@
     <string name="settings_tab_tiles">Tuiles</string>
 
     <!-- Réglages : Système -->
-    <string name="settings_section_avatar">Avatar</string>
     <string name="settings_section_language">Langue</string>
-    <string name="avatar_url_placeholder">https://...</string>
     <string name="settings_section_units">Unités</string>
     <string name="unit_metric">Métrique</string>
     <string name="unit_imperial">Impérial</string>
@@ -400,7 +395,7 @@
     <!-- Réinitialisation -->
     <string name="settings_section_reset">Réinitialisation</string>
     <string name="action_reset_all_settings">Réinitialiser tous les paramètres</string>
-    <string name="dialog_reset_all_settings_text">Cette action restaure tous les paramètres (langue, thème, avatar, réglages carte...). Les URLs et clés des fournisseurs, les fonds composites créés par l\'utilisateur et les fichiers MBTiles importés sont conservés.</string>
+    <string name="dialog_reset_all_settings_text">Cette action restaure tous les paramètres (langue, thème, réglages carte...). Les URLs et clés des fournisseurs, les fonds composites créés par l\'utilisateur et les fichiers MBTiles importés sont conservés.</string>
 
     <!-- Import/Export des fournisseurs -->
     <string name="dialog_import_providers_title">Importer les fournisseurs ?</string>
@@ -491,7 +486,6 @@
     <string name="settings_label_map_button_size">Taille des boutons</string>
     <string name="settings_label_marker_size">Taille des marqueurs</string>
     <string name="settings_label_bubble_position">Position</string>
-    <string name="settings_label_avatar">Avatar</string>
     <string name="settings_label_side_title">Titre du menu latéral</string>
     <string name="settings_sw_planner_step_numbers">Numéros des étapes dans la liste</string>
     <string name="settings_sw_gps_recenter">Recentrer sur la position</string>

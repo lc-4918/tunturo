@@ -73,12 +73,11 @@ import com.tunturo.app.ui.theme.TunturoIcons
 
 @Composable internal fun SystemTab(
     cur: SettingsEntity, vm: SettingsViewModel,
-    onPickImportDir: () -> Unit, onPickMbtilesFolder: () -> Unit, onPickAvatar: () -> Unit,
+    onPickImportDir: () -> Unit, onPickMbtilesFolder: () -> Unit,
     onPickBrouterFolder: () -> Unit = {},
     onBackup: () -> Unit, onRestore: () -> Unit,
 ) {
     val ctx = LocalContext.current
-    var avatarDialogOpen by remember { mutableStateOf(false) }
     var confirmReset by remember { mutableStateOf(false) }
 
     // Treize rubriques a plat devenaient une liste ou l'on cherchait. Quatre groupes : ce que ca donne a
@@ -360,7 +359,7 @@ import com.tunturo.app.ui.theme.TunturoIcons
         FieldRow(stringResource(R.string.settings_label_side_title)) {
             // La disquette n'apparait qu'apres une modification, DANS le champ : l'action d'enregistrer
             // appartient a ce qu'on vient de taper, et non au bas de la carte, ou elle se lisait comme
-            // l'action de la rubrique entiere - avatar compris, qui s'enregistre pourtant tout seul.
+            // l'action de la rubrique entiere.
             SettingsTextField(
                 titleText, stringResource(R.string.drawer_default_title),
                 trailing = if (titleText == cur.customTitle) null else ({
@@ -369,20 +368,6 @@ import com.tunturo.app.ui.theme.TunturoIcons
                     }
                 }),
             ) { titleText = it }
-        }
-        // L'avatar : mode expert seulement.
-        if (cur.expertMode) {
-            RowDivider()
-            SetRow(stringResource(R.string.settings_label_avatar)) {
-                if (cur.avatarSource.isNotBlank()) {
-                    RowIcon(TunturoIcons.Trash, stringResource(R.string.action_reset_avatar)) {
-                        vm.save(cur.copy(avatarSource = ""))
-                    }
-                }
-                RowIcon(Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.action_change_avatar)) {
-                    avatarDialogOpen = true
-                }
-            }
         }
     }
 
@@ -396,31 +381,6 @@ import com.tunturo.app.ui.theme.TunturoIcons
         }
     }
 
-    if (avatarDialogOpen) {
-        var urlText by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { avatarDialogOpen = false },
-            title = { Text(stringResource(R.string.action_change_avatar)) },
-            text = {
-                Column {
-                    Button(onClick = { onPickAvatar(); avatarDialogOpen = false }, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.action_load_image_from_phone))
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    CompactOutlinedTextField(urlText, { urlText = it },
-                        placeholder = { Text(stringResource(R.string.avatar_url_placeholder)) },
-                        modifier = Modifier.fillMaxWidth(), singleLine = true)
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (urlText.isNotBlank()) vm.save(cur.copy(avatarSource = urlText))
-                    avatarDialogOpen = false
-                }) { Text(stringResource(R.string.action_save)) }
-            },
-            dismissButton = { TextButton(onClick = { avatarDialogOpen = false }) { Text(stringResource(R.string.action_cancel)) } },
-        )
-    }
     if (confirmReset) {
         AlertDialog(
             onDismissRequest = { confirmReset = false },

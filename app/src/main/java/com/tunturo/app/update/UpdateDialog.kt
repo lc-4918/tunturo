@@ -1,5 +1,6 @@
 package com.tunturo.app.update
 
+import com.tunturo.app.ui.theme.brandedText
 import android.content.Context
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
@@ -47,7 +48,7 @@ fun UnknownSourcesDialog(onOpenSettings: () -> Unit, onCancel: () -> Unit) {
     AlertDialog(
         onDismissRequest = onCancel,
         title = { Text(stringResource(R.string.update_unknown_sources_title)) },
-        text = { Text(stringResource(R.string.update_unknown_sources_text)) },
+        text = { Text(brandedText(stringResource(R.string.update_unknown_sources_text))) },
         confirmButton = { TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.action_ok)) } },
         dismissButton = { TextButton(onClick = onCancel) { Text(stringResource(R.string.action_cancel)) } },
     )

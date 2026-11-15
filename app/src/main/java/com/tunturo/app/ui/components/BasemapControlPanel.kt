@@ -295,12 +295,12 @@ fun BasemapControlPanel(
                     }
                     if (reliefAvailable(providers)) ReliefToggle(reliefOn, onToggleRelief)
                 }
-                // Décalé au maximum vers l'angle haut-droit du gestionnaire (SPEC section 7.1).
-                IconButton(onClick = onClose, modifier = Modifier.align(Alignment.TopEnd).size(32.dp)) {
-                    Icon(Icons.Filled.Close, stringResource(R.string.action_close), Modifier.size(18.dp))
-                }
+                // Décalé au maximum vers l'angle haut-droit du gestionnaire (SPEC section 7.1). La meme croix
+                // que les panneaux du calcul d'itineraire et du tableau de bord.
+                SheetCloseButton(onClick = onClose, modifier = Modifier.align(Alignment.TopEnd))
             }
-            HorizontalDivider()
+            // Plus de filet sous l'en-tete : essai demande par Luc (2026-11-15), a retablir s'il ne convient
+            // pas - HorizontalDivider().
             combinedBasemapChildren(null, folders, providers, composites).forEach { item ->
                 key(basemapNodeKey(item)) {
                     BasemapNode(item, folders, providers, composites, 0, dctx, currentBasemapId, onSelect)

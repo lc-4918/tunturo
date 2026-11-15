@@ -1,5 +1,6 @@
 package com.tunturo.app.ui.watch
 
+import com.tunturo.app.ui.theme.brandedText
 import com.tunturo.app.ui.theme.secondaryButtonColors
 import com.tunturo.app.ui.theme.secondaryButtonBorder
 import androidx.compose.foundation.BorderStroke
@@ -398,7 +399,7 @@ private fun WatchSendProgressDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 WatchLinkLine(link, onOpenPermissionSettings)
-                Text(stringResource(R.string.watch_send_instructions))
+                Text(brandedText(stringResource(R.string.watch_send_instructions)))
                 Text(
                     if (session.servedCount == 0) stringResource(R.string.watch_send_waiting)
                     else stringResource(R.string.watch_send_progress, session.servedCount, session.tileCount),

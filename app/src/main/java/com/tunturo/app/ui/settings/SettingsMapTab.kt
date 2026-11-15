@@ -1,5 +1,6 @@
 package com.tunturo.app.ui.settings
 
+import com.tunturo.app.ui.theme.brandedText
 import android.app.Activity
 import android.content.Intent
 import android.media.RingtoneManager
@@ -388,7 +389,7 @@ internal fun LazyListScope.mapTab(cur: SettingsEntity, vm: SettingsViewModel, gr
         AlertDialog(
             onDismissRequest = { demanderReveil = false },
             title = { Text(stringResource(R.string.settings_off_track_wake_title)) },
-            text = { Text(stringResource(R.string.settings_off_track_wake_text)) },
+            text = { Text(brandedText(stringResource(R.string.settings_off_track_wake_text))) },
             confirmButton = {
                 TextButton(onClick = { demanderReveil = false; AlertWakeScreen.openSettings(ctx) }) {
                     Text(stringResource(R.string.settings_off_track_wake_open))

@@ -211,17 +211,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Import d'une image d'avatar choisie par l'utilisateur (copiée dans le stockage privé de l'app). */
-    fun importAvatarImage(uri: Uri) = viewModelScope.launch {
-        val s = settings.value ?: SettingsEntity()
-        val ctx = getApplication<Application>()
-        val name = queryDisplayName(uri) ?: "avatar"
-        val input = ctx.contentResolver.openInputStream(uri) ?: return@launch
-        val path = repo.importImage(input, name)
-        repo.settings.upsert(s.copy(avatarSource = path))
-    }
-
-    /** Restaure les paramètres initiaux (SPEC section 3.1) : réglages, avatar, thème, titre, langue et
+    /** Restaure les paramètres initiaux (SPEC section 3.1) : réglages, thème, titre, langue et
      *  toggle-slides des fonds de plan intégrés. Préserve en revanche URLs/clés API, fonds composites
      *  créés par l'utilisateur et fichiers MBTiles importés - ces derniers n'ont pas d'équivalent dans
      *  Providers.defaults() donc ne sont jamais touchés par la boucle ci-dessous. */

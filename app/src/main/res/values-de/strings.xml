@@ -109,14 +109,11 @@
     <string name="action_center_on_location">Auf meinen Standort zentrieren</string>
     <string name="action_follow_position_on">Meiner Position folgen</string>
     <string name="action_follow_position_off">Meiner Position nicht mehr folgen</string>
-    <string name="action_reset_avatar">Avatar zurücksetzen</string>
     <string name="action_pin_image">Als Titelbild anheften</string>
     <string name="action_unpin_image">Lösen</string>
     <string name="label_pinned_image">Titelbild</string>
     <string name="action_create_composite">Kombi-Karte</string>
     <string name="action_reset_defaults">Auf Standardwerte zurücksetzen</string>
-    <string name="action_change_avatar">Avatar ändern</string>
-    <string name="action_load_image_from_phone">Bild laden</string>
     <string name="action_manage_providers">Anbieter verwalten</string>
     <string name="action_offline_download">Offlinekarte</string>
     <string name="offline_action_back">Zurück</string>
@@ -226,7 +223,7 @@
     <string name="dialog_edit_bubble_title">Infoblase bearbeiten</string>
 
     <!-- Seitenmenü -->
-    <string name="drawer_default_title">Bibliothek</string>
+    <string name="drawer_default_title">Tunturo</string>
     <!-- Nom du dossier du jeu de demonstration seme au premier lancement -->
     <string name="demo_folder_name">Demo</string>
 
@@ -238,9 +235,7 @@
     <string name="settings_tab_tiles">Kacheln</string>
 
     <!-- Einstellungen: System -->
-    <string name="settings_section_avatar">Avatar</string>
     <string name="settings_section_language">Sprache</string>
-    <string name="avatar_url_placeholder">https://...</string>
     <string name="settings_section_units">Einheiten</string>
     <string name="unit_metric">Metrisch</string>
     <string name="unit_imperial">Imperial</string>
@@ -398,7 +393,7 @@
     <!-- Zurücksetzen -->
     <string name="settings_section_reset">Zurücksetzen</string>
     <string name="action_reset_all_settings">Alle Einstellungen zurücksetzen</string>
-    <string name="dialog_reset_all_settings_text">Dadurch werden alle Einstellungen zurückgesetzt (Sprache, Design, Avatar, Karteneinstellungen ...). URLs und API-Schlüssel der Anbieter, vom Nutzer erstellte zusammengesetzte Kartengrundlagen und importierte MBTiles-Dateien bleiben erhalten.</string>
+    <string name="dialog_reset_all_settings_text">Dadurch werden alle Einstellungen zurückgesetzt (Sprache, Design, Karteneinstellungen ...). URLs und API-Schlüssel der Anbieter, vom Nutzer erstellte zusammengesetzte Kartengrundlagen und importierte MBTiles-Dateien bleiben erhalten.</string>
 
     <!-- Import/Export von Anbietern -->
     <string name="dialog_import_providers_title">Anbieter importieren?</string>
@@ -489,7 +484,6 @@
     <string name="settings_label_map_button_size">Größe der Schaltflächen</string>
     <string name="settings_label_marker_size">Größe der Marker</string>
     <string name="settings_label_bubble_position">Position</string>
-    <string name="settings_label_avatar">Avatar</string>
     <string name="settings_label_side_title">Titel des Seitenmenüs</string>
     <string name="settings_sw_planner_step_numbers">Schrittnummern in der Liste</string>
     <string name="settings_sw_gps_recenter">Auf Position zentrieren</string>

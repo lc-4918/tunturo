@@ -1,7 +1,5 @@
 package com.tunturo.app.ui.planner
 
-import com.tunturo.app.ui.theme.smallButtonBackground
-import com.tunturo.app.ui.theme.smallButtonContent
 import com.tunturo.app.ui.profile.profileChartHeight
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -411,15 +409,13 @@ private fun ProfileAndActions(
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         ProfileSelect(state.profile, { state.chooseProfile(it) }, Modifier.weight(1f))
-        // Les couleurs des petits boutons du theme : primary et onPrimary ; Reinitialiser, seul geste qui
-        // efface, garde le rouge, mais en aplat (error et onError) comme les autres.
-        val scheme = MaterialTheme.colorScheme
-        BandAction(Icons.Outlined.Folder, stringResource(R.string.planner_action_save), smallButtonContent(), calcule,
-            smallButtonBackground(), onImport)
-        BandAction(Icons.Outlined.FileUpload, stringResource(R.string.planner_action_export), smallButtonContent(), calcule,
-            smallButtonBackground(), onDownload)
-        BandAction(TunturoIcons.Trash, stringResource(R.string.planner_reset), scheme.onError, true,
-            scheme.error, onReset)
+        // Sans aplat : l'essai en aplat primary (2026-11-15) a ete refuse par Luc, les trois gestes gardent
+        // leur dessin d'origine - neutres, et Reinitialiser en rouge.
+        val neutre = MaterialTheme.colorScheme.onSurfaceVariant
+        BandAction(Icons.Outlined.Folder, stringResource(R.string.planner_action_save), neutre, calcule, onImport)
+        BandAction(Icons.Outlined.FileUpload, stringResource(R.string.planner_action_export), neutre, calcule, onDownload)
+        BandAction(TunturoIcons.Trash, stringResource(R.string.planner_reset),
+            MaterialTheme.colorScheme.error, true, onReset)
     }
 }
 
@@ -480,13 +476,9 @@ private fun ProfileSelect(current: RoutingProfile, onSelect: (RoutingProfile) ->
 
 /** Un geste du parcours : l'icone, et son libelle dessous. Grise et inerte tant qu'il n'a rien a faire. */
 @Composable
-private fun BandAction(
-    icon: ImageVector, label: String, color: Color, enabled: Boolean,
-    background: Color = Color.Transparent, onClick: () -> Unit,
-) {
+private fun BandAction(icon: ImageVector, label: String, color: Color, enabled: Boolean, onClick: () -> Unit) {
     Column(
         Modifier.width(62.dp).height(52.dp).clip(MaterialTheme.shapes.small)
-            .background(background)
             .clickable(enabled = enabled, onClick = onClick)
             .alpha(if (enabled) 1f else 0.38f),
         horizontalAlignment = Alignment.CenterHorizontally,

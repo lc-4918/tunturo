@@ -8,6 +8,9 @@
     <style name="Theme.TunturoApp.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <!-- Le disque vert de l'icone derriere le logo clair : sans lui, le vert tres clair des courbes
+             flotterait seul sur le fond gris. -->
+        <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
         <item name="postSplashScreenTheme">@style/Theme.TunturoApp</item>
     </style>
 </resources>

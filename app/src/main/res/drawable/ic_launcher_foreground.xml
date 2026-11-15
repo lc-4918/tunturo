@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Calque avant de l'icone Tunturo : logo B1 en esquisse, couleur primaryContainer de Mousse.
+     Fichier genere par tools/app-icon/generate_icon.py : modifier le script, pas ce fichier. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.9498"
+        android:scaleY="0.9498"
+        android:translateX="23.6068"
+        android:translateY="22.1821">
+        <path
+            android:pathData="M8,46 C8,28 22,14 34,14 C48,14 58,28 56,44 C54,54 14,56 8,46 Z"
+            android:strokeColor="#D5EC9C"
+            android:strokeWidth="2.6" />
+        <path
+            android:pathData="M17,42 C17,30 26,21 34,21 C44,21 49,30 48,40 C47,47 20,49 17,42 Z"
+            android:strokeColor="#D5EC9C"
+            android:strokeWidth="2.6" />
+        <path
+            android:pathData="M26,37 C26,31 30,27 34,27 C39,27 41,32 40,36 C39,40 27,41 26,37 Z"
+            android:strokeColor="#D5EC9C"
+            android:strokeWidth="2.6" />
+        <path
+            android:pathData="M33.5,31.5 A2,2 0 1,1 33.5,35.5 A2,2 0 1,1 33.5,31.5 Z"
+            android:fillColor="#D5EC9C" />
+    </group>
+</vector>

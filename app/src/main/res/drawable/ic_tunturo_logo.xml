@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Logo Tunturo, piste B1 "sommet en courbes" (maquette "Tunturo - identite", TM-3) : trois courbes de
-     niveau et le point du sommet. Une seule couleur, posee par la teinte de l'icone. Esquisse d'essai, a
-     redessiner une fois la palette choisie. -->
+     niveau et le point du sommet. Une seule couleur, posee par la teinte de l'icone. L'esquisse est le
+     dessin retenu par Luc (2026-11-15), le meme que l'icone d'application (tools/app-icon). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"

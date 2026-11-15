@@ -1,5 +1,6 @@
 <resources>
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Fond de l'icone : primary de Mousse (cf. tools/app-icon/generate_icon.py). -->
+    <color name="ic_launcher_background">#536525</color>
     <!-- Sombre quel que soit le mode de l'appareil, et non plus accorde au premier ecran Compose : on
          ouvre Tunturo dehors, souvent de nuit, et un aplat quasi blanc en plein ecran eblouit pour
          plusieurs secondes. Gris tres foncé plutot que noir, car un aplat franchement noir se lit

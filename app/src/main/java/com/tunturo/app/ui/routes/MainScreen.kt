@@ -946,7 +946,9 @@ fun MainScreen(
             // Coins DROITS, et non l'arrondi de Material cote ouvert : le tiroir prend toute la largeur, et
             // ses coins arrondis ne faisaient que laisser voir la carte aux deux angles de l'ecran.
             ModalDrawerSheet(Modifier.fillMaxWidth(), drawerShape = RectangleShape,
-                drawerContainerColor = MaterialTheme.colorScheme.surface) {
+                // Une surface teintee de la palette, et non surface, presque blanche dans tous les jeux.
+                drawerContainerColor = if (LocalBrandAccents.current) MaterialTheme.colorScheme.surfaceContainerLow
+                    else MaterialTheme.colorScheme.surface) {
                 DrawerContent(
                     folders = folders, layers = layers, settings = settings, vm = vm,
                     open = drawerState.isOpen,

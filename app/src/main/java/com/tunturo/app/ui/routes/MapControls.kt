@@ -1,5 +1,7 @@
 package com.tunturo.app.ui.routes
 
+import androidx.compose.material3.MaterialTheme
+import com.tunturo.app.ui.theme.LocalBrandAccents
 import com.tunturo.app.data.db.BasemapControlMode
 import com.tunturo.app.ui.offline.RoutingDownloadIndicator
 import androidx.compose.foundation.Canvas
@@ -188,9 +190,9 @@ internal fun BoxScope.MapTopLeftControls(
                     if (planner.open) planner.collapseOrClose()
                     measure.open()
                 }
-            }, modifier = chrome.buttonBackground) {
+            }, modifier = chrome.buttonBackground(measure.picking)) {
                 Icon(Icons.Filled.Straighten, stringResource(R.string.measure_title),
-                    tint = if (measure.picking) chrome.active else chrome.fg)
+                    tint = chrome.buttonForeground(measure.picking))
             }
         }
         // Retouche des traces : un bouton, et non une barre permanente. Ouvrir le mode est un
@@ -198,12 +200,12 @@ internal fun BoxScope.MapTopLeftControls(
         // qu'un outil attend son point. Dans la colonne de gauche, sous le burger, avec les
         // deux autres fonctions qui s'ouvrent en mode.
         if (settings.trackEditEnabled) {
-            IconButton(onClick = { edit.toggleBar() }, modifier = chrome.buttonBackground) {
+            IconButton(onClick = { edit.toggleBar() }, modifier = chrome.buttonBackground(edit.open)) {
                 Icon(
                     // Un crayon plutot qu'un marteau : deux traits contre une silhouette
                     // pleine d'outils croises, illisible a 22 dp au-dessus d'une carte.
                     Icons.Outlined.Edit, stringResource(R.string.edit_toolbar),
-                    tint = if (edit.open) chrome.active else chrome.fg,
+                    tint = chrome.buttonForeground(edit.open),
                 )
             }
         }
@@ -450,7 +452,7 @@ internal fun BoxScope.MapBottomRightControls(
                         MapFollow.FollowTap.DISARM -> vm.setMapFollowPosition(false)
                     }
                 },
-                modifier = chrome.buttonBackground,
+                modifier = chrome.buttonBackground(suit),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
@@ -468,13 +470,15 @@ internal fun BoxScope.MapBottomRightControls(
                                 MapFollow.FollowTap.DISARM -> R.string.action_follow_position_off
                             },
                         ),
-                        tint = if (suit) chrome.active else chrome.fg,
+                        tint = chrome.buttonForeground(suit),
                     )
                     // Disque central au bleu du point de position : la carte tient le repere au centre
                     // de l'ecran, et le bouton le porte. Le seul des trois etats ou il y a un point
                     // sous la croix - les deux autres portent la croix vide.
                     if (suit && positionCentered) {
-                        Canvas(Modifier.size(MyLocationDotSize)) { drawCircle(color = RecenterDotColor) }
+                        // Avec la nouvelle identite, le point prend la couleur du repere GPS : primary.
+                        val dotColor = if (LocalBrandAccents.current) MaterialTheme.colorScheme.primary else RecenterDotColor
+                        Canvas(Modifier.size(MyLocationDotSize)) { drawCircle(color = dotColor) }
                     }
                 }
             }
@@ -513,13 +517,13 @@ internal fun BoxScope.MapBottomRightControls(
              */
             IconButton(
                 onClick = { poi.toggleBubble() },
-                modifier = chrome.buttonBackground.onGloballyPositioned {
+                modifier = chrome.buttonBackground(poi.visible || poi.bubbleOpen).onGloballyPositioned {
                     val p = it.positionInRoot()
                     poiButtonLeftPx = p.x.toInt()
                     poiButtonBottomPx = p.y.toInt() + it.size.height
                 },
             ) {
-                val teinte = if (poi.visible || poi.bubbleOpen) chrome.active else chrome.fg
+                val teinte = chrome.buttonForeground(poi.visible || poi.bubbleOpen)
                 /*
                  * L'attente prend la place du pictogramme, DANS le bouton.
                  *
@@ -556,7 +560,7 @@ internal fun BoxScope.MapBottomRightControls(
          * alors de combien, mais le bouton l'annonce déjà à qui regarde la carte.
          */
         if (dashboardEnabled && !dashboardPanelShown) CoverableButton(coverTopPx) {
-            IconButton(onClick = { onDashboardTap() }, modifier = chrome.buttonBackground) {
+            IconButton(onClick = { onDashboardTap() }, modifier = chrome.buttonBackground(dashboardOpen)) {
                 Icon(
                     Icons.Filled.Speed,
                     stringResource(R.string.content_desc_dashboard),
@@ -594,13 +598,13 @@ internal fun BoxScope.MapBottomRightControls(
                         planner.chooseProfile(RoutingProfile.of(settings.routingProfile))
                     }
                 }
-            }, modifier = chrome.mainActionBackground) {
+            }, modifier = chrome.buttonBackground(planner.open)) {
                 // Bleu tant qu'un trajet est en cours, comme le suivi de position et la couche
                 // des points d'intérêt : le bouton ne dit plus seulement "calculer un
                 // itinéraire", il dit aussi "il y en a un rangé là-dessous".
                 Icon(
                     Icons.Outlined.Directions, stringResource(R.string.planner_title),
-                    tint = if (planner.open) chrome.active else chrome.mainActionFg,
+                    tint = chrome.buttonForeground(planner.open),
                 )
             }
         }

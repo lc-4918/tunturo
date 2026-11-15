@@ -127,7 +127,7 @@ import com.tunturo.app.ui.theme.TunturoIcons
             val trialTheme by TrialTheme.selected.collectAsState()
             PickRow(
                 stringResource(R.string.settings_label_trial_theme), trialTheme, TrialTheme.choices,
-                optionLabel = { TrialTheme.displayName(it) ?: stringResource(R.string.trial_theme_current) },
+                optionLabel = { TrialTheme.displayName(it) },
             ) { TrialTheme.select(ctx, it) }
         }
         RowDivider()

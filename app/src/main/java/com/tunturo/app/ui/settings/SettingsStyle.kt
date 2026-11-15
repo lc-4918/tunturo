@@ -137,8 +137,20 @@ class SettingsPalette(
  * -, ce qui la fait monter d'un cran dans les conteneurs la ou le clair en descend.
  */
 internal fun settingsPaletteOf(c: ColorScheme, dark: Boolean, brand: Boolean = false) = SettingsPalette(
-    screen = if (dark) c.surfaceContainerLowest else c.surfaceContainerLow,
-    card = if (dark) c.surfaceContainerLow else c.surfaceContainerLowest,
+    // Avec la nouvelle identite, les cartes prennent une surface TEINTEE de la palette : surfaceContainerLowest
+    // est blanc pur (ou noir pur) dans tous les jeux de Material 3, et les cartes restaient blanches.
+    screen = when {
+        brand && dark -> c.surface
+        brand -> c.surfaceContainerHigh
+        dark -> c.surfaceContainerLowest
+        else -> c.surfaceContainerLow
+    },
+    card = when {
+        brand && dark -> c.surfaceContainerHigh
+        brand -> c.surfaceContainerLow
+        dark -> c.surfaceContainerLow
+        else -> c.surfaceContainerLowest
+    },
     divider = if (dark) c.surfaceContainerHigh else c.surfaceContainer,
     label = c.onSurface,
     subtle = c.onSurfaceVariant,
@@ -149,9 +161,15 @@ internal fun settingsPaletteOf(c: ColorScheme, dark: Boolean, brand: Boolean = f
     outline = c.outlineVariant,
     fieldBg = if (dark) c.surfaceContainerHigh else c.surfaceContainerLow,
     track = c.surfaceContainerHighest,
-    header = if (brand) c.primaryContainer else (if (dark) c.surfaceContainerLow else c.surfaceContainerLowest),
-    onHeader = if (brand) c.onPrimaryContainer else c.onSurface,
-    onHeaderSubtle = if (brand) c.onPrimaryContainer.copy(alpha = 0.72f) else c.onSurfaceVariant,
+    // L'entete garde le fond des cartes : un entete en aplat de couleur a ete essaye et refuse (2026-11-15).
+    header = when {
+        brand && dark -> c.surfaceContainerHigh
+        brand -> c.surfaceContainerLow
+        dark -> c.surfaceContainerLow
+        else -> c.surfaceContainerLowest
+    },
+    onHeader = c.onSurface,
+    onHeaderSubtle = c.onSurfaceVariant,
     selected = if (brand) c.primary else c.primaryContainer,
     onSelected = if (brand) c.onPrimary else c.onPrimaryContainer,
     chipSelected = if (brand) c.tertiaryContainer else c.primaryContainer,

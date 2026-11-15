@@ -20,8 +20,8 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 object TrialTheme {
 
-    /** Le thème actuel de l'application, sans essai. */
-    const val CURRENT = "current"
+    /** La palette posee tant que Luc n'en a pas choisi une autre : la recommandation de la planche. */
+    const val DEFAULT = "ruska"
 
     /** Une palette d'essai : son identifiant enregistre, son nom affiche, et ses deux jeux. */
     class Palette(val id: String, val displayName: String, val light: ColorScheme, val dark: ColorScheme)
@@ -39,39 +39,53 @@ object TrialTheme {
         Palette("granite", "Granite", TrialGraniteLight, TrialGraniteDark),
     )
 
-    /** Les identifiants proposes : le thème actuel en tete, puis les palettes. */
-    val choices: List<String> = listOf(CURRENT) + palettes.map { it.id }
+    /**
+     * Les identifiants proposes. Plus de "thème actuel" : la nouvelle identite remplace entierement
+     * l'ancien theme bleu (decision de Luc, 2026-11-15) ; reste a choisir laquelle des neuf.
+     */
+    val choices: List<String> = palettes.map { it.id }
 
-    /** Le nom affiche d'une palette, null pour le thème actuel (libelle traduit, cote ecran). */
-    fun displayName(id: String): String? = palettes.firstOrNull { it.id == id }?.displayName
+    /** Le nom affiche d'une palette. */
+    fun displayName(id: String): String = palettes.firstOrNull { it.id == id }?.displayName ?: id
 
-    /** Le jeu de couleurs a poser : celui de la palette [id], ou celui de l'application. */
+    /** La palette [id], ou celle par defaut pour un identifiant inconnu. */
+    private fun paletteOf(id: String?): Palette =
+        palettes.firstOrNull { it.id == id } ?: palettes.first { it.id == DEFAULT }
+
+    /**
+     * Le jeu de couleurs a poser pour la palette [id].
+     *
+     * Les textes prennent la couleur de la palette, et non les gris presque neutres de Material 3 :
+     * onSurface devient la teinte foncee de la primaire (onPrimaryContainer), onSurfaceVariant la
+     * secondaire. Demande de Luc : toutes les couleurs de police de l'application doivent changer.
+     */
     fun colorScheme(id: String?, dark: Boolean): ColorScheme {
-        val palette = palettes.firstOrNull { it.id == id }
-        return when {
-            palette == null -> if (dark) TunturoDark else TunturoLight
-            dark -> palette.dark
-            else -> palette.light
-        }
+        val palette = paletteOf(id)
+        val scheme = if (dark) palette.dark else palette.light
+        return scheme.copy(
+            onSurface = scheme.onPrimaryContainer,
+            onBackground = scheme.onPrimaryContainer,
+            onSurfaceVariant = scheme.secondary,
+        )
     }
 
     private const val PREFS_NAME = "trial_theme_prefs"
     private const val KEY_THEME = "trial_theme"
 
-    private val selectedState = MutableStateFlow(CURRENT)
+    private val selectedState = MutableStateFlow(DEFAULT)
 
     /** La palette retenue, suivie par le theme de l'application. */
     val selected: StateFlow<String> = selectedState.asStateFlow()
 
-    /** Relit le choix enregistre ; un identifiant inconnu (palette retiree) revient au thème actuel. */
+    /** Relit le choix enregistre ; un identifiant inconnu (palette retiree, ancien "current") donne la palette par defaut. */
     fun load(context: Context) {
-        val stored = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(KEY_THEME, CURRENT)
-        selectedState.value = stored?.takeIf { it in choices } ?: CURRENT
+        val stored = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(KEY_THEME, DEFAULT)
+        selectedState.value = stored?.takeIf { it in choices } ?: DEFAULT
     }
 
     /** Retient [id] et l'applique aussitot. */
     fun select(context: Context, id: String) {
-        val chosen = id.takeIf { it in choices } ?: CURRENT
+        val chosen = id.takeIf { it in choices } ?: DEFAULT
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit { putString(KEY_THEME, chosen) }
         selectedState.value = chosen
     }

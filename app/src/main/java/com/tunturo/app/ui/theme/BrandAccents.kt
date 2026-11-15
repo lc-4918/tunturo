@@ -6,7 +6,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.graphics.Color
 
 /**
  * La couleur de marque montree a des endroits ou l'application, aujourd'hui, n'en met pas.
@@ -17,13 +16,11 @@ import androidx.compose.ui.graphics.Color
  * pas se juger. Luc a choisi le 2026-11-15 quatre endroits qui portent la couleur : les boutons de la carte,
  * le bouton d'action principal, les entetes des panneaux, les selections et onglets.
  *
- * **Seulement avec une palette d'essai.** "Actuel" garde l'application telle qu'elle est, pour comparer.
- * Une fois la palette choisie, ces accents deviendront le dessin normal, ou seront retires.
+ * **Toujours actifs depuis le 2026-11-15** : Luc ne veut pas garder l'ancien theme, la nouvelle identite
+ * remplace tout. Le drapeau reste le temps de l'essai des palettes ; une fois la palette choisie, les
+ * branches "sans accents" disparaitront avec lui.
  */
-val LocalBrandAccents = staticCompositionLocalOf { false }
-
-/** Les couleurs d'un entete teinte : son fond, et ce qui s'y pose. */
-class BrandHeader(val background: Color, val content: Color)
+val LocalBrandAccents = staticCompositionLocalOf { true }
 
 /**
  * Les couleurs d'un bouton secondaire (Annuler...) : l'aplat secondaryContainer de la planche des
@@ -43,12 +40,3 @@ fun secondaryButtonColors(): ButtonColors =
 /** Le contour d'un bouton secondaire : [default] sans accents de marque, aucun avec (l'aplat suffit). */
 @Composable
 fun secondaryButtonBorder(default: BorderStroke?): BorderStroke? = if (LocalBrandAccents.current) null else default
-
-/** L'entete teinte a poser, ou null quand les accents de marque ne sont pas actifs. */
-@Composable
-fun brandHeader(): BrandHeader? =
-    if (LocalBrandAccents.current) {
-        BrandHeader(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
-    } else {
-        null
-    }

@@ -23,8 +23,8 @@ fun TunturoTheme(themePref: String = "light", content: @Composable () -> Unit) {
         typography = TunturoTypography,
         shapes = TunturoShapes,
     ) {
-        // Les accents de marque ne s'allument qu'avec une palette d'essai (cf. BrandAccents).
-        CompositionLocalProvider(LocalBrandAccents provides (trialTheme != TrialTheme.CURRENT), content = content)
+        // La nouvelle identite s'applique partout, quelle que soit la palette (cf. BrandAccents).
+        CompositionLocalProvider(LocalBrandAccents provides true, content = content)
     }
 }
 

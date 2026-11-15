@@ -5,28 +5,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.test.core.app.ApplicationProvider
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 /**
- * Le theme d'essai de TM-3 : chaque palette rend les couleurs exportees du Theme Builder, le thème actuel
- * reste celui de l'application, et le choix survit a une relecture.
+ * Le theme d'essai de TM-3 : chaque palette rend les couleurs exportees du Theme Builder, textes compris
+ * (pris dans la palette et non plus neutres), et le choix survit a une relecture. Plus de "thème actuel" :
+ * la nouvelle identite remplace l'ancien theme.
  */
 @RunWith(RobolectricTestRunner::class)
 class TrialThemeTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
-    @After fun backToCurrent() = TrialTheme.select(context, TrialTheme.CURRENT)
-
-    @Test fun `le thème actuel et un identifiant inconnu gardent les couleurs de l'application`() {
-        assertSame(TunturoLight, TrialTheme.colorScheme(TrialTheme.CURRENT, dark = false))
-        assertSame(TunturoDark, TrialTheme.colorScheme(TrialTheme.CURRENT, dark = true))
-        assertSame(TunturoLight, TrialTheme.colorScheme("palette-retiree", dark = false))
-        assertSame(TunturoLight, TrialTheme.colorScheme(null, dark = false))
-    }
+    @After fun backToDefault() = TrialTheme.select(context, TrialTheme.DEFAULT)
 
     /** Valeurs relevees dans ruska.json et myrtille.json (exports du 2026-11-15). */
     @Test fun `une palette rend les couleurs de son export, en clair comme en sombre`() {
@@ -40,25 +33,40 @@ class TrialThemeTest {
         assertEquals(Color(0xFF65558F), TrialTheme.colorScheme("myrtille", dark = false).primary)
     }
 
-    @Test fun `le choix propose le thème actuel puis les neuf palettes, sans doublon`() {
-        assertEquals(TrialTheme.CURRENT, TrialTheme.choices.first())
-        assertEquals(10, TrialTheme.choices.size)
+    @Test fun `les textes prennent les couleurs de la palette`() {
+        val light = TrialTheme.colorScheme("ruska", dark = false)
+        assertEquals(Color(0xFF703717), light.onSurface)
+        assertEquals(Color(0xFF703717), light.onBackground)
+        assertEquals(Color(0xFF765749), light.onSurfaceVariant)
+        val dark = TrialTheme.colorScheme("ruska", dark = true)
+        assertEquals(Color(0xFFFFDBCB), dark.onSurface)
+        assertEquals(Color(0xFFE6BEAC), dark.onSurfaceVariant)
+    }
+
+    @Test fun `un identifiant inconnu donne la palette par defaut`() {
+        assertEquals(TrialTheme.colorScheme(TrialTheme.DEFAULT, dark = false).primary,
+            TrialTheme.colorScheme("current", dark = false).primary)
+        assertEquals(TrialTheme.colorScheme(TrialTheme.DEFAULT, dark = true).primary,
+            TrialTheme.colorScheme(null, dark = true).primary)
+    }
+
+    @Test fun `le choix propose les neuf palettes, sans doublon ni thème actuel`() {
+        assertEquals(9, TrialTheme.choices.size)
         assertEquals(TrialTheme.choices.size, TrialTheme.choices.toSet().size)
+        assertEquals(false, "current" in TrialTheme.choices)
         assertEquals("Ruska", TrialTheme.displayName("ruska"))
-        assertEquals(null, TrialTheme.displayName(TrialTheme.CURRENT))
     }
 
     @Test fun `le choix s'applique aussitot et se relit au demarrage suivant`() {
         TrialTheme.select(context, "ambre")
         assertEquals("ambre", TrialTheme.selected.value)
-        TrialTheme.select(context, TrialTheme.CURRENT)
         TrialTheme.select(context, "glacier")
         TrialTheme.load(context)
         assertEquals("glacier", TrialTheme.selected.value)
     }
 
-    @Test fun `un identifiant inconnu revient au thème actuel`() {
-        TrialTheme.select(context, "palette-retiree")
-        assertEquals(TrialTheme.CURRENT, TrialTheme.selected.value)
+    @Test fun `un identifiant inconnu, dont l'ancien thème actuel, revient a la palette par defaut`() {
+        TrialTheme.select(context, "current")
+        assertEquals(TrialTheme.DEFAULT, TrialTheme.selected.value)
     }
 }

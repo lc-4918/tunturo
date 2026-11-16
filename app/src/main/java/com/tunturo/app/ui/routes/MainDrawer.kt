@@ -1282,8 +1282,10 @@ internal fun DrawerContent(
     Column(Modifier.fillMaxSize().statusBarsPadding().closesTooltips(bulles)) {
         // En-tete, sur deux lignes : le logo, le titre et la croix ; puis les gestes de la bibliotheque, la roue
         // crantee des reglages au bout, apres la loupe (demande de Luc, 2026-11-15).
+        // Meme marge de droite (Spacing.s) que la ligne des gestes : la croix tombe pile au-dessus de la
+        // roue crantee, qui ont le meme diametre (demande de Luc, 2026-11-16).
         Row(
-            Modifier.fillMaxWidth().height(64.dp).padding(start = Spacing.l, end = Spacing.l, top = Spacing.s),
+            Modifier.fillMaxWidth().height(64.dp).padding(start = Spacing.l, end = Spacing.s, top = Spacing.s),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.m),
         ) {

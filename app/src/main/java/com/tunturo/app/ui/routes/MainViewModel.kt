@@ -16,6 +16,7 @@ import com.tunturo.app.data.imp.EmptyLayerException
 import com.tunturo.app.data.repo.TunturoRepository
 import com.tunturo.app.domain.geo.OffTrack
 import com.tunturo.app.domain.geo.TrackEdit
+import com.tunturo.app.domain.geo.TrackCursor
 import com.tunturo.app.domain.geo.TrackMath
 import com.tunturo.app.domain.geo.TrackMeasure
 import com.tunturo.app.domain.model.ComputedTrack
@@ -307,8 +308,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             viewModelScope.launch {
                 // Projection sur la ligne brisee, et non plus recherche du sommet le plus proche : le
                 // curseur tombe la ou le doigt a vise, meme entre deux points de la trace.
+                // Sur les echantillons COMPLETS des qu'ils sont charges : le profil decime ne porte qu'un
+                // point tous les quelques kilometres sur une tres longue trace (cf. TrackCursor).
+                val detailed = _highlightSamples.value
                 val along = withContext(Dispatchers.Default) {
-                    TrackMeasure.project(current.samples, lon, lat)?.alongM
+                    TrackCursor.alongOf(lon, lat, current.samples, detailed)
                 }
                 if (_activeLayerId.value == id) _cursor.value = along
             }
@@ -340,19 +344,35 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 _cursor.value = result?.second
                 _activeTrackIndex.value = result?.third ?: 0
                 _profileLoading.value = false
-                loadHighlightSamples(layer, id, _activeTrackIndex.value)
+                loadHighlightSamples(layer, id, _activeTrackIndex.value, tap = lon to lat, roughCursor = result?.second)
             }
         }
     }
 
     /** Lit tous les points de la ligne [index] de [layer] pour la mise en evidence, si cette couche est toujours montree. */
-    private fun loadHighlightSamples(layer: LayerEntity, id: Long, index: Int) {
+    /**
+     * Charge les echantillons complets de la trace ouverte.
+     *
+     * [tap] et [roughCursor] : le tap qui a ouvert le profil, et le kilometrage qu'on en a tire sur le
+     * profil decime. Ce kilometrage peut etre faux de plusieurs kilometres sur une tres longue trace (cf.
+     * TrackCursor) : il est recalcule sur les echantillons complets, sauf si le curseur a bouge entre-temps
+     * - un doigt promene sur le profil l'emporte sur un tap deja ancien.
+     */
+    private fun loadHighlightSamples(
+        layer: LayerEntity, id: Long, index: Int,
+        tap: Pair<Double, Double>? = null, roughCursor: Double? = null,
+    ) {
         viewModelScope.launch {
-            val samples = withContext(Dispatchers.Default) {
-                repo.loadTrackLines(layer).getOrNull(index)
-                    ?.let { TrackMath.compute(it, maxPoints = 0, ignoreStops = false).samples }
+            val loaded = withContext(Dispatchers.Default) {
+                repo.loadDetailedSamples(layer).getOrNull(index)
+                    ?.let { samples ->
+                        samples to tap?.let { (lon, lat) -> TrackCursor.alongOf(lon, lat, null, samples) }
+                    }
             }
-            if (_activeLayerId.value == id) _highlightSamples.value = samples
+            if (_activeLayerId.value != id) return@launch
+            _highlightSamples.value = loaded?.first
+            val refined = loaded?.second
+            if (refined != null && roughCursor != null && _cursor.value == roughCursor) _cursor.value = refined
         }
     }
 
@@ -398,9 +418,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * Les couches retenues sont lues **en parallèle** : elles sont peu nombreuses, mais un paquet de
      * traces superposées les ferait sinon attendre l'une après l'autre.
      *
-     * Les profils sont lus par le dépôt, donc servis par son cache dès la première fois : le kilométrage
-     * cumulé qu'ils portent est calculé sur la géométrie complète, avant décimation, et la mesure suit
-     * donc le parcours réel et non la ligne allégée du rendu.
+     * Les echantillons COMPLETS sont lus par le depot, garde en cache pour les deux dernieres couches (cf.
+     * TunturoRepository.loadDetailedSamples) : le point de mesure se pose sur la trace dessinee, et non sur
+     * la corde entre deux echantillons du profil decime, qui s'en ecarte de plusieurs kilometres sur une
+     * tres longue trace. Le kilometrage est le meme sur les deux.
      */
     fun pickMeasureStart(
         lon: Double, lat: Double, keys: List<String>, onResult: (MeasurePoint?) -> Unit,
@@ -410,9 +431,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (candidates.isEmpty()) { onResult(null); return@launch }
         val best = candidates.map { ly ->
             async {
-                val profiles = repo.loadProfiles(ly)
+                // Les echantillons COMPLETS : sur le profil decime, le point de mesure se posait sur la
+                // corde entre deux echantillons, a cote de la trace sur une tres longue trace (cf.
+                // TrackCursor).
+                val segments = repo.loadDetailedSamples(ly)
                 withContext(Dispatchers.Default) {
-                    profiles.mapIndexedNotNull { i, ct -> TrackMeasure.project(ct.samples, lon, lat)?.let { i to it } }
+                    segments.mapIndexedNotNull { i, samples -> TrackMeasure.project(samples, lon, lat)?.let { i to it } }
                         .minByOrNull { it.second.awayM }
                 }?.let { (index, p) -> MeasurePoint(ly.id, ly.name, index, p.lon, p.lat, p.alongM) to p.awayM }
             }
@@ -433,7 +457,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         onResult: (MeasurePoint, List<Pair<Double, Double>>) -> Unit,
     ) = viewModelScope.launch {
         val layer = layers.value.firstOrNull { it.id == start.layerId } ?: return@launch
-        val samples = repo.loadProfiles(layer).getOrNull(start.trackIndex)?.samples ?: return@launch
+        // Les echantillons complets, comme pour le premier point (cf. pickMeasureStart).
+        val samples = repo.loadDetailedSamples(layer).getOrNull(start.trackIndex) ?: return@launch
         val computed = withContext(Dispatchers.Default) {
             TrackMeasure.project(samples, lon, lat)?.let { p ->
                 p to TrackMeasure.portion(samples, start.alongM, p.alongM)
@@ -846,10 +871,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     suspend fun layerProfiles(layer: LayerEntity): List<ComputedTrack> = repo.loadProfiles(layer)
 
     /** Les echantillons de chaque ligne de la couche, tous les points de la trace (cf. LayerWaysViewerState.detailedSamples). */
-    suspend fun layerDetailedSamples(layer: LayerEntity): List<List<com.tunturo.app.domain.model.Sample>> =
-        withContext(Dispatchers.Default) {
-            repo.loadTrackLines(layer).map { TrackMath.compute(it, maxPoints = 0, ignoreStops = false).samples }
-        }
+    suspend fun layerDetailedSamples(layer: LayerEntity): List<List<Sample>> = repo.loadDetailedSamples(layer)
 
     /** La couche des points d'interet mise de cote, ou remise, par l'oeil de sa bulle. */
     fun savePoiMasked(masked: Boolean) = viewModelScope.launch {

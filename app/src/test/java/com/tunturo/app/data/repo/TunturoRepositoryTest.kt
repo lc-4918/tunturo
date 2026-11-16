@@ -124,6 +124,25 @@ class TunturoRepositoryTest {
 
     // ---------- Amorcage ----------
 
+    /**
+     * Les echantillons complets gardent TOUS les points de la trace, avec le meme kilometrage que le
+     * profil decime : le point courant et la mesure s'y posent sans changer de kilometrage (cf.
+     * TrackCursor), et une trace qui change de fichier n'est pas servie depuis un cache perime.
+     */
+    @Test fun `les echantillons complets gardent tous les points avec le kilometrage du profil`() = runTest {
+        repo.importLayer(bytes("wikiloc_soreze-fontbruno-arfons-berniquaut.gpx"), "wikiloc.gpx", folderId = null)
+        val layer = derniereCouche()
+        val lines = repo.loadTrackLines(layer)
+        val detailed = repo.loadDetailedSamples(layer)
+        val profiles = repo.loadProfiles(layer)
+        assertEquals(lines.size, detailed.size)
+        assertEquals(lines.map { it.size }, detailed.map { it.size })
+        detailed.zip(profiles).forEach { (samples, profile) ->
+            assertEquals(profile.samples.last().x, samples.last().x, 1e-6)
+        }
+        assertTrue("servi par le cache au second appel", repo.loadDetailedSamples(layer) === detailed)
+    }
+
     @Test fun `l'amorcage installe les fonds et les reglages`() = runTest {
         repo.ensureSeed()
         assertTrue("aucun fond seme", db.providers().count() > 0)

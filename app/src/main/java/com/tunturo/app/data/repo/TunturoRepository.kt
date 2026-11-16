@@ -49,6 +49,7 @@ import com.tunturo.app.domain.model.PropValue
 import com.tunturo.app.domain.model.SchemaItem
 import com.tunturo.app.domain.model.LayerWays
 import com.tunturo.app.domain.model.TrackPoint
+import com.tunturo.app.domain.model.Sample
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
@@ -636,6 +637,7 @@ class TunturoRepository(private val ctx: Context) {
      */
     suspend fun restoreBackup(input: InputStream): BackupArchive.Result = withContext(Dispatchers.IO) {
         profileCache.clear()
+        detailedSamplesCache.clear()
         BackupArchive.restore(input, databaseFile(), backupDirs(), File(ctx.cacheDir, "restauration"))
     }
 
@@ -731,6 +733,35 @@ class TunturoRepository(private val ctx: Context) {
         profileCache["${profFile.absolutePath}|${profFile.lastModified()}"] = profiles   // + cache mémoire
         profiles
     }
+
+    /**
+     * Les echantillons COMPLETS de chaque segment de la couche, sans decimation.
+     *
+     * Le profil (cf. [loadProfiles]) n'en garde que deux mille par segment : sur une trace de plusieurs
+     * milliers de kilometres, un tous les quelques kilometres, et un point interpole entre deux d'entre
+     * eux tombe a cote de la trace dessinee (cf. TrackCursor). Le point courant du profil et la mesure sur
+     * trace se posent donc sur ceux-ci.
+     *
+     * Gardes en memoire pour les deux dernieres couches : la mesure les relit a chaque tap, et relire une
+     * longue trace couterait plusieurs secondes. La cle tient a la date du fichier, comme pour les profils.
+     */
+    suspend fun loadDetailedSamples(layer: LayerEntity): List<List<Sample>> = withContext(Dispatchers.IO) {
+        val geometry = File(layersDir, layer.geometryFile)
+        val cacheKey = "${geometry.absolutePath}|${geometry.lastModified()}"
+        detailedSamplesCache[cacheKey]?.let { return@withContext it }
+        val lines = loadTrackLines(layer)
+        val samples = withContext(Dispatchers.Default) {
+            lines.map { TrackMath.compute(it, maxPoints = 0, ignoreStops = false).samples }
+        }
+        detailedSamplesCache[cacheKey] = samples
+        samples
+    }
+
+    private val detailedSamplesCache = java.util.Collections.synchronizedMap(
+        object : LinkedHashMap<String, List<List<Sample>>>(4, 0.75f, true) {
+            override fun removeEldestEntry(e: MutableMap.MutableEntry<String, List<List<Sample>>>) = size > 2
+        }
+    )
 
     /** Fichier .map prêt-pour-carte (GeoJSON précalculé), chargé directement par MapLibre via une URI
      *  file:// (lecture + parse sur son thread de travail). Le génère une fois s'il manque (couche importée

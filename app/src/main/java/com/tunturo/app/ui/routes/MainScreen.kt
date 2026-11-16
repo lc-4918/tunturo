@@ -680,6 +680,7 @@ fun MainScreen(
         // Hors du profil, le point n'est plus pose sur la carte ; il y revient avec le profil.
         cursor = cursor.takeIf { panelView.cursorShown },
         computed = computed,
+        detailedSamples = highlightSamples,
         profileZoom = profileZoom,
         topCoverPx = statusBarTopPx,
         bottomCoverPx = insets.profilePanelPx,

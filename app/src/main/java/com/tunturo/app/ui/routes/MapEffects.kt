@@ -11,7 +11,8 @@ import androidx.compose.runtime.setValue
 import com.tunturo.app.data.db.LayerEntity
 import com.tunturo.app.data.db.ProviderEntity
 import com.tunturo.app.data.db.SettingsEntity
-import com.tunturo.app.domain.geo.TrackMath
+import com.tunturo.app.domain.geo.TrackCursor
+import com.tunturo.app.domain.model.Sample
 import com.tunturo.app.domain.model.ComputedTrack
 import com.tunturo.app.domain.model.GpsMarkerStyle
 import com.tunturo.app.map.CoverageBounds
@@ -113,15 +114,18 @@ internal fun ProfileCursorEffects(
     controller: MapController,
     cursor: Double?,
     computed: ComputedTrack?,
+    /** Les echantillons complets de la trace, une fois charges : le point s'y pose (cf. TrackCursor). */
+    detailedSamples: List<Sample>?,
     profileZoom: IntRange?,
     /** Ce que cachent le haut (barre de statut, boutons) et le bas (le panneau du profil) de la carte. */
     topCoverPx: Int = 0,
     bottomCoverPx: Int = 0,
 ) {
     val couverture by rememberUpdatedState(topCoverPx to bottomCoverPx)
-    LaunchedEffect(cursor, computed) {
-        val s = computed?.samples
-        val p = if (cursor != null && s != null) TrackMath.sampleAt(s, cursor) else null
+    LaunchedEffect(cursor, computed, detailedSamples) {
+        // Sur les echantillons complets des qu'ils sont la : interpole sur le profil decime, le point
+        // tombait a cote de la trace sur une tres longue trace (cf. TrackCursor).
+        val p = if (cursor != null) TrackCursor.pointAt(cursor, computed?.samples, detailedSamples) else null
         if (p != null) {
             controller.setCursor(p.lon, p.lat)
             // Curseur sorti de la VUE - hors de l'ecran, ou sous le panneau du profil : la carte le

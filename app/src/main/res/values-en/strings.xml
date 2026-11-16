@@ -109,6 +109,10 @@
     <string name="action_center_on_location">Center on my location</string>
     <string name="action_follow_position_on">Follow my position</string>
     <string name="action_follow_position_off">Stop following my position</string>
+    <string name="position_notice_auto_on">Auto-recentering on</string>
+    <string name="position_notice_centered">Centered on your location</string>
+    <string name="position_notice_auto_off">Recentering off</string>
+    <string name="position_notice_auto_return">Back to your location</string>
     <string name="action_pin_image">Pin as cover image</string>
     <string name="action_unpin_image">Unpin</string>
     <string name="label_pinned_image">Cover image</string>

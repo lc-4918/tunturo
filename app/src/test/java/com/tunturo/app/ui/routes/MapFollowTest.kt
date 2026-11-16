@@ -180,4 +180,29 @@ class MapFollowTest {
     @Test fun `la camera reclamee rend le suivi`() {
         assertTrue(suit(cameraReleased = false))
     }
+
+    /**
+     * **Le bandeau dit l'etat OBTENU**, et un etat different pour chacun des trois appuis : c'est ce qui
+     * manquait au testeur qui voyait la carte revenir sur lui sans savoir pourquoi.
+     */
+    @Test fun `chaque appui annonce son propre etat`() {
+        assertEquals(MapFollow.PositionNotice.AUTO_ON, MapFollow.tapNotice(MapFollow.FollowTap.ARM))
+        assertEquals(MapFollow.PositionNotice.CENTERED, MapFollow.tapNotice(MapFollow.FollowTap.RECENTER))
+        assertEquals(MapFollow.PositionNotice.AUTO_OFF, MapFollow.tapNotice(MapFollow.FollowTap.DISARM))
+    }
+
+    /** Sans geste, le recentrage est le deroulement normal du suivi : rien a annoncer. */
+    @Test fun `pas de geste pas d annonce de retour`() {
+        assertFalse(MapFollow.announcesReturn(lastGestureAt = 0L, announcedGestureAt = 0L))
+    }
+
+    /**
+     * Le retour qui suit un geste est annonce UNE fois : les recentrages suivants, a chaque position,
+     * ne le sont pas, et un nouveau geste rouvre l'annonce.
+     */
+    @Test fun `le retour apres un geste est annonce une seule fois`() {
+        assertTrue("geste nouveau", MapFollow.announcesReturn(lastGestureAt = 1_000L, announcedGestureAt = 0L))
+        assertFalse("meme geste deja annonce", MapFollow.announcesReturn(lastGestureAt = 1_000L, announcedGestureAt = 1_000L))
+        assertTrue("nouveau geste", MapFollow.announcesReturn(lastGestureAt = 9_000L, announcedGestureAt = 1_000L))
+    }
 }

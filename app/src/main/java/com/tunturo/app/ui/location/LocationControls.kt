@@ -25,6 +25,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +41,7 @@ import com.tunturo.app.domain.geo.FixAge
 import com.tunturo.app.location.LocationHub
 import com.tunturo.app.location.LocationService
 import com.tunturo.app.ui.components.MapController
+import com.tunturo.app.ui.routes.MapFollow
 import kotlin.coroutines.resume
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -192,6 +194,24 @@ class LocationControls internal constructor(
      *   revient veut voir ou il est, pas purger une attente heritee.
      */
     fun clearUserGesture() { lastUserGestureAt = 0L }
+
+    /** Le bandeau d'etat du recentrage affiche en bas de la carte, ou null (cf. MapFollow.PositionNotice). */
+    var positionNotice by mutableStateOf<MapFollow.PositionNotice?>(null)
+        private set
+
+    /** Compteur d'affichages : relance le delai d'effacement, meme quand le meme message revient. */
+    var positionNoticeStamp by mutableIntStateOf(0)
+        private set
+
+    /** L'heure du dernier geste dont le retour a deja ete annonce (cf. MapFollow.announcesReturn). */
+    var announcedGestureAt: Long = 0L
+
+    fun showPositionNotice(notice: MapFollow.PositionNotice) {
+        positionNotice = notice
+        positionNoticeStamp++
+    }
+
+    fun dismissPositionNotice() { positionNotice = null }
 
     fun hasLocationPermission() =
         ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||

@@ -26,6 +26,14 @@ import com.tunturo.app.domain.model.PoiFilters
 import com.tunturo.app.ui.poi.PoiFilterBubbleAnchored
 import com.tunturo.app.ui.poi.PoiState
 import kotlin.math.hypot
+import kotlinx.coroutines.delay
+import com.tunturo.app.ui.components.MapPromptBar
+import com.tunturo.app.location.LocationHub
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -429,6 +437,9 @@ internal fun BoxScope.MapBottomRightControls(
             val geste = MapFollow.tapAction(following = suit, positionCentered = positionCentered)
             IconButton(
                 onClick = {
+                    // L'etat obtenu est annonce en bas de l'ecran : la teinte du bouton seule ne
+                    // suffisait pas a dire que la carte reviendrait d'elle-meme (cf. PositionNotice).
+                    location.showPositionNotice(MapFollow.tapNotice(geste))
                     when (geste) {
                         MapFollow.FollowTap.ARM -> {
                             vm.setMapFollowPosition(true)
@@ -638,7 +649,45 @@ internal fun BoxScope.MapBottomRightControls(
             )
         }
     }
+
+    /*
+     * Le bandeau d'etat du recentrage (cf. MapFollow.PositionNotice) : bref, en bas de l'ecran, A GAUCHE
+     * de la colonne - le bouton doit rester touchable dessous, pour passer d'un etat au suivant sans
+     * attendre que le message s'efface. Il ne s'empile pas sur le bandeau d'arret de la localisation, ni
+     * sur ce qui occupe deja le bas (bande deployee, panneau).
+     */
+    val positionNotice = location.positionNotice
+    LaunchedEffect(location.positionNoticeStamp) {
+        if (positionNotice == null) return@LaunchedEffect
+        delay(MapFollow.NoticeMs)
+        location.dismissPositionNotice()
+    }
+    val stopNotice by LocationHub.stopNotice.collectAsState()
+    if (positionNotice != null && stopNotice == null && !planner.expanded && !bottomPanelOpen) {
+        MapPromptBar(
+            text = stringResource(
+                when (positionNotice) {
+                    MapFollow.PositionNotice.AUTO_ON -> R.string.position_notice_auto_on
+                    MapFollow.PositionNotice.CENTERED -> R.string.position_notice_centered
+                    MapFollow.PositionNotice.AUTO_OFF -> R.string.position_notice_auto_off
+                    MapFollow.PositionNotice.AUTO_RETURN -> R.string.position_notice_auto_return
+                },
+            ),
+            onClose = { location.dismissPositionNotice() },
+            modifier = Modifier.align(Alignment.BottomStart)
+                .padding(
+                    end = PositionNoticeEndGap,
+                    bottom = if (dashboardPx > 0) with(density) { dashboardPx.toDp() } + MapControlSpacing
+                        else maxOf(MapControlSpacing, navBottomDp),
+                )
+                .semantics { liveRegion = LiveRegionMode.Polite },
+        )
+    }
 }
+
+/** Ecart a droite du bandeau d'etat du recentrage : la colonne de boutons (8 dp de marge, 48 dp de
+ *  bouton) reste libre, le bandeau ajoutant lui-meme son air. */
+private val PositionNoticeEndGap = 56.dp
 
 /**
  * Le bouton du coin passe-t-il sous ce qui recouvre le coin, meme en partie ? Son bas plus bas que le haut

@@ -124,6 +124,51 @@ object MapFollow {
     }
 
     /**
+     * Ce que le bandeau du bas annonce : l'etat dans lequel le bouton vient de mettre la carte, ou le
+     * retour automatique sur la position.
+     *
+     * **Pourquoi un bandeau.** Un testeur deplacait la carte et la voyait revenir sur lui quelques
+     * secondes plus tard, sans comprendre pourquoi : le recentrage automatique etait arme, et rien ne le
+     * disait hors de la teinte du bouton. Le bandeau nomme l'etat a chaque appui, et nomme aussi le
+     * retour quand il a lieu - c'est ce mouvement-la qui surprenait.
+     */
+    enum class PositionNotice {
+        /** Le recentrage automatique vient d'etre active. */
+        AUTO_ON,
+
+        /** La carte vient d'etre ramenee sur la position, a la demande. */
+        CENTERED,
+
+        /** Le recentrage automatique vient d'etre coupe. */
+        AUTO_OFF,
+
+        /** La carte revient d'elle-meme sur la position, le silence d'apres-geste ecoule. */
+        AUTO_RETURN,
+    }
+
+    /** Duree d'affichage du bandeau : de quoi lire trois mots, pas assez pour encombrer la carte. */
+    const val NoticeMs = 3_000L
+
+    /** Le bandeau qui repond a un appui sur le bouton : l'etat obtenu, et non le geste fait. */
+    fun tapNotice(tap: FollowTap): PositionNotice = when (tap) {
+        FollowTap.ARM -> PositionNotice.AUTO_ON
+        FollowTap.RECENTER -> PositionNotice.CENTERED
+        FollowTap.DISARM -> PositionNotice.AUTO_OFF
+    }
+
+    /**
+     * Le recentrage qui vient d'avoir lieu merite-t-il le bandeau "retour sur votre position" ?
+     *
+     * Oui s'il suit un geste ([lastGestureAt] non nul) qui n'a pas encore ete annonce
+     * ([announcedGestureAt]). Pendant qu'on avance, la carte se recentre a chaque position, environ une
+     * par seconde : seul le premier retour apres un geste est une surprise, les suivants sont le
+     * deroulement normal. L'appui sur le bouton remet l'heure du geste a zero (cf.
+     * LocationControls.clearUserGesture), et n'est donc pas annonce deux fois.
+     */
+    fun announcesReturn(lastGestureAt: Long, announcedGestureAt: Long): Boolean =
+        lastGestureAt > 0L && lastGestureAt != announcedGestureAt
+
+    /**
      * Attente restante avant de pouvoir recentrer, en millisecondes ; 0 quand le dernier geste est assez
      * vieux, ou qu'il n'y en a jamais eu ([lastGestureAt] à 0).
      *
@@ -217,8 +262,14 @@ internal fun MapFollowEffect(
     LaunchedEffect(followsPosition, location.lastUserLocation, location.lastUserGestureAt) {
         if (!followsPosition) return@LaunchedEffect
         val (la, lo) = location.lastUserLocation ?: return@LaunchedEffect
-        val wait = MapFollow.waitMs(SystemClock.elapsedRealtime(), location.lastUserGestureAt)
+        val gestureAt = location.lastUserGestureAt
+        val wait = MapFollow.waitMs(SystemClock.elapsedRealtime(), gestureAt)
         if (wait > 0L) delay(wait)
         controller.centerOn(la, lo)
+        // Le premier retour apres un geste est annonce : c'est le mouvement qui surprend.
+        if (MapFollow.announcesReturn(gestureAt, location.announcedGestureAt)) {
+            location.announcedGestureAt = gestureAt
+            location.showPositionNotice(MapFollow.PositionNotice.AUTO_RETURN)
+        }
     }
 }

@@ -109,6 +109,10 @@
     <string name="action_center_on_location">Centrar en mi posición</string>
     <string name="action_follow_position_on">Seguir mi posición</string>
     <string name="action_follow_position_off">Dejar de seguir mi posición</string>
+    <string name="position_notice_auto_on">Recentrado automático activado</string>
+    <string name="position_notice_centered">Centrado en tu posición</string>
+    <string name="position_notice_auto_off">Recentrado desactivado</string>
+    <string name="position_notice_auto_return">Volviendo a tu posición</string>
     <string name="action_pin_image">Fijar como imagen de portada</string>
     <string name="action_unpin_image">Quitar fijación</string>
     <string name="label_pinned_image">Imagen de portada</string>

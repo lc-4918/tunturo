@@ -109,6 +109,10 @@
     <string name="action_center_on_location">Zentratu nire kokapenean</string>
     <string name="action_follow_position_on">Nire kokapena jarraitu</string>
     <string name="action_follow_position_off">Utzi nire kokapena jarraitzeari</string>
+    <string name="position_notice_auto_on">Birzentratze automatikoa aktibatuta</string>
+    <string name="position_notice_centered">Zure kokapenean zentratuta</string>
+    <string name="position_notice_auto_off">Birzentratzea desaktibatuta</string>
+    <string name="position_notice_auto_return">Zure kokapenera itzultzen</string>
     <string name="action_pin_image">Ainguratu azal-irudi gisa</string>
     <string name="action_unpin_image">Kendu ainguratzea</string>
     <string name="label_pinned_image">Azaleko irudia</string>

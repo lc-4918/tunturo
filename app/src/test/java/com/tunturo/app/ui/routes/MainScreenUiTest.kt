@@ -406,6 +406,35 @@ class MainScreenUiTest {
         attend { !texte(R.string.location_stopped_system) }
     }
 
+    // ---------- Le bandeau d'etat du recentrage ----------
+
+    /**
+     * **Chaque appui sur le bouton de recentrage dit l'etat obtenu**, puis le bandeau s'efface seul.
+     *
+     * Retour de terrain : un testeur voyait la carte revenir sur lui sans comprendre que le recentrage
+     * automatique etait arme. Le bouton passe ici d'eteint a arme ("Recentrage automatique active"),
+     * puis, la position n'etant pas encore connue donc pas centree, a un rappel immediat.
+     */
+    @Test fun `l'appui sur le bouton de recentrage annonce l'etat obtenu`() {
+        reglages { it.copy(mapFollowPosition = false) }
+        ecran()
+        attend { surface.controller != null }
+        compose.runOnUiThread { LocationHub.setTracking(true) }
+        attend { affiche(R.string.action_follow_position_on) }
+        assertFalse("rien avant l'appui", texte(R.string.position_notice_auto_on))
+
+        compose.onNodeWithContentDescription(libelle(R.string.action_follow_position_on)).performClick()
+        attend { texte(R.string.position_notice_auto_on) }
+
+        // Arme mais sans position sous la croix : l'appui suivant ramene la carte.
+        attend { affiche(R.string.action_center_on_location) }
+        compose.onNodeWithContentDescription(libelle(R.string.action_center_on_location)).performClick()
+        attend { texte(R.string.position_notice_centered) }
+        assertFalse("un seul bandeau a la fois", texte(R.string.position_notice_auto_on))
+
+        attend { !texte(R.string.position_notice_centered) }
+    }
+
     // ---------- Le calcul d'itineraire : un seul bouton, et deux appuis pour le perdre ----------
 
     /** Le geste du retour Android, tel que le systeme le remet a l'activite. */

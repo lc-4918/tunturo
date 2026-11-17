@@ -249,4 +249,22 @@ class PhotonTest {
     @Test fun `l'url inverse retombe sur l'anglais pour une langue non servie`() {
         assertTrue("lang=en" in Photon.reverseUrl(Photon.DEFAULT_URL, 6.0, 44.0, "eu"))
     }
+
+    // ---------- La commune, pour nommer un parcours enregistre ----------
+
+    @Test fun `la commune d'une adresse est sa ville`() {
+        val r = Photon.parse(fc(feature(""""name":"Col de Porte","city":"Sarcenas","country":"France"""")))
+        assertEquals("Sarcenas", r.single().town)
+    }
+
+    /** Photon rend une commune par son nom, de type "city", sans champ city. */
+    @Test fun `une commune est sa propre commune`() {
+        val r = Photon.parse(fc(feature(""""name":"Brest","type":"city","country":"France"""")))
+        assertEquals("Brest", r.single().town)
+    }
+
+    @Test fun `un sommet isole n'a pas de commune`() {
+        val r = Photon.parse(fc(feature(""""name":"Grand Som","type":"locality","county":"Isere"""")))
+        assertEquals(null, r.single().town)
+    }
 }

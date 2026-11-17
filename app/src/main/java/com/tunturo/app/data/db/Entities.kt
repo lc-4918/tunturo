@@ -406,6 +406,10 @@ data class SettingsEntity(
     // place, recopie par la migration 70 -> 71, mais n'est plus lu : une colonne ne se retire pas sans
     // reconstruire la table.
     val profileVerticalScale: String = "m:200",
+    // Les altitudes des parcours enregistres (cf. location/TrackRecorder) prises au modele de terrain, a
+    // chaque rangement dans la bibliotheque, plutot qu'au GPS : celle d'un telephone tremble de plusieurs
+    // metres et gonfle le denivele. Eteint par defaut : il fait partir des requetes vers un service tiers.
+    val recordingSmoothElevation: Boolean = false,
 )
 
 /** Les valeurs de [SettingsEntity.basemapControlMode]. */

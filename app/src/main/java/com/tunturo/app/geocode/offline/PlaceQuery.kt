@@ -10,7 +10,10 @@ import java.text.Normalizer
  * qu'il designe - le contexte qui distingue deux "Rue de la Republique".
  */
 data class PlaceHit(val name: String, val kind: Int, val lon: Double, val lat: Double, val locality: String?) {
-    fun toPlace() = GeocodePlace(listOfNotNull(name, locality?.takeIf { it != name }), lon, lat)
+    fun toPlace() = GeocodePlace(listOfNotNull(name, locality?.takeIf { it != name }), lon, lat, town)
+
+    /** La commune du lieu : lui-meme s'il en est une, sinon celle qu'il designe (cf. [PlaceKind.isTown]). */
+    val town: String? get() = if (PlaceKind.isTown(kind)) name else locality
 }
 
 /** Les genres de lieu de l'index, tels que `tools/geocode-index/build_index.py` les numerote. */
@@ -26,6 +29,9 @@ object PlaceKind {
     private val SETTLEMENTS = setOf(CITY, TOWN, VILLAGE, HAMLET, 5, LOCALITY)
 
     fun isSettlement(kind: Int): Boolean = kind in SETTLEMENTS
+
+    /** Les genres qui sont des communes, et non des quartiers ou des lieux-dits d'une commune. */
+    fun isTown(kind: Int): Boolean = kind == CITY || kind == TOWN || kind == VILLAGE
 
     /**
      * L'importance d'un genre : plus petit, plus en vue. Reprend `TIER` du script - la meme echelle range

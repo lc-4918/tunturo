@@ -205,4 +205,14 @@ class PlaceQueryTest {
         assertTrue(PlaceKind.tier(PlaceKind.LOCALITY) < PlaceKind.tier(PlaceKind.STREET))
         assertEquals("un sommet vaut un village de peu moins", 4, PlaceKind.tier(10))
     }
+
+    // ---------- La commune, pour nommer un parcours enregistre ----------
+
+    @Test fun `la commune d'un lieu hors ligne est lui-meme s'il en est une, sinon celle qu'il designe`() {
+        assertEquals("Brest", hit("Brest", PlaceKind.CITY).toPlace().town)
+        assertEquals("Revel", hit("Revel", PlaceKind.VILLAGE, locality = "Isere").town)
+        assertEquals("Sarcenas", hit("Le Sappey", PlaceKind.HAMLET, locality = "Sarcenas").town)
+        assertEquals("Grenoble", hit("Rue Thiers", PlaceKind.STREET, locality = "Grenoble").town)
+        assertEquals(null, hit("Chamechaude", 10).town)
+    }
 }

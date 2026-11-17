@@ -298,6 +298,16 @@ import kotlinx.coroutines.launch
     // Dans cet onglet et non dans "Carte" : c'est de la matiere du profil qu'il s'agit, comme le lissage
     // au-dessus, et non de ce qui s'affiche. Les deux services ne s'ouvrent qu'une fois le completement
     // demande - trois champs d'URL sous un interrupteur eteint n'auraient rien a regler.
+    // L'enregistrement de trace : ses altitudes au GPS ou au modele de terrain. Hors du mode expert - c'est
+    // un choix de qualite du parcours, que l'on fait sans connaitre les services qui le servent.
+    SectionTitle(stringResource(R.string.settings_section_recording))
+    SettingsCard {
+        SwitchLine(
+            stringResource(R.string.settings_label_recording_smooth_elevation), cur.recordingSmoothElevation,
+            info = stringResource(R.string.settings_recording_smooth_elevation_hint),
+        ) { vm.save(cur.copy(recordingSmoothElevation = it)) }
+    }
+
     // Mode expert seulement : le completement suit son reglage par defaut pour qui ne l'a jamais regarde.
     if (cur.expertMode) {
     SectionTitle(stringResource(R.string.settings_section_elevation_fill))

@@ -25,6 +25,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 import com.tunturo.app.MainActivity
 import com.tunturo.app.R
+import com.tunturo.app.domain.geo.RecordingPhase
 import com.tunturo.app.TunturoApp
 import com.tunturo.app.data.db.LayerEntity
 import com.tunturo.app.data.db.SettingsEntity
@@ -134,6 +135,9 @@ class LocationService : Service() {
         }
         silence = FixWatchdog.onFix(SystemClock.elapsedRealtime())
         LocationHub.publish(loc)
+        // L'enregistrement prend la position ICI, et non en collectant LocationHub.fix : ce flux ne garde
+        // que sa derniere valeur, et une salve livree au reveil y perdrait ses points intermediaires.
+        LocationHub.fix.value?.let { TrackRecorder.add(it) }
         pace(loc.latitude, loc.longitude, precision)
     }
 
@@ -237,6 +241,8 @@ class LocationService : Service() {
     private val appLifecycleObserver = LifecycleEventObserver { _, event ->
         if (event == Lifecycle.Event.ON_STOP && !inForeground) {
             FixLog.write(this) { "application en arriere-plan - suivi ecran seul arrete" }
+            // Un enregistrement en cours se met en pause, et se range : le capteur va s'arreter.
+            recordingSession().pause()
             LocationHub.stopRequestedByUser()
             stopReason = LocationHub.StopReason.USER
             stopSelf()
@@ -310,6 +316,7 @@ class LocationService : Service() {
         watchDetectionPace()
         watchAlertRing()
         watchNotice()
+        watchRecording()
         watchSilence()
         powerCuts = PowerSave.cutsLocation(this)
         ProcessLifecycleOwner.get().lifecycle.addObserver(appLifecycleObserver)
@@ -318,7 +325,9 @@ class LocationService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
             // Le bouton de la notification : il retire le suivi ECRAN ETEINT, pas le curseur. Un geste, donc
-            // rien a annoncer.
+            // rien a annoncer. Un enregistrement en cours se met en pause et se range dans la bibliotheque :
+            // sans suivi ecran eteint, il ne recevrait plus rien telephone en poche.
+            recordingSession().pause()
             LocationHub.stopBackgroundTracking()
             when (LocationHub.stopAction(appVisible())) {
                 // L'application est a l'ecran : le suivi continue sans notification ("ecran seul").
@@ -553,6 +562,13 @@ class LocationService : Service() {
      * ferme l'application serait exactement ce qu'on reproche aux applications qui le font.
      */
     override fun onTaskRemoved(rootIntent: Intent?) {
+        // Sauf pendant un enregistrement : c'est la fonction meme qui doit survivre a l'ecran, et la
+        // notification dit qu'il tourne et permet de l'arreter.
+        if (TrackRecorder.recording.value.phase == RecordingPhase.RECORDING) {
+            FixLog.write(this) { "application balayee - enregistrement en cours, le suivi continue" }
+            super.onTaskRemoved(rootIntent)
+            return
+        }
         LocationHub.stopRequestedByUser()
         stopReason = LocationHub.StopReason.USER
         stopSelf()
@@ -862,6 +878,17 @@ class LocationService : Service() {
         (application as TunturoApp).repository.settingsFlow.collect { settings = it }
     }
 
+    private fun recordingSession() = (application as TunturoApp).recordingSession
+
+    /** L'enregistrement en cours ou non : la notification le dit, des qu'il change. */
+    private fun watchRecording() = scope.launch {
+        TrackRecorder.recording.map { it.phase == RecordingPhase.RECORDING }.distinctUntilChanged().collect {
+            if (!inForeground) return@collect
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return@collect
+            runCatching { nm.notify(NOTIF_ID, notification(notice.value)) }
+        }
+    }
+
     /** La notification suit ce qu'elle a a dire, sans etre reposee a chaque position quand rien ne change. */
     private fun watchNotice() = scope.launch {
         notice.collect { texte ->
@@ -1021,7 +1048,9 @@ class LocationService : Service() {
             this, 1, Intent(this, LocationService::class.java).setAction(ACTION_STOP),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val body = alerte ?: texte ?: getString(R.string.location_notice_idle)
+        val recording = TrackRecorder.recording.value.phase == RecordingPhase.RECORDING
+        val body = alerte ?: texte?.let { if (recording) getString(R.string.recording_notice_with, it) else it }
+            ?: getString(if (recording) R.string.recording_notice_running else R.string.location_notice_idle)
         if (alerte != null) ensureAlertChannel()
         // Suivi interrompu : la meme notification, sur le canal d'alerte (importance haute, elle sonne et
         // s'affiche en bandeau), le temps que le suivi reprenne. Elle ne sonne qu'a sa premiere pose.

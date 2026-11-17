@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import com.tunturo.app.R
 import com.tunturo.app.data.DemoPrefs
+import com.tunturo.app.data.RecordingPrefs
 import com.tunturo.app.data.db.AppDatabase
 import com.tunturo.app.data.db.FolderEntity
 import com.tunturo.app.data.db.LayerEntity
@@ -39,7 +40,9 @@ import com.tunturo.app.map.offline.OfflineStage
 import com.tunturo.app.map.offline.OfflineThumbnails
 import com.tunturo.app.map.offline.OfflineTileDownloader
 import com.tunturo.app.map.offline.OfflineDownloadRequest
+import com.tunturo.app.domain.geo.RecordingName
 import com.tunturo.app.domain.geo.TrackEdit
+import com.tunturo.app.domain.geo.TrackRecording
 import com.tunturo.app.domain.geo.TrackMath
 import com.tunturo.app.domain.model.ComputedTrack
 import com.tunturo.app.domain.model.PointFeature
@@ -121,7 +124,11 @@ class TunturoRepository(private val ctx: Context) {
         const val PROF_SUFFIX = ".prof"   // profil (samples décimés + stats) précalculé par segment
         const val WAYS_SUFFIX = ".ways"   // voies empruntées, retrouvées par recalage (cf. LayerWays)
         const val SHARE_DIR = "partage"   // cache des fichiers ouverts à une autre application
+        const val RECORDING_SOURCE = "record"   // couche nee d'un enregistrement (cf. saveRecording)
     }
+
+    /** L'acces aux services altimetriques du lissage des parcours enregistres. Remplacable par les tests. */
+    internal var elevationFetcher: com.tunturo.app.elevation.ElevationFetcher = ElevationFiller.httpFetcher
 
     // Paramètres du profil, identiques au tap comme au précalcul (sinon le .prof ne correspondrait pas).
     private val profileJson = Json { ignoreUnknownKeys = true }
@@ -390,6 +397,84 @@ class TunturoRepository(private val ctx: Context) {
             )
             written.computed.bounds
         }
+
+    /** Un parcours enregistre, range dans la bibliotheque : sa couche, et le nom que l'application lui a donne. */
+    data class SavedRecording(val layerId: Long, val autoName: String)
+
+    /**
+     * Range un parcours enregistre dans "Mes parcours" (cf. location/TrackRecorder), a chaque pause.
+     *
+     * La premiere pause cree la couche ; les suivantes - apres "Continuer" - la reecrivent EN PLACE, avec
+     * tout ce qui a ete enregistre depuis le depart : elle garde sa couleur, sa place et sa visibilite, et
+     * les marqueurs qu'on y aurait poses entre-temps. Si elle a ete supprimee entre-temps, le parcours en
+     * cree une nouvelle plutot que de se perdre.
+     *
+     * [baseName] est le nom calcule pour cette pause (cf. [RecordingName]). Une couche qui porte encore le
+     * nom automatique [previousAutoName] prend le nouveau - l'arrivee a change ; renommee a la main, elle
+     * garde le sien.
+     *
+     * Null quand il n'y a rien a ranger : aucun segment d'au moins deux points.
+     */
+    suspend fun saveRecording(
+        lines: List<List<TrackPoint>>, previousLayerId: Long?, previousAutoName: String?, baseName: String,
+    ): SavedRecording? = withContext(Dispatchers.IO) {
+        if (lines.isEmpty()) return@withContext null
+        val stored = smoothRecordedElevation(lines)
+        val existing = previousLayerId?.let { db.layers().byId(it) }
+        if (existing != null) {
+            val siblings = db.layers().all().first()
+                .filter { it.folderId == existing.folderId && it.id != existing.id }.map { it.name }
+            val keepsAutoName = existing.name == previousAutoName
+            val name = if (keepsAutoName) RecordingName.unique(baseName, siblings) else existing.name
+            rewriteLayer(existing.copy(name = name), geometryOf(existing).points, stored)
+            return@withContext SavedRecording(existing.id, if (keepsAutoName) name else previousAutoName ?: name)
+        }
+        val folderId = ensureRecordingsFolder()
+        val siblings = db.layers().all().first().filter { it.folderId == folderId }.map { it.name }
+        val name = RecordingName.unique(baseName, siblings)
+        val written = writeGeometry(emptyList(), stored)
+        val layerId = db.layers().insert(
+            LayerEntity(
+                name = name, folderId = folderId, source = RECORDING_SOURCE,
+                color = Palette.pick(db.layers().colorsInFolder(folderId)),
+                sortOrder = db.layers().maxSort(folderId) + 1,
+                geometryFile = written.fileName,
+            ).describedBy(written)
+        )
+        SavedRecording(layerId, name)
+    }
+
+    /**
+     * Les altitudes du modele de terrain a la place de celles du GPS, si le reglage le demande. La ou le
+     * service ne repond pas - hors reseau -, l'altitude du GPS reste : un parcours se range toujours.
+     */
+    private suspend fun smoothRecordedElevation(lines: List<List<TrackPoint>>): List<List<TrackPoint>> {
+        val s = db.settings().get() ?: return lines
+        if (!s.recordingSmoothElevation) return lines
+        val holes = lines.map { line -> line.map { it.copy(ele = null) } }
+        val filled = runCatching {
+            ElevationFiller.fill(
+                emptyList(), holes,
+                ElevationServices(s.elevationIgnUrl, s.elevationWorldUrl, s.elevationWorldKey),
+                elevationFetcher,
+            )
+        }.getOrNull() ?: return lines
+        return TrackRecording.mergeElevation(lines, filled.lines)
+    }
+
+    /**
+     * Le dossier "Mes parcours", cree au premier enregistrement. Retrouve par son identifiant (cf.
+     * [RecordingPrefs]) ; s'il a ete supprime, par son nom a la racine ; sinon, il est recree.
+     */
+    private suspend fun ensureRecordingsFolder(): Long {
+        val folders = db.folders().all().first()
+        RecordingPrefs.folderId(ctx)?.let { id -> if (folders.any { it.id == id }) return id }
+        val name = ctx.getString(R.string.recordings_folder_name)
+        val folderId = folders.firstOrNull { it.name == name && it.parentId == null }?.id
+            ?: db.folders().insert(FolderEntity(name = name))
+        RecordingPrefs.setFolderId(ctx, folderId)
+        return folderId
+    }
 
     private fun typeOf(v: PropValue): PropType = when (v) {
         is PropValue.Link -> PropType.LINK

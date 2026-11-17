@@ -807,4 +807,27 @@
     <string name="watch_send_done_title">Enviament al rellotge acabat</string>
     <string name="watch_send_done_text">El rellotge ha rebut les %1$d tessel·les de %2$s.</string>
     <string name="watch_send_channel_name">Enviament al rellotge</string>
+
+    <!-- Enregistrement de trace -->
+    <string name="recordings_folder_name">Els meus recorreguts</string>
+    <string name="recording_default_name">Recorregut</string>
+    <string name="recording_action_record">Enregistrar el recorregut</string>
+    <string name="recording_action_pause">Posar en pausa l\'enregistrament</string>
+    <string name="recording_notice_started">Enregistrament iniciat</string>
+    <string name="recording_notice_resumed">Enregistrament represo</string>
+    <string name="recording_notice_saved">Recorregut desat a Els meus recorreguts: %1$s</string>
+    <string name="recording_notice_empty">Res a desar: no hi ha prou punts enregistrats</string>
+    <string name="recording_notice_failed">No s\'ha pogut desar el recorregut, queda en memòria</string>
+    <string name="recording_notice_running">Enregistrament del recorregut en curs.</string>
+    <string name="recording_notice_with">Enregistrament en curs. %1$s</string>
+    <string name="recording_resume_title">Reprendre l\'enregistrament</string>
+    <string name="recording_resume_same_segment">Continuar el mateix segment</string>
+    <string name="recording_resume_same_segment_hint">Una línia recta uneix el lloc de la pausa amb el de la represa.</string>
+    <string name="recording_resume_new_segment">Continuar en un segment nou</string>
+    <string name="recording_resume_new_segment_hint">El mateix recorregut, sense línia entre la pausa i la represa.</string>
+    <string name="recording_resume_new_track">Recorregut nou</string>
+    <string name="recording_resume_new_track_hint">El recorregut anterior queda tal com és a Els meus recorreguts.</string>
+    <string name="settings_section_recording">Enregistrament de recorregut</string>
+    <string name="settings_label_recording_smooth_elevation">Suavitzar les altituds amb el model del terreny</string>
+    <string name="settings_recording_smooth_elevation_hint">A cada pausa, les altituds del GPS se substitueixen per les del model del terreny (IGN a França, OpenTopography a la resta). Cal xarxa; sense, es manté l\'altitud del GPS.</string>
 </resources>

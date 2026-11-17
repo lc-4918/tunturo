@@ -807,4 +807,27 @@
     <string name="watch_send_done_title">Erlojurako bidalketa amaituta</string>
     <string name="watch_send_done_text">Erlojuak %2$s ibilbideko %1$d lauzak jaso ditu.</string>
     <string name="watch_send_channel_name">Erlojurako bidalketa</string>
+
+    <!-- Enregistrement de trace -->
+    <string name="recordings_folder_name">Nire ibilbideak</string>
+    <string name="recording_default_name">Ibilbidea</string>
+    <string name="recording_action_record">Grabatu ibilbidea</string>
+    <string name="recording_action_pause">Pausatu grabaketa</string>
+    <string name="recording_notice_started">Grabaketa hasi da</string>
+    <string name="recording_notice_resumed">Grabaketa berrekin da</string>
+    <string name="recording_notice_saved">Ibilbidea Nire ibilbideak karpetan gorde da: %1$s</string>
+    <string name="recording_notice_empty">Ez dago ezer gordetzeko: puntu gutxiegi grabatu dira</string>
+    <string name="recording_notice_failed">Ezin izan da ibilbidea gorde, memorian geratzen da</string>
+    <string name="recording_notice_running">Ibilbidearen grabaketa martxan.</string>
+    <string name="recording_notice_with">Grabaketa martxan. %1$s</string>
+    <string name="recording_resume_title">Berrekin grabaketari</string>
+    <string name="recording_resume_same_segment">Jarraitu segmentu berean</string>
+    <string name="recording_resume_same_segment_hint">Lerro zuzen batek pausaren lekua eta berrekitearena lotzen ditu.</string>
+    <string name="recording_resume_new_segment">Jarraitu segmentu berri batean</string>
+    <string name="recording_resume_new_segment_hint">Ibilbide bera, pausaren eta berrekitearen artean lerrorik gabe.</string>
+    <string name="recording_resume_new_track">Ibilbide berria</string>
+    <string name="recording_resume_new_track_hint">Aurreko ibilbidea dagoen bezala geratzen da Nire ibilbideak karpetan.</string>
+    <string name="settings_section_recording">Ibilbidearen grabaketa</string>
+    <string name="settings_label_recording_smooth_elevation">Leundu altuerak lur-ereduarekin</string>
+    <string name="settings_recording_smooth_elevation_hint">Pausa bakoitzean, GPSaren altuerak lur-ereduarenekin ordezten dira (IGN Frantzian, OpenTopography beste leku batzuetan). Sarea behar da; gabe, GPSaren altuera gordetzen da.</string>
 </resources>

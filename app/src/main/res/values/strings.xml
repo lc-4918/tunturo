@@ -809,4 +809,27 @@
     <string name="watch_send_done_title">Envoi à la montre terminé</string>
     <string name="watch_send_done_text">La montre a reçu les %1$d tuiles de %2$s.</string>
     <string name="watch_send_channel_name">Envoi à la montre</string>
+
+    <!-- Enregistrement de trace -->
+    <string name="recordings_folder_name">Mes parcours</string>
+    <string name="recording_default_name">Parcours</string>
+    <string name="recording_action_record">Enregistrer le parcours</string>
+    <string name="recording_action_pause">Mettre l\'enregistrement en pause</string>
+    <string name="recording_notice_started">Enregistrement démarré</string>
+    <string name="recording_notice_resumed">Enregistrement repris</string>
+    <string name="recording_notice_saved">Parcours rangé dans Mes parcours : %1$s</string>
+    <string name="recording_notice_empty">Rien à ranger : pas assez de points enregistrés</string>
+    <string name="recording_notice_failed">Le parcours n\'a pas pu être rangé, il reste en mémoire</string>
+    <string name="recording_notice_running">Enregistrement du parcours en cours.</string>
+    <string name="recording_notice_with">Enregistrement en cours. %1$s</string>
+    <string name="recording_resume_title">Reprendre l\'enregistrement</string>
+    <string name="recording_resume_same_segment">Continuer le même segment</string>
+    <string name="recording_resume_same_segment_hint">Un trait droit relie l\'endroit de la pause à celui de la reprise.</string>
+    <string name="recording_resume_new_segment">Continuer dans un nouveau segment</string>
+    <string name="recording_resume_new_segment_hint">Le même parcours, sans trait entre la pause et la reprise.</string>
+    <string name="recording_resume_new_track">Nouveau parcours</string>
+    <string name="recording_resume_new_track_hint">Le parcours précédent reste tel qu\'il est dans Mes parcours.</string>
+    <string name="settings_section_recording">Enregistrement de trace</string>
+    <string name="settings_label_recording_smooth_elevation">Lisser les altitudes sur le modèle de terrain</string>
+    <string name="settings_recording_smooth_elevation_hint">À chaque pause, les altitudes du GPS sont remplacées par celles du modèle de terrain (IGN en France, OpenTopography ailleurs). Il faut du réseau ; sans lui, l\'altitude du GPS est gardée.</string>
 </resources>

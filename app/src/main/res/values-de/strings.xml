@@ -807,4 +807,27 @@
     <string name="watch_send_done_title">Senden an die Uhr abgeschlossen</string>
     <string name="watch_send_done_text">Die Uhr hat die %1$d Kacheln von %2$s empfangen.</string>
     <string name="watch_send_channel_name">Senden an die Uhr</string>
+
+    <!-- Enregistrement de trace -->
+    <string name="recordings_folder_name">Meine Touren</string>
+    <string name="recording_default_name">Tour</string>
+    <string name="recording_action_record">Tour aufzeichnen</string>
+    <string name="recording_action_pause">Aufzeichnung pausieren</string>
+    <string name="recording_notice_started">Aufzeichnung gestartet</string>
+    <string name="recording_notice_resumed">Aufzeichnung fortgesetzt</string>
+    <string name="recording_notice_saved">Tour in Meine Touren gespeichert: %1$s</string>
+    <string name="recording_notice_empty">Nichts zu speichern: zu wenige Punkte aufgezeichnet</string>
+    <string name="recording_notice_failed">Die Tour konnte nicht gespeichert werden, sie bleibt im Speicher</string>
+    <string name="recording_notice_running">Touraufzeichnung läuft.</string>
+    <string name="recording_notice_with">Aufzeichnung läuft. %1$s</string>
+    <string name="recording_resume_title">Aufzeichnung fortsetzen</string>
+    <string name="recording_resume_same_segment">Im selben Segment fortfahren</string>
+    <string name="recording_resume_same_segment_hint">Eine gerade Linie verbindet den Ort der Pause mit dem der Fortsetzung.</string>
+    <string name="recording_resume_new_segment">In einem neuen Segment fortfahren</string>
+    <string name="recording_resume_new_segment_hint">Dieselbe Tour, ohne Linie zwischen Pause und Fortsetzung.</string>
+    <string name="recording_resume_new_track">Neue Tour</string>
+    <string name="recording_resume_new_track_hint">Die vorherige Tour bleibt unverändert in Meine Touren.</string>
+    <string name="settings_section_recording">Touraufzeichnung</string>
+    <string name="settings_label_recording_smooth_elevation">Höhen mit dem Geländemodell glätten</string>
+    <string name="settings_recording_smooth_elevation_hint">Bei jeder Pause werden die GPS-Höhen durch die des Geländemodells ersetzt (IGN in Frankreich, sonst OpenTopography). Dafür ist ein Netz nötig; ohne Netz bleibt die GPS-Höhe erhalten.</string>
 </resources>

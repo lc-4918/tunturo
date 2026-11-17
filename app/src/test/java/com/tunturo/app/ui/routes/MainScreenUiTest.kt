@@ -29,6 +29,7 @@ import com.tunturo.app.data.db.BasemapControlMode
 import com.tunturo.app.data.db.LayerEntity
 import com.tunturo.app.data.db.SettingsEntity
 import com.tunturo.app.location.LocationHub
+import com.tunturo.app.location.TrackRecorder
 import com.tunturo.app.location.TrackWatch
 import com.tunturo.app.ui.planner.StepTarget
 import com.tunturo.app.ui.components.MapController
@@ -433,6 +434,36 @@ class MainScreenUiTest {
         assertFalse("un seul bandeau a la fois", texte(R.string.position_notice_auto_on))
 
         attend { !texte(R.string.position_notice_centered) }
+    }
+
+    // ---------- L'enregistrement de trace : un seul bouton, deux etats ----------
+
+    /**
+     * **Un seul bouton, deux etats.** En enregistrement, il dit "mettre en pause" ; l'appui met en pause,
+     * range le parcours - ici rien a ranger, aucun point n'ayant ete recu - et le bouton revient a
+     * "enregistrer". Un appui de plus ouvre la boite de reprise et ses trois choix.
+     *
+     * L'enregistrement est demarre directement sur [TrackRecorder] : le demarrage par le bouton demande
+     * l'autorisation de localisation, que le test ne peut pas accorder a l'ecran.
+     */
+    @Test fun `le bouton d'enregistrement met en pause, puis propose comment reprendre`() {
+        reglages()
+        TrackRecorder.resetForTest()
+        compose.runOnUiThread { TrackRecorder.start() }
+        ecran()
+        attend { affiche(R.string.recording_action_pause) }
+        assertFalse("un seul bouton", affiche(R.string.recording_action_record))
+
+        compose.onNodeWithContentDescription(libelle(R.string.recording_action_pause)).performClick()
+        attend { affiche(R.string.recording_action_record) }
+        attend { texte(R.string.recording_notice_empty) }
+
+        compose.onNodeWithContentDescription(libelle(R.string.recording_action_record)).performClick()
+        attend { texte(R.string.recording_resume_title) }
+        assertTrue(texte(R.string.recording_resume_same_segment))
+        assertTrue(texte(R.string.recording_resume_new_segment))
+        assertTrue(texte(R.string.recording_resume_new_track))
+        TrackRecorder.resetForTest()
     }
 
     // ---------- Le calcul d'itineraire : un seul bouton, et deux appuis pour le perdre ----------

@@ -40,6 +40,8 @@ import com.tunturo.app.domain.geo.FirstAnswer
 import com.tunturo.app.domain.geo.FixAge
 import com.tunturo.app.location.LocationHub
 import com.tunturo.app.location.LocationService
+import com.tunturo.app.location.TrackRecorder
+import com.tunturo.app.domain.geo.RecordingPhase
 import com.tunturo.app.ui.components.MapController
 import com.tunturo.app.ui.routes.MapFollow
 import kotlin.coroutines.resume
@@ -242,6 +244,8 @@ class LocationControls internal constructor(
      */
     fun stopGps() {
         startedForFollow = false
+        // Un enregistrement en cours garde le capteur : c'est lui qui le nourrit (cf. TrackRecorder).
+        if (TrackRecorder.recording.value.phase == RecordingPhase.RECORDING) return
         LocationHub.stopRequestedByUser()
         LocationService.stop(ctx)
     }
@@ -489,6 +493,21 @@ class LocationControls internal constructor(
     fun allowBackgroundTracking() {
         LocationHub.allowBackgroundTracking()
         if (gpsActive) LocationService.start(ctx)
+    }
+
+    /**
+     * Le capteur pour un enregistrement de trace : allume s'il ne l'est pas, et au premier plan, avec sa
+     * notification - un enregistrement se fait telephone en poche, ecran eteint. Faux quand la
+     * localisation du telephone est eteinte : la boite qui propose de l'allumer s'ouvre alors.
+     */
+    fun startForRecording(): Boolean {
+        if (!LocationManagerCompat.isLocationEnabled(locationManager)) {
+            showDisabledDialog = true
+            return false
+        }
+        LocationHub.allowBackgroundTracking()
+        if (gpsActive) LocationService.start(ctx) else startGps()
+        return true
     }
 
     /**

@@ -807,4 +807,27 @@
     <string name="watch_send_done_title">Invio all\'orologio completato</string>
     <string name="watch_send_done_text">L\'orologio ha ricevuto le %1$d tessere di %2$s.</string>
     <string name="watch_send_channel_name">Invio all\'orologio</string>
+
+    <!-- Enregistrement de trace -->
+    <string name="recordings_folder_name">I miei percorsi</string>
+    <string name="recording_default_name">Percorso</string>
+    <string name="recording_action_record">Registra il percorso</string>
+    <string name="recording_action_pause">Metti in pausa la registrazione</string>
+    <string name="recording_notice_started">Registrazione avviata</string>
+    <string name="recording_notice_resumed">Registrazione ripresa</string>
+    <string name="recording_notice_saved">Percorso salvato in I miei percorsi: %1$s</string>
+    <string name="recording_notice_empty">Niente da salvare: punti registrati insufficienti</string>
+    <string name="recording_notice_failed">Impossibile salvare il percorso, resta in memoria</string>
+    <string name="recording_notice_running">Registrazione del percorso in corso.</string>
+    <string name="recording_notice_with">Registrazione in corso. %1$s</string>
+    <string name="recording_resume_title">Riprendi la registrazione</string>
+    <string name="recording_resume_same_segment">Continua lo stesso segmento</string>
+    <string name="recording_resume_same_segment_hint">Una linea retta collega il punto della pausa a quello della ripresa.</string>
+    <string name="recording_resume_new_segment">Continua in un nuovo segmento</string>
+    <string name="recording_resume_new_segment_hint">Lo stesso percorso, senza linea tra la pausa e la ripresa.</string>
+    <string name="recording_resume_new_track">Nuovo percorso</string>
+    <string name="recording_resume_new_track_hint">Il percorso precedente resta così com\'è in I miei percorsi.</string>
+    <string name="settings_section_recording">Registrazione del percorso</string>
+    <string name="settings_label_recording_smooth_elevation">Leviga le altitudini con il modello del terreno</string>
+    <string name="settings_recording_smooth_elevation_hint">A ogni pausa, le altitudini del GPS sono sostituite da quelle del modello del terreno (IGN in Francia, OpenTopography altrove). Serve la rete; senza, resta l\'altitudine del GPS.</string>
 </resources>

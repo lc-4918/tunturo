@@ -1012,6 +1012,17 @@ class MigrationsTest {
         db.close()
     }
 
+    /** Le lissage des altitudes enregistrees arrive eteint : il fait partir des requetes vers un tiers. */
+    @Test fun `78 vers 79 ajoute le lissage des altitudes enregistrees, eteint`() {
+        val db = freshDb("m7879")
+        db.execSQL("CREATE TABLE settings (id INTEGER PRIMARY KEY NOT NULL)")
+        db.execSQL("INSERT INTO settings (id) VALUES (1)")
+        db.execSQL(MigrationSql.ADD_RECORDING_SMOOTH_ELEVATION)
+        assertEquals(0, scalar(db, "SELECT recordingSmoothElevation FROM settings") { it.getInt(0) })
+        assertFalse(SettingsEntity().recordingSmoothElevation)
+        db.close()
+    }
+
     // ---------- La base reelle s'ouvre et porte le schema courant ----------
 
     /**

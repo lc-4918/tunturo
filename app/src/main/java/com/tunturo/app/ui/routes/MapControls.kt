@@ -1,5 +1,8 @@
 package com.tunturo.app.ui.routes
 
+import com.tunturo.app.ui.recording.RecordButtonIcon
+import com.tunturo.app.ui.recording.RecordingControls
+import com.tunturo.app.ui.recording.recordingNoticeText
 import androidx.compose.material3.MaterialTheme
 import com.tunturo.app.data.db.BasemapControlMode
 import com.tunturo.app.ui.offline.RoutingDownloadIndicator
@@ -325,6 +328,8 @@ internal fun BoxScope.MapBottomRightControls(
     onPoiFilters: (PoiFilters) -> Unit,
     /** La mise de cote de la couche, a enregistrer (cf. MainViewModel.savePoiMasked). */
     onPoiMasked: (Boolean) -> Unit,
+    /** L'enregistrement de trace : son bouton, et le bandeau qui dit ce qu'il vient de faire. */
+    recording: RecordingControls,
     moveTick: Int,
     idleTick: Int,
     maxWidthPx: Int,
@@ -568,6 +573,19 @@ internal fun BoxScope.MapBottomRightControls(
          * ouvert, rouge quand on s'est écarté de la trace suivie, cloche armée - la bannière du haut dit
          * alors de combien, mais le bouton l'annonce déjà à qui regarde la carte.
          */
+        /*
+         * L'enregistrement de la trace : un seul bouton, deux etats. Rond rouge plein, fond allume : les
+         * positions s'enregistrent, et l'appui met en pause - le parcours se range alors dans "Mes
+         * parcours". Le symbole "enregistrer" sinon : l'appui demarre, ou demande comment reprendre.
+         *
+         * Au-dessus du tableau de bord : les deux servent pendant la sortie.
+         */
+        CoverableButton(coverTopPx) {
+            IconButton(
+                onClick = { recording.onTap(location) },
+                modifier = chrome.buttonBackground(recording.recording),
+            ) { RecordButtonIcon(recording.recording, chrome) }
+        }
         if (dashboardEnabled && !dashboardPanelShown) CoverableButton(coverTopPx) {
             IconButton(onClick = { onDashboardTap() }, modifier = chrome.buttonBackground(dashboardOpen)) {
                 Icon(
@@ -663,7 +681,27 @@ internal fun BoxScope.MapBottomRightControls(
         location.dismissPositionNotice()
     }
     val stopNotice by LocationHub.stopNotice.collectAsState()
-    if (positionNotice != null && stopNotice == null && !planner.expanded && !bottomPanelOpen) {
+    // Le bandeau de l'enregistrement, a la meme place : il l'emporte sur celui du recentrage - un parcours
+    // range dans la bibliotheque se dit plus qu'un recentrage, qui se voit sur la carte.
+    val recordingNotice = recording.notice
+    LaunchedEffect(recording.noticeStamp) {
+        if (recordingNotice == null) return@LaunchedEffect
+        delay(RecordingControls.NoticeMs)
+        recording.dismissNotice()
+    }
+    if (recordingNotice != null && stopNotice == null && !planner.expanded && !bottomPanelOpen) {
+        MapPromptBar(
+            text = recordingNoticeText(recordingNotice),
+            onClose = { recording.dismissNotice() },
+            modifier = Modifier.align(Alignment.BottomStart)
+                .padding(
+                    end = PositionNoticeEndGap,
+                    bottom = if (dashboardPx > 0) with(density) { dashboardPx.toDp() } + MapControlSpacing
+                        else maxOf(MapControlSpacing, navBottomDp),
+                )
+                .semantics { liveRegion = LiveRegionMode.Polite },
+        )
+    } else if (positionNotice != null && stopNotice == null && !planner.expanded && !bottomPanelOpen) {
         MapPromptBar(
             text = stringResource(
                 when (positionNotice) {

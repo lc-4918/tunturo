@@ -1,5 +1,8 @@
 package com.tunturo.app.ui.routes
 
+import com.tunturo.app.ui.recording.RecordingLineEffect
+import com.tunturo.app.ui.recording.RecordingResumeDialog
+import com.tunturo.app.ui.recording.rememberRecordingControls
 import com.tunturo.app.ui.offline.basemapLabel
 import com.tunturo.app.ui.offline.offlineDownloadAvailable
 import android.annotation.SuppressLint
@@ -245,6 +248,9 @@ fun MainScreen(
      * L'ecran n'en garde que ce qu'il AFFICHE - le symbole du repere, ci-dessous - et ce qu'il en lit.
      */
     val location = rememberLocationControls(controller)
+    // L'enregistrement de trace : un bouton de la colonne du pouce, sa boite de reprise, son trace en direct.
+    val recording = rememberRecordingControls(location)
+    RecordingLineEffect(controller, recording.segments, styleTick)
     // Ecran maintenu allume tant que le suivi tourne, si le reglage le demande (cf. KeepScreenOnEffect).
     // L'annonce d'un arret subi du suivi : voir la banniere posee avec celle de l'alerte d'eloignement.
     val stopNotice by LocationHub.stopNotice.collectAsState()
@@ -1161,6 +1167,7 @@ fun MainScreen(
                     poiFilters = poiFilters,
                     onPoiFilters = { vm.savePoiFilters(it) },
                     onPoiMasked = { vm.savePoiMasked(it) },
+                    recording = recording,
                     moveTick = moveTick,
                     idleTick = idleTick,
                     maxWidthPx = constraints.maxWidth,
@@ -1637,6 +1644,11 @@ fun MainScreen(
         currentPositionLabel = currentPositionLabel,
         onPickImage = { onImported -> dialogs.awaitImage(onImported); imagePicker.launch("image/*") },
         routeGpx = { name -> routeGpx(name) },
+    )
+    if (recording.showResumeDialog) RecordingResumeDialog(
+        dark = isDarkTheme(settings.theme),
+        onPick = { mode -> recording.onResume(mode, location) },
+        onDismiss = { recording.showResumeDialog = false },
     )
 }
 

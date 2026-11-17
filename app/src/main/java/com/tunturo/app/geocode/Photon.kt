@@ -16,7 +16,11 @@ import kotlin.math.log10
  * liste de propositions les lit d'un seul tenant ([label]) ; une infobulle trop étroite les rend ligne à
  * ligne plutôt que de tronquer l'adresse (cf. `ui/geocode/BubbleParts.kt`).
  */
-data class GeocodePlace(val lines: List<String>, val lon: Double, val lat: Double) {
+data class GeocodePlace(
+    val lines: List<String>, val lon: Double, val lat: Double,
+    /** La commune du lieu, quand le geocodeur la dit : de quoi nommer un parcours enregistre. */
+    val town: String? = null,
+) {
     /** Un lieu dont on ne connaît que le libellé, d'un seul tenant. */
     constructor(label: String, lon: Double, lat: Double) : this(listOf(label), lon, lat)
 
@@ -159,7 +163,7 @@ object Photon {
             // d'une locale francaise separerait a la fois les decimales et les deux valeurs ("44,56, 6,08").
             val lines = labelParts(f.properties)
                 .ifEmpty { listOf("%.5f, %.5f".format(java.util.Locale.US, lat, lon)) }
-            GeocodePlace(lines, lon, lat)
+            GeocodePlace(lines, lon, lat, townOf(f.properties))
         }
     }.getOrDefault(emptyList())
 
@@ -184,6 +188,15 @@ object Photon {
             listOfNotNull(p.housenumber, p.street).joinToString(" ").ifBlank { null },
             listOfNotNull(townLine, p.country).joinToString(", ").ifBlank { null },
         )
+    }
+
+    /**
+     * La commune d'une entree : celle ou elle se trouve, ou elle-meme quand c'est une commune - Photon
+     * range alors son nom dans `name`, de type "city", sans `city`. Null pour un sommet isole, un lac.
+     */
+    internal fun townOf(p: Props?): String? {
+        if (p == null) return null
+        return p.city?.takeIf { it.isNotBlank() } ?: p.name?.takeIf { p.type == "city" && it.isNotBlank() }
     }
 
     /** L'adresse d'une entrée sur une seule ligne, ses morceaux recollés (cf. [labelParts]). */
@@ -242,5 +255,7 @@ object Photon {
         val county: String? = null,
         val state: String? = null,
         val country: String? = null,
+        /** Le genre de l'entree : house, street, locality, district, city, county, state, country. */
+        val type: String? = null,
     )
 }

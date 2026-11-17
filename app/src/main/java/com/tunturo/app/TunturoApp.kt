@@ -16,6 +16,8 @@ import coil3.svg.SvgDecoder
 import com.tunturo.app.data.LocalePrefs
 import com.tunturo.app.data.repo.LocalImagePath
 import com.tunturo.app.data.repo.TunturoRepository
+import com.tunturo.app.location.RecordingSession
+import com.tunturo.app.location.TrackRecorder
 import com.tunturo.app.update.UpdateManager
 import com.tunturo.app.watch.WatchExportService
 import com.tunturo.app.watch.WatchExportSession
@@ -63,6 +65,12 @@ open class TunturoApp : Application(), SingletonImageLoader.Factory {
         WatchExportSession(scope, onStarted = { WatchExportService.start(this) })
     }
 
+    /**
+     * Les gestes de l'enregistrement de trace et le rangement des parcours. Ici pour la raison de
+     * [brouterData] : la pause peut venir de la notification, sans ecran, et le parcours doit se ranger.
+     */
+    val recordingSession: RecordingSession by lazy { RecordingSession(this, repository, scope) }
+
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(LocalePrefs.wrap(base))
     }
@@ -71,6 +79,9 @@ open class TunturoApp : Application(), SingletonImageLoader.Factory {
         super.onCreate()
         initMapEngine()
         repository = TunturoRepository(this)
+        // L'enregistrement de trace repris du disque AVANT que quiconque le lise : la carte qui s'ouvre
+        // doit retrouver le bouton dans l'etat ou on l'a laisse (cf. TrackRecorder).
+        TrackRecorder.attach(filesDir)
         // Les chemins d'images d'une sauvegarde Trailog designent le dossier de Trailog (cf. LocalImagePath).
         LocalImagePath.imagesDirectory = java.io.File(filesDir, "images")
         startBackgroundWork()

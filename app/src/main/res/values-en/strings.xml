@@ -807,4 +807,27 @@
     <string name="watch_send_done_title">Sending to watch finished</string>
     <string name="watch_send_done_text">The watch received the %1$d tiles of %2$s.</string>
     <string name="watch_send_channel_name">Sending to watch</string>
+
+    <!-- Enregistrement de trace -->
+    <string name="recordings_folder_name">My tracks</string>
+    <string name="recording_default_name">Track</string>
+    <string name="recording_action_record">Record track</string>
+    <string name="recording_action_pause">Pause recording</string>
+    <string name="recording_notice_started">Recording started</string>
+    <string name="recording_notice_resumed">Recording resumed</string>
+    <string name="recording_notice_saved">Track saved to My tracks: %1$s</string>
+    <string name="recording_notice_empty">Nothing to save: not enough points recorded</string>
+    <string name="recording_notice_failed">The track could not be saved, it stays in memory</string>
+    <string name="recording_notice_running">Track recording in progress.</string>
+    <string name="recording_notice_with">Recording in progress. %1$s</string>
+    <string name="recording_resume_title">Resume recording</string>
+    <string name="recording_resume_same_segment">Continue the same segment</string>
+    <string name="recording_resume_same_segment_hint">A straight line joins the place you paused to the place you resume.</string>
+    <string name="recording_resume_new_segment">Continue in a new segment</string>
+    <string name="recording_resume_new_segment_hint">The same track, with no line between the pause and the resume.</string>
+    <string name="recording_resume_new_track">New track</string>
+    <string name="recording_resume_new_track_hint">The previous track stays as it is in My tracks.</string>
+    <string name="settings_section_recording">Track recording</string>
+    <string name="settings_label_recording_smooth_elevation">Smooth elevations with the terrain model</string>
+    <string name="settings_recording_smooth_elevation_hint">At each pause, GPS elevations are replaced with terrain model ones (IGN in France, OpenTopography elsewhere). This needs a network; without one, the GPS elevation is kept.</string>
 </resources>

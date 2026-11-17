@@ -1398,7 +1398,9 @@ class MapController {
      * noir ou teinte par pente qu'il recouvre, sur un fond clair comme sombre. Pose juste au-dessus du
      * trace, et donc sous les epingles et le repere de position, comme lui.
      */
-    fun setRouteHighlight(pieces: List<List<Pair<Double, Double>>>, key: String = "planner") {
+    fun setRouteHighlight(
+        pieces: List<List<Pair<Double, Double>>>, key: String = "planner", color: String = RouteHighlightColor,
+    ) {
         val s = style ?: return
         val hl = hlId(key)
         val hlCasing = hlCasingId(key)
@@ -1419,7 +1421,7 @@ class MapController {
             PropertyFactory.lineColor("#FFFFFF"), highlightWidth(HighlightWidth.casingStops(trackWidthDp)),
             PropertyFactory.lineCap("round"), PropertyFactory.lineJoin("round"))
         val ligne = LineLayer(hl, hlSrc).withProperties(
-            PropertyFactory.lineColor(RouteHighlightColor), highlightWidth(HighlightWidth.lineStops(trackWidthDp)),
+            PropertyFactory.lineColor(color), highlightWidth(HighlightWidth.lineStops(trackWidthDp)),
             PropertyFactory.lineCap("round"), PropertyFactory.lineJoin("round"))
         val dessous = routeBelow(s)
         if (dessous != null) { s.addLayerBelow(casing, dessous); s.addLayerBelow(ligne, dessous) }

@@ -85,14 +85,14 @@ visualiser sur une carte avec un profil altimétrique synchronisé, sans dépend
 - **Recherche d'un lieu ou d'une adresse**, le lieu trouvé se posant sur la carte avec son adresse.
 - **Calcul d'itinéraire** de 2 à 25 étapes, pour cinq disciplines, avec profil, surfaces et **recalcul à chaque changement**.
 - **Étapes numérotées sur la carte** : A et B aux extrémités, des pastilles numérotées entre les deux, déplaçables à la main ou supprimables.
-- **Votre position comme étape**, remise à jour à chaque réouverture du calcul d'itinéraire, ou à la demande par le bouton *Actualiser*.
+- **Votre position comme étape**, recalculée toute seule dès que vous vous êtes déplacé de plus de 50 m ; un bouton *Actualiser* apparaît quand un itinéraire n'a pu être calculé faute de réseau et de données hors ligne.
 - **Départ, arrivée ou étape en trois gestes** depuis toute infobulle, ou depuis un appui long n'importe où sur la carte.
 - **Appui long sur la carte** : l'adresse du lieu, et la distance et la durée pour l'atteindre depuis votre position ou un autre point.
 - **Mesure sur une trace** : la distance entre deux points d'une trace affichée, le long du parcours, sans réseau.
 - **Alerte d'éloignement** : choisissez la trace suivie, et un bandeau, et un son si vous le voulez, vous prévient dès que vous vous en écartez.
 - **Enregistrement de trace** : un seul bouton, qui enregistre ou non ; chaque pause range le parcours dans *Mes parcours*, nommé d'après ses communes de départ et d'arrivée.
 - **Tableau de bord pendant le suivi** : vitesse, temps et distance faits et restants, dénivelés positif et négatif faits et à venir.
-- **Le suivi continue écran éteint**, avec une notification permanente et une option pour garder l'écran allumé.
+- **Le suivi continue écran éteint**, avec une notification permanente - discrète tant que l'application est à l'écran - et une option pour garder l'écran allumé.
 - **Flèche de cap** qui suit votre direction de déplacement plutôt que la boussole.
 - **Envoi à une montre Garmin** : le couloir d'une trace, en tuiles de carte, par Garmin Connect.
 - **Mises à jour intégrées**, et interface en français, anglais, allemand, espagnol, catalan, basque, italien et portugais.

@@ -82,7 +82,6 @@ import com.tunturo.app.data.db.CompositeSortOrder
 import com.tunturo.app.data.db.DefaultDemOpacityPct
 import com.tunturo.app.data.db.ProviderEntity
 import com.tunturo.app.data.db.SettingsEntity
-import com.tunturo.app.map.compositeBasemapId
 import com.tunturo.app.map.flagAssetModel
 import com.tunturo.app.map.flagCodeFor
 import com.tunturo.app.map.offline.OfflineThumbnails
@@ -115,8 +114,6 @@ private fun margesDePaire(premier: Boolean) = PaddingValues(
     /** Ouvre le cadrage d'une zone a telecharger, sur la carte (cf. AppRoot). */
     onDownloadArea: () -> Unit = {},
 ) {
-    val mapProviders = providers.filter { it.type != "DEM" && !it.transparent && it.enabled }
-    val mapComposites = composites.filter { it.enabled }
     // Le Relief (type DEM) est un fournisseur standard (URL, activation, edition) : il suit les memes
     // regles que les autres et figure donc dans "Gerer les fournisseurs", pas dans les fonds MBTILES.
     val basemapEntries = providers.filter { it.type == "MBTILES" }
@@ -129,19 +126,15 @@ private fun margesDePaire(premier: Boolean) = PaddingValues(
     val mbtilesDirPath = cur.mbtilesDir.ifBlank { File(ctx.filesDir, "mbtiles").absolutePath }
 
     /*
-     * Le fond affiche par defaut, et l'aspect du panneau qui sert a en changer.
+     * Plus de "fond par defaut" a choisir ici : le fond affiche au demarrage est celui qu'on regardait en
+     * quittant l'application. Le panneau de la carte l'enregistre a chaque choix (cf.
+     * MainViewModel.selectBasemap), et c'est aussi celui que "Telecharger" emporte.
      *
-     * Les deux curseurs viennent de l'onglet Carte, ou ils formaient une rubrique "Gestionnaire de fonds
-     * de plan" avec l'interrupteur qui POSE son bouton. Celui-ci est reste la-bas, parmi les boutons de
-     * la carte ; ce qui regle le panneau LUI-MEME a suivi les fonds de plan qu'il donne a choisir, et
-     * c'est ici qu'on les a sous les yeux.
+     * Reste l'aspect du panneau qui sert a en changer, en mode expert : sa largeur et son opacite.
      */
-    SectionTitle(stringResource(R.string.settings_section_default_basemap), tight = true)
-    SettingsCard {
-        BasemapPickRow(mapProviders, mapComposites, cur.defaultBasemapId) { vm.save(cur.copy(defaultBasemapId = it)) }
-        // L'aspect du panneau : reglage fin, mode expert seulement.
-        if (cur.expertMode) {
-            RowDivider()
+    if (cur.expertMode) {
+        SectionTitle(stringResource(R.string.settings_section_layer_manager), tight = true)
+        SettingsCard {
             SliderRow(
                 stringResource(R.string.settings_label_panel_width), "${cur.basemapControlWidthPct} %",
                 fractionOf(cur.basemapControlWidthPct, 20, 90),
@@ -159,10 +152,9 @@ private fun margesDePaire(premier: Boolean) = PaddingValues(
         }
     }
 
-    // En deuxieme, juste apres le fond par defaut : c'est la rubrique qu'on rouvre le plus souvent apres
-    // la premiere visite (activer un fond, y coller une cle d'API), la ou "Fonds de plan personnalises"
-    // ci-dessous ne sert qu'aux quelques fonds qu'on a soi-meme apportes.
-    SectionTitle(stringResource(R.string.settings_section_providers))
+    // En tete de l'onglet : c'est la rubrique qu'on rouvre le plus souvent (activer un fond, y coller une
+    // cle d'API), la ou les fonds hors ligne ci-dessous ne servent qu'aux quelques fonds qu'on a apportes.
+    SectionTitle(stringResource(R.string.settings_section_providers), tight = !cur.expertMode)
     SettingsCard {
         SetRow(
             stringResource(R.string.action_manage_providers),
@@ -174,13 +166,25 @@ private fun margesDePaire(premier: Boolean) = PaddingValues(
     }
 
     /*
-     * Fonds de plan personnalises : ce qu'on a soi-meme apporte a l'application - importe ou compose -,
-     * a la difference des fonds qu'elle fournit (rubrique Fournisseurs, juste au-dessus). "Ajouter" et
-     * "installes" etaient deux rubriques pour une seule matiere ; importer et composer rejoignent
-     * desormais ce qu'ils remplissent, en en-tete de la liste qu'ils alimentent.
+     * Fonds de plan hors ligne : ce qu'on a soi-meme apporte a l'application - importe, telecharge ou
+     * compose -, a la difference des fonds en ligne qu'elle fournit (rubrique juste au-dessus). La liste
+     * vient en tete, et les gestes qui l'alimentent dessous.
      */
     SectionTitle(stringResource(R.string.settings_section_custom_basemaps))
     SettingsCard {
+        // La liste d'abord : c'est elle qu'on vient consulter. Ce qui l'alimente - importer, telecharger,
+        // composer - vient dessous.
+        basemapEntries.forEachIndexed { i, p ->
+            if (i > 0) RowDivider()
+            val onDelete: (() -> Unit)? = if (!p.builtin) { { vm.deleteProvider(p) } } else null
+            ProviderRow(p, onSave = vm::saveProvider, onDelete = onDelete, mbtilesDirPath = mbtilesDirPath)
+        }
+        composites.forEachIndexed { i, c ->
+            if (i > 0 || basemapEntries.isNotEmpty()) RowDivider()
+            CompositeRow(c, onToggle = { vm.saveComposite(c.copy(enabled = it)) },
+                onEdit = { editingComposite = c }, onDelete = { vm.deleteComposite(c) })
+        }
+        if (basemapEntries.isNotEmpty() || composites.isNotEmpty()) RowDivider()
         // Les deux facons d'apporter un fond : l'importer, ou le telecharger depuis celui qu'on affiche -
         // une zone qu'on cadre sur la carte. Composer vient en dessous : il assemble ce qu'on a deja.
         val telechargeable = offlineDownloadAvailable(cur.defaultBasemapId, providers)
@@ -227,19 +231,6 @@ private fun margesDePaire(premier: Boolean) = PaddingValues(
         CardButton(
             stringResource(R.string.action_create_composite), painterResource(R.drawable.ic_settings_layers),
         ) { creatingComposite = true }
-        if (basemapEntries.isNotEmpty() || composites.isNotEmpty()) {
-            RowDivider()
-            basemapEntries.forEachIndexed { i, p ->
-                if (i > 0) RowDivider()
-                val onDelete: (() -> Unit)? = if (!p.builtin) { { vm.deleteProvider(p) } } else null
-                ProviderRow(p, onSave = vm::saveProvider, onDelete = onDelete, mbtilesDirPath = mbtilesDirPath)
-            }
-            composites.forEachIndexed { i, c ->
-                if (i > 0 || basemapEntries.isNotEmpty()) RowDivider()
-                CompositeRow(c, onToggle = { vm.saveComposite(c.copy(enabled = it)) },
-                    onEdit = { editingComposite = c }, onDelete = { vm.deleteComposite(c) })
-            }
-        }
     }
 
     /*
@@ -404,23 +395,6 @@ private fun margesDePaire(premier: Boolean) = PaddingValues(
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             items.forEach { p -> DropdownMenuItem(text = { ProviderOptionLabel(p) }, onClick = { onSelect(p.id); open = false }) }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-/** Fond affiche au demarrage : une ligne de carte, le nom en accent et le menu de tous les fonds. */
-@Composable private fun ColumnScopeMarker.BasemapPickRow(
-    providers: List<ProviderEntity>, composites: List<CompositeEntity>, current: String, onSelect: (String) -> Unit,
-) {
-    var open by remember { mutableStateOf(false) }
-    val currentLabel = providers.firstOrNull { it.id == current }?.name
-        ?: composites.firstOrNull { compositeBasemapId(it.id) == current }?.name
-        ?: current
-    SetRow(stringResource(R.string.settings_label_default_basemap), onClick = { open = true }) {
-        PickValue(currentLabel, open, { open = false }) {
-            providers.forEach { p -> DropdownMenuItem(text = { ProviderOptionLabel(p) }, onClick = { onSelect(p.id); open = false }) }
-            composites.forEach { c -> DropdownMenuItem(text = { Text(c.name) }, onClick = { onSelect(compositeBasemapId(c.id)); open = false }) }
         }
     }
 }

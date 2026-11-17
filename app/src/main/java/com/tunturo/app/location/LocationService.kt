@@ -239,6 +239,15 @@ class LocationService : Service() {
 
     /** L'application passe en arriere-plan : en mode "ecran seul", le suivi s'arrete sans rien annoncer. */
     private val appLifecycleObserver = LifecycleEventObserver { _, event ->
+        // L'application revient a l'ecran ou le quitte - ecran eteint compris, l'activite s'arretant avec
+        // lui : la notification passe de discrete a normale, et inversement (cf. TrackingNotificationChannel).
+        // On reposte une notification deja posee, sans redemarrer de service : aucune restriction
+        // d'arriere-plan ne s'applique.
+        if (inForeground && (event == Lifecycle.Event.ON_START || event == Lifecycle.Event.ON_STOP)) {
+            val visible = event == Lifecycle.Event.ON_START
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            runCatching { nm?.notify(NOTIF_ID, notification(notice.value, visible)) }
+        }
         if (event == Lifecycle.Event.ON_STOP && !inForeground) {
             FixLog.write(this) { "application en arriere-plan - suivi ecran seul arrete" }
             // Un enregistrement en cours se met en pause, et se range : le capteur va s'arreter.
@@ -1035,8 +1044,9 @@ class LocationService : Service() {
 
     // ---------- notification ----------
 
-    private fun notification(texte: String?): Notification {
+    private fun notification(texte: String?, visible: Boolean = appVisible()): Notification {
         ensureChannel()
+        ensureQuietChannel()
         val alerte = stoppedAlertText
         val ouvrir = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java).apply {
@@ -1056,7 +1066,12 @@ class LocationService : Service() {
         // s'affiche en bandeau), le temps que le suivi reprenne. Elle ne sonne qu'a sa premiere pose.
         val sonne = alerte != null && !stoppedAlertRung
         if (alerte != null) stoppedAlertRung = true
-        return NotificationCompat.Builder(this, if (alerte != null) ALERT_CHANNEL_ID else CHANNEL_ID)
+        val channel = when (TrackingNotificationChannel.channelFor(visible, alerting = alerte != null)) {
+            TrackingNotificationChannel.ALERT -> ALERT_CHANNEL_ID
+            TrackingNotificationChannel.QUIET -> QUIET_CHANNEL_ID
+            TrackingNotificationChannel.NORMAL -> CHANNEL_ID
+        }
+        return NotificationCompat.Builder(this, channel)
             .setSmallIcon(R.drawable.ic_stat_location)
             .setContentTitle(getString(R.string.location_notice_title))
             .setContentText(body)
@@ -1067,7 +1082,11 @@ class LocationService : Service() {
             .setOngoing(true)
             .setSilent(alerte == null)
             .setOnlyAlertOnce(!sonne)
-            .setPriority(if (alerte != null) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_LOW)
+            .setPriority(when (channel) {
+                ALERT_CHANNEL_ID -> NotificationCompat.PRIORITY_HIGH
+                QUIET_CHANNEL_ID -> NotificationCompat.PRIORITY_MIN
+                else -> NotificationCompat.PRIORITY_LOW
+            })
             .setCategory(if (alerte != null) NotificationCompat.CATEGORY_ERROR else NotificationCompat.CATEGORY_SERVICE)
             .build()
     }
@@ -1084,8 +1103,20 @@ class LocationService : Service() {
         )
     }
 
+    /** Le canal discret, application a l'ecran : importance minimale, sans icone dans la barre d'etat. */
+    private fun ensureQuietChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+        if (nm.getNotificationChannel(QUIET_CHANNEL_ID) != null) return
+        nm.createNotificationChannel(
+            NotificationChannel(QUIET_CHANNEL_ID, getString(R.string.location_channel_quiet_name), NotificationManager.IMPORTANCE_MIN)
+                .apply { setShowBadge(false) },
+        )
+    }
+
     companion object {
         private const val CHANNEL_ID = "suivi-position"
+        private const val QUIET_CHANNEL_ID = "suivi-position-discret"
         private const val ALERT_CHANNEL_ID = "suivi-position-arrete"
         private const val NOTIF_ID = 4918
         private const val ALERT_NOTIF_ID = 4919

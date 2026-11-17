@@ -337,12 +337,10 @@
     <string name="settings_basemap_control_width">Largura do painel: %1$d%%</string>
     <string name="settings_basemap_control_opacity">Opacidade do painel: %1$d%%</string>
     <string name="settings_bubble_opacity">Opacidade: %1$d%%</string>
-    <string name="settings_section_default_basemap">Mapas base</string>
-    <string name="settings_label_default_basemap">Mapa base predefinido</string>
     <string name="settings_section_mbtiles_folder">Pasta de MBTiles</string>
     <string name="settings_app_folder_default">Pasta da app (predefinida)</string>
     <string name="settings_section_basemaps">Mapas base</string>
-    <string name="settings_section_providers">Fornecedores</string>
+    <string name="settings_section_providers">Mapas de fundo online</string>
     <string name="settings_basemap_label">Mapa base</string>
     <string name="settings_field_mbtiles_file">Ficheiro MBTiles</string>
     <string name="settings_field_name">Nome</string>
@@ -465,7 +463,7 @@
     <string name="settings_group_gps">GPS</string>
     <string name="settings_section_map_buttons">Botões do mapa</string>
     <string name="settings_group_application">Aplicação</string>
-    <string name="settings_section_custom_basemaps">Mapas base personalizados</string>
+    <string name="settings_section_custom_basemaps">Mapas de fundo offline</string>
     <string name="settings_section_services">Serviços</string>
     <string name="settings_section_profile_calc">Cálculo do perfil</string>
     <string name="settings_section_personalisation">Personalização</string>
@@ -635,7 +633,6 @@
     <string name="routing_zones_none">Nenhuma zona transferida</string>
     <string name="routing_zones_hint">Onde uma zona está transferida, o BRouter calcula a rota no telefone, sem rede.</string>
     <string name="routing_zones_add">Transferir zonas</string>
-    <string name="routing_zones_add_sub">Países e grandes regiões</string>
     <string name="routing_zones_available">Zonas disponíveis</string>
     <string name="routing_zones_all_downloaded">Todas as zonas estão transferidas</string>
     <string name="routing_zone_tiles">Quadrados de dados</string>
@@ -701,17 +698,15 @@
     <string name="dash_title">Painel</string>
     <string name="dash_reset_title">Repor os contadores?</string>
     <string name="dash_reset_text">A distância, a duração e o desnível da saída voltam a zero.</string>
-    <string name="settings_group_dashboard">Painel</string>
     <string name="content_desc_dashboard">Painel</string>
     <string name="settings_section_dashboard_fields">Campos mostrados</string>
     <string name="dash_eta">Tempo rest.</string>
     <string name="dash_set_eta">Tempo restante estimado</string>
-    <string name="settings_dashboard_off">Ative o botão do painel em Botões e gestos, secção Posição.</string>
     <string name="offline_config_title_track">Transferência do mapa ao longo do trilho</string>
     <string name="offline_config_track_hint">Transfere o mapa de fundo atual de cada lado do trilho, na largura escolhida.</string>
     <string name="offline_config_section_label">Parte do trilho</string>
     <string name="offline_config_section_value">km %1$d - %2$d</string>
-    <string name="settings_offline_routing_info">São apenas os dados regionais do motor de itinerários (BRouter), para calcular um itinerário sem rede. Nem mapas de fundo nem trilhos: o mapa offline transfere-se à parte.</string>
+    <string name="settings_offline_routing_info">Dados regionais do cálculo de itinerários sem rede</string>
     <string name="settings_updates_info">Auto: ao arrancar, o Tunturo verifica se foi publicada uma nova versão e propõe instalá-la. Manual: a verificação só é feita quando a pedir.</string>
     <string name="settings_expert_on">Modo especialista ativado</string>
     <string name="settings_expert_off">Modo especialista desativado</string>
@@ -830,4 +825,7 @@
     <string name="settings_section_recording">Gravação de percurso</string>
     <string name="settings_label_recording_smooth_elevation">Suavizar as altitudes com o modelo do terreno</string>
     <string name="settings_recording_smooth_elevation_hint">Em cada pausa, as altitudes do GPS são substituídas pelas do modelo do terreno (IGN em França, OpenTopography noutros locais). É preciso rede; sem ela, mantém-se a altitude do GPS.</string>
+    <string name="settings_sw_recording">Gravação</string>
+    <string name="settings_section_layer_manager">Gestor de camadas</string>
+    <string name="location_channel_quiet_name">Seguimento da posição (app aberta)</string>
 </resources>

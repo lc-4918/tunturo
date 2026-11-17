@@ -87,8 +87,8 @@ class ExpertModeUiTest {
         compose.waitForIdle()
         val expert = R.string.settings_sw_gps_last_fix
         // Hors mode expert, la rubrique "Suivi de la position" entiere est cachee : on se place sur le
-        // repere de position, la rubrique voisine, toujours visible.
-        defileVers(app.getString(R.string.settings_section_gps_marker).uppercase())
+        // repere de position, toujours visible (sans titre hors mode expert).
+        defileVers(app.getString(R.string.settings_label_gps_marker_size))
         assertTrue("cachee hors mode expert", !present(expert))
         assertTrue("suivi de la position cache", !present(R.string.settings_sw_gps_recenter))
 
@@ -99,7 +99,7 @@ class ExpertModeUiTest {
         assertTrue("enregistre en base", runBlocking { app.repository.settings.get()!!.expertMode })
 
         septAppuis()
-        defileVers(app.getString(R.string.settings_section_gps_marker).uppercase())
+        defileVers(app.getString(R.string.settings_label_gps_marker_size))
         compose.waitUntil(5_000) { !present(expert) }
         assertTrue(present(R.string.settings_expert_off))
     }
@@ -118,12 +118,11 @@ class ExpertModeUiTest {
     /** Onglet Carte : champs du tableau de bord, points d'interet et profil altimetrique caches hors mode expert. */
     @Test fun `la carte cache ses groupes experts hors mode expert`() {
         carteAvecTableauDeBord(expert = false)
-        // Le groupe du tableau de bord est le dernier hors mode expert : en y defilant, on est en bout de liste.
-        defileVers(app.getString(R.string.settings_group_dashboard))
+        // Le repere de position est la derniere carte hors mode expert : en y defilant, on est en bout de liste.
+        defileVers(app.getString(R.string.settings_label_gps_marker_size))
         fun presentText(texte: String) =
             compose.onAllNodesWithText(texte, substring = true).fetchSemanticsNodes().isNotEmpty()
         assertFalse("champs affiches", presentText(app.getString(R.string.settings_section_dashboard_fields).uppercase()))
-        // Le titre du groupe est aussi le libelle de l'interrupteur de Boutons et gestes : on vise son contenu.
         assertFalse("points d'interet", present(R.string.settings_label_bubble_position))
         assertFalse("profil altimetrique", present(R.string.settings_group_elevation_profile))
     }
@@ -134,6 +133,37 @@ class ExpertModeUiTest {
         defileVers(app.getString(R.string.settings_group_pois))
         defileVers(app.getString(R.string.settings_group_elevation_profile))
         assertTrue("profil altimetrique", present(R.string.settings_group_elevation_profile))
+    }
+
+    /**
+     * Hors mode expert, l'onglet Carte n'a plus ni groupe ni rubrique : une carte par bouton de la carte,
+     * dont celle de l'enregistrement, qui ecrit son reglage.
+     */
+    @Test fun `la carte simple n'a ni groupe ni rubrique, et porte l'interrupteur d'enregistrement`() {
+        carteAvecTableauDeBord(expert = false)
+        assertFalse("pas de groupe Boutons et gestes", present(R.string.settings_section_map_controls))
+        defileVers(app.getString(R.string.settings_sw_recording))
+        compose.onNodeWithText(app.getString(R.string.settings_sw_recording)).performClick()
+        compose.waitUntil(5_000) { runBlocking { app.repository.settings.get()?.recordingButtonEnabled == false } }
+        defileVers(app.getString(R.string.settings_label_gps_marker_size))
+        assertFalse("pas de rubrique du repere",
+            compose.onAllNodesWithText(app.getString(R.string.settings_section_gps_marker).uppercase())
+                .fetchSemanticsNodes().isNotEmpty())
+    }
+
+    /** L'alerte d'eloignement se deplie sous l'interrupteur du tableau de bord, et seulement allume. */
+    @Test fun `l'interrupteur du tableau de bord deplie ses reglages`() {
+        runBlocking {
+            app.repository.ensureSeed()
+            val s = app.repository.settings.get() ?: SettingsEntity()
+            app.repository.settings.upsert(s.copy(expertMode = false, offTrackAlertEnabled = false))
+        }
+        compose.setContent { MaterialTheme { SettingsScreen(onBack = {}) } }
+        compose.waitForIdle()
+        defileVers(app.getString(R.string.settings_sw_track_follow))
+        assertFalse("replie, eteint", present(R.string.settings_sw_off_track_vibrate))
+        compose.onNodeWithText(app.getString(R.string.settings_sw_track_follow)).performClick()
+        compose.waitUntil(5_000) { present(R.string.settings_sw_off_track_vibrate) }
     }
 
     /** Ouvre l'onglet portant ce libelle, une fois l'ecran compose. */
@@ -178,6 +208,29 @@ class ExpertModeUiTest {
         assertTrue("sauvegarde", present(R.string.settings_backup_create))
     }
 
+    private fun presentTitle(res: Int) =
+        compose.onAllNodesWithText(app.getString(res).uppercase(), substring = true).fetchSemanticsNodes().isNotEmpty()
+
+    /**
+     * Tuiles : plus de fond par defaut a choisir (c'est le dernier consulte), des rubriques "en ligne" et
+     * "hors ligne", et le gestionnaire de couches en mode expert seulement.
+     */
+    @Test fun `les tuiles n'ont plus de fond par defaut, et leur panneau est un reglage expert`() {
+        reglagesEnMode(expert = false)
+        onglet(R.string.settings_tab_tiles)
+        compose.waitUntil(5_000) { presentTitle(R.string.settings_section_providers) }
+        assertTrue("hors ligne", presentTitle(R.string.settings_section_custom_basemaps))
+        assertFalse("gestionnaire de couches", presentTitle(R.string.settings_section_layer_manager))
+        assertFalse("largeur du panneau", present(R.string.settings_label_panel_width))
+    }
+
+    @Test fun `en mode expert, les tuiles reglent le gestionnaire de couches`() {
+        reglagesEnMode(expert = true)
+        onglet(R.string.settings_tab_tiles)
+        compose.waitUntil(5_000) { presentTitle(R.string.settings_section_layer_manager) }
+        assertTrue("largeur du panneau", present(R.string.settings_label_panel_width))
+    }
+
     /** L'affichage de la carte (echelle, rotation, fonds) n'apparait qu'en mode expert. */
     @Test fun `l'affichage de la carte ne s'ouvre qu'en mode expert`() {
         runBlocking {
@@ -200,7 +253,12 @@ class ExpertModeUiTest {
      * retire quand on remonte. Sans lui, on regle des curseurs sans savoir a quoi ils se rapportent.
      */
     @Test fun `le groupe courant reste affiche en defilant`() {
-        runBlocking { app.repository.ensureSeed() }
+        // Les groupes ne sont plus que dans le mode expert (cf. mapTab).
+        runBlocking {
+            app.repository.ensureSeed()
+            val s = app.repository.settings.get() ?: SettingsEntity()
+            app.repository.settings.upsert(s.copy(expertMode = true))
+        }
         compose.setContent { MaterialTheme { SettingsScreen(onBack = {}) } }
         compose.waitForIdle()
         compose.waitUntil(5_000) { avatars().isNotEmpty() }

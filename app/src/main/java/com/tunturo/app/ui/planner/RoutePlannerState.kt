@@ -607,6 +607,20 @@ class RoutePlannerState {
     }
 
     /**
+     * Le parcours part de la position actuelle et l'on s'en est eloigne de plus de [CurrentPositionRefreshM] :
+     * il se refait, tout seul, depuis la ou l'on est. Rend vrai quand le calcul est relance.
+     *
+     * Appele a chaque position recue (cf. MainScreen). Pas pendant un calcul en cours : la position qu'il
+     * emploie n'est pas encore retenue, et chaque position suivante le relancerait. Le planificateur ferme,
+     * il n'y a rien a refaire.
+     */
+    fun refreshIfMoved(currentLatLon: Pair<Double, Double>?): Boolean {
+        if (!open || recomputing || !movedSinceLastRoute(currentLatLon)) return false
+        refreshCurrentPosition()
+        return true
+    }
+
+    /**
      * Le porteur s'est-il eloigne de plus de [CurrentPositionRefreshM] de la position employee par le
      * dernier calcul ? Faux si aucune etape n'est sur la position actuelle, ou si l'une des deux positions
      * manque. [currentLatLon] en (lat, lon), comme le capteur la rend.

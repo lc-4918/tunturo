@@ -292,8 +292,12 @@ fun RoutePlannerBand(
         ) {
             BandHeader(
                 recomputing = state.recomputing,
-                canRefresh = state.usesCurrentPosition,
-                onRefresh = { state.refreshCurrentPosition() },
+                // Seulement quand le calcul n'a pu aboutir faute de reseau et de zone hors ligne : c'est la
+                // seule panne qu'un nouvel essai peut lever. Le parcours parti de la position, lui, se refait
+                // seul des qu'on s'est eloigne de cinquante metres (cf. RoutePlannerState.refreshIfMoved).
+                canRefresh = state.route is RouteState.NoNetwork,
+                // Un nouvel essai, depuis la position du moment si le parcours en part.
+                onRefresh = { if (state.usesCurrentPosition) state.refreshCurrentPosition() else state.retryRoute() },
                 onClose = { state.collapseOrClose() },
             )
             ProfileAndActions(
@@ -372,7 +376,7 @@ private fun BandHeader(
     // La croix s'aligne sur le bord des champs, et se tient aussi loin du haut de la bande.
     SheetTop(onCollapse = onClose, onClose = onClose, edgeGap = Spacing.l,
         handleModifier = Modifier.testTag("planner_handle"),
-        // Une etape sur la position actuelle : le parcours se refait d'ou l'on est maintenant.
+        // Le calcul a echoue faute de reseau et de zone hors ligne : un appui le relance.
         extraAction = if (canRefresh) { {
             SheetRoundButton(Icons.Filled.Refresh, stringResource(R.string.action_refresh), onRefresh,
                 Modifier.testTag("planner_refresh"))

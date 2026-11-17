@@ -180,19 +180,25 @@ class RoutePlannerBandUiTest {
         assertTrue(state.collapsed)
     }
 
-    /** Le bouton Actualiser n'apparait que si une etape est posee sur la position actuelle. */
-    @Test fun `le bouton actualiser suit la presence d'une etape en position actuelle`() {
-        val state = planificateurOuvert().apply { setStart(grenoble) }
+    /**
+     * Le bouton Actualiser n'apparait qu'en cas de panne : le calcul n'a pu aboutir, ni reseau ni zone hors
+     * ligne. Une etape sur la position actuelle ne le fait plus paraitre : ce parcours se refait seul.
+     */
+    @Test fun `le bouton actualiser n'apparait qu'en cas de panne de reseau`() {
+        val state = planificateurOuvert().apply { setStart(grenoble); choose(steps.last(), StepTarget.CurrentPosition) }
         affiche(state)
         compose.onNodeWithTag("planner_refresh").assertDoesNotExist()
-        state.choose(state.steps.last(), StepTarget.CurrentPosition)
+        compose.runOnIdle { state.publish(RouteState.NoNetwork) }
         compose.waitForIdle()
         compose.onNodeWithTag("planner_refresh").assertIsDisplayed()
+        compose.runOnIdle { state.publish(RouteState.Failed) }
+        compose.waitForIdle()
+        compose.onNodeWithTag("planner_refresh").assertDoesNotExist()
     }
 
     /** Actualiser relance le calcul : l'empreinte des entrees change. */
     @Test fun `actualiser relance le calcul`() {
-        val state = planificateurOuvert().apply { setStart(grenoble); choose(steps.last(), StepTarget.CurrentPosition) }
+        val state = planificateurOuvert().apply { setStart(grenoble); setEnd(grenoble); publish(RouteState.NoNetwork) }
         affiche(state)
         val before = state.revision
         compose.onNodeWithTag("planner_refresh").performClick()

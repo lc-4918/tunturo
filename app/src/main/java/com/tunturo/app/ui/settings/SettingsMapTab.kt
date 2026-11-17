@@ -12,6 +12,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.em
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -99,22 +105,30 @@ import kotlinx.coroutines.launch
 internal fun LazyListScope.mapTab(cur: SettingsEntity, vm: SettingsViewModel, groupes: TabGroups) {
     val onglet = SettingsTabScope(this, groupes)
     onglet.run {
+    /*
+     * Hors mode expert, ni groupe ni rubrique : une carte par bouton de la carte, espacees, et le repere de
+     * position a la suite. Ce sont des interrupteurs qui se lisent d'un coup d'oeil ; des titres au-dessus
+     * de six lignes ne disaient rien de plus qu'elles.
+     *
+     * En mode expert, la structure en groupes reste : ses rubriques fines en ont besoin pour se retrouver.
+     *
+     * Le suivi de la carte ("Suivre ma position") a quitte la liste sans retour : il se commande depuis la
+     * carte, au bouton a trois etats du coin bas-droit (cf. MapBottomRightControls).
+     */
+    if (!cur.expertMode) {
+        bloc { MapButtonCards(cur, vm) }
+        bloc {
+            Spacer(Modifier.height(CardGap))
+            GpsMarkerSettings(cur, vm, titled = false)
+        }
+        publier()
+        return
+    }
+
     bloc(R.string.settings_section_map_controls) {
-        /*
-         * Boutons et gestes : les interrupteurs de la carte, sans sous-rubrique. Ils se lisent d'un bloc, et
-         * l'affichage des boutons de carte (fonds, echelle, rotation) ne s'ouvre qu'en mode expert.
-         *
-         * Le suivi de la carte ("Suivre ma position") a quitte la liste sans retour : il se commande desormais
-         * DEPUIS LA CARTE, au bouton a trois etats du coin bas-droit (cf. MapBottomRightControls). Le reglage
-         * `mapFollowPosition` qu'il portait reste - c'est ce bouton qui l'ecrit desormais.
-         */
         GroupTitle(stringResource(R.string.settings_section_map_controls), first = true)
         SettingsCard {
-            // Le tableau de bord suit la position du telephone : il n'a pas de bouton de localisation a allumer
-            // ni a couper, le capteur du telephone en est la seule condition.
-            SwitchLine(stringResource(R.string.settings_sw_track_follow), cur.offTrackAlertEnabled) {
-                vm.save(cur.copy(offTrackAlertEnabled = it))
-            }
+            DashboardSwitch(cur, vm)
             RowDivider()
             SwitchLine(stringResource(R.string.settings_sw_geocoding), cur.geocodingEnabled) { vm.save(cur.copy(geocodingEnabled = it)) }
             RowDivider()
@@ -131,6 +145,8 @@ internal fun LazyListScope.mapTab(cur: SettingsEntity, vm: SettingsViewModel, gr
                 stringResource(R.string.settings_sw_track_edit), cur.trackEditEnabled,
                 info = stringResource(R.string.settings_sw_track_edit_sub),
             ) { vm.save(cur.copy(trackEditEnabled = it)) }
+            RowDivider()
+            RecordingSwitch(cur, vm)
         }
     }
 
@@ -192,27 +208,6 @@ internal fun LazyListScope.mapTab(cur: SettingsEntity, vm: SettingsViewModel, gr
         }
     }
 
-    bloc(R.string.settings_group_dashboard) {
-        /*
-         * Le tableau de bord : son bouton, ses champs, et l'alerte d'eloignement que sa cloche arme - en un
-         * groupe, puisque c'est lui, desormais, qui porte le suivi de trace.
-         */
-        GroupTitle(stringResource(R.string.settings_group_dashboard))
-    }
-
-    bloc {
-        /*
-         * L'alerte d'eloignement AVANT les champs : c'est elle qu'on vient regler - l'ecart qui declenche, la
-         * sonnerie -, tandis que les champs se cochent une fois pour toutes. La liste des champs est en outre
-         * longue de neuf lignes, et la releguait en bas d'un defilement.
-         */
-        if (cur.offTrackAlertEnabled) OffTrackAlertSettings(cur, vm)
-    }
-
-    bloc {
-        DashboardSettings(cur, vm)
-    }
-
     if (cur.expertMode) bloc(R.string.settings_group_pois) {
         GroupTitle(stringResource(R.string.settings_group_pois))
         // La taille des marqueurs : reglage fin, mode expert seulement. Celle par defaut convient a qui ne se
@@ -261,59 +256,127 @@ internal fun LazyListScope.mapTab(cur: SettingsEntity, vm: SettingsViewModel, gr
     }
 }
 
+/** L'ecart entre deux cartes posees l'une sous l'autre, sans titre entre elles. */
+private val CardGap = 12.dp
+
 /**
- * Les champs du tableau de bord, un interrupteur chacun.
- *
- * Son bouton, lui, est dans "Boutons et gestes", rubrique Position, avec les autres boutons de la carte.
- * Eteint, le groupe ne montre que ce renvoi : des reglages qui ne servent a rien valent mieux absents que
- * grises, mais il faut dire ou les allumer.
+ * Les boutons de la carte, hors mode expert : une carte par interrupteur, espacees de [CardGap] - rien
+ * avant la premiere, rien apres la derniere.
  */
-@Composable private fun DashboardSettings(cur: SettingsEntity, vm: SettingsViewModel) {
-    if (!cur.offTrackAlertEnabled) {
-        SettingsCard { Hint(stringResource(R.string.settings_dashboard_off)) }
-        return
+@Composable private fun MapButtonCards(cur: SettingsEntity, vm: SettingsViewModel) {
+    Column(verticalArrangement = Arrangement.spacedBy(CardGap)) {
+        SettingsCard { DashboardSwitch(cur, vm) }
+        SettingsCard {
+            SwitchLine(stringResource(R.string.settings_sw_geocoding), cur.geocodingEnabled) { vm.save(cur.copy(geocodingEnabled = it)) }
+        }
+        SettingsCard {
+            SwitchLine(stringResource(R.string.settings_sw_planner), cur.routePlannerEnabled) { vm.save(cur.copy(routePlannerEnabled = it)) }
+        }
+        SettingsCard {
+            SwitchLine(
+                stringResource(R.string.settings_sw_poi), cur.poiEnabled,
+                info = stringResource(R.string.settings_sw_poi_sub),
+            ) { vm.save(cur.copy(poiEnabled = it)) }
+        }
+        SettingsCard {
+            SwitchLine(stringResource(R.string.settings_sw_measure), cur.trackMeasureEnabled) { vm.save(cur.copy(trackMeasureEnabled = it)) }
+        }
+        SettingsCard {
+            SwitchLine(
+                stringResource(R.string.settings_sw_track_edit), cur.trackEditEnabled,
+                info = stringResource(R.string.settings_sw_track_edit_sub),
+            ) { vm.save(cur.copy(trackEditEnabled = it)) }
+        }
+        SettingsCard { RecordingSwitch(cur, vm) }
     }
-    // Les champs affiches : mode expert seulement, le tableau de bord montre sinon ses champs par defaut.
-    if (!cur.expertMode) return
-    SectionTitle(stringResource(R.string.settings_section_dashboard_fields), tight = true)
-    SettingsCard {
-        val masques = DashboardField.hidden(cur.dashboardHidden)
-        val tailles = DashboardField.fontSizes(cur.dashboardFontSizes)
-        val libelles = DashboardField.entries.map { stringResource(it.settingsLabel) }
-        val moins = stringResource(R.string.action_decrease)
-        val plus = stringResource(R.string.action_increase)
-        // La largeur de la carte, pour aligner les pas-a-pas d'une ligne a l'autre : c'est la ligne au
-        // plus long libelle qui decide pour toutes (cf. alignedStepperMetrics).
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val metrics = alignedStepperMetrics(libelles, maxWidth)
-            Column {
-                DashboardField.entries.forEachIndexed { i, f ->
-                    if (i > 0) RowDivider()
-                    SwitchStepperRow(
-                        label = libelles[i],
-                        value = tailles[f] ?: DashboardFontDefaultSp,
-                        min = DashboardFontMinSp, max = DashboardFontMaxSp,
-                        checked = f !in masques, metrics = metrics,
-                        decreaseLabel = moins, increaseLabel = plus,
-                        onValue = { sp ->
-                            vm.save(cur.copy(dashboardFontSizes = DashboardField.withFontSize(cur.dashboardFontSizes, f, sp)))
-                        },
-                        onToggle = { on ->
-                            vm.save(cur.copy(dashboardHidden = DashboardField.withHidden(cur.dashboardHidden, f, hide = !on)))
-                        },
-                    )
-                }
+}
+
+/** Le bouton d'enregistrement de trace sur la carte (cf. recordButtonShown). */
+@Composable private fun ColumnScopeMarker.RecordingSwitch(cur: SettingsEntity, vm: SettingsViewModel) {
+    SwitchLine(stringResource(R.string.settings_sw_recording), cur.recordingButtonEnabled) {
+        vm.save(cur.copy(recordingButtonEnabled = it))
+    }
+}
+
+/**
+ * L'interrupteur du tableau de bord, et ce qu'il commande en accordeon dessous, dans la meme carte :
+ * l'alerte d'eloignement que sa cloche arme, puis - en mode expert - les champs affiches.
+ *
+ * Ces reglages formaient un groupe a part, loin de l'interrupteur, et ne disaient rien tant qu'il etait
+ * eteint, sinon ou l'allumer. Ils se deplient desormais sous lui, et seulement allume : des reglages qui ne
+ * servent a rien valent mieux absents que grises.
+ *
+ * L'alerte AVANT les champs : c'est elle qu'on vient regler, tandis que les champs se cochent une fois
+ * pour toutes.
+ */
+@Composable private fun ColumnScopeMarker.DashboardSwitch(cur: SettingsEntity, vm: SettingsViewModel) {
+    // Le tableau de bord suit la position du telephone : il n'a pas de bouton de localisation a allumer
+    // ni a couper, le capteur du telephone en est la seule condition.
+    SwitchLine(stringResource(R.string.settings_sw_track_follow), cur.offTrackAlertEnabled) {
+        vm.save(cur.copy(offTrackAlertEnabled = it))
+    }
+    AnimatedVisibility(visible = cur.offTrackAlertEnabled) {
+        Column {
+            RowDivider()
+            OffTrackAlertRows(cur, vm)
+            if (cur.expertMode) {
+                RowDivider()
+                DashboardFieldRows(cur, vm)
             }
         }
-        /*
-         * Le defaire de la carte entiere : les neuf champs reaffiches, et leurs tailles revenues a celle
-         * d'origine. Les deux ensemble et non deux liens - ce sont les deux reglages de cette carte, et
-         * l'un sans l'autre laisserait une moitie de retour en arriere.
-         */
-        CardAction(stringResource(R.string.action_reset_defaults)) {
-            vm.save(cur.copy(dashboardHidden = "", dashboardFontSizes = ""))
+    }
+}
+
+/**
+ * Les champs du tableau de bord, un interrupteur chacun, sous un intitule dans la carte. Mode expert
+ * seulement : le tableau de bord montre sinon ses champs par defaut.
+ */
+@Composable private fun ColumnScopeMarker.DashboardFieldRows(cur: SettingsEntity, vm: SettingsViewModel) {
+    InCardHeading(stringResource(R.string.settings_section_dashboard_fields))
+    val masques = DashboardField.hidden(cur.dashboardHidden)
+    val tailles = DashboardField.fontSizes(cur.dashboardFontSizes)
+    val libelles = DashboardField.entries.map { stringResource(it.settingsLabel) }
+    val moins = stringResource(R.string.action_decrease)
+    val plus = stringResource(R.string.action_increase)
+    // La largeur de la carte, pour aligner les pas-a-pas d'une ligne a l'autre : c'est la ligne au
+    // plus long libelle qui decide pour toutes (cf. alignedStepperMetrics).
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val metrics = alignedStepperMetrics(libelles, maxWidth)
+        Column {
+            DashboardField.entries.forEachIndexed { i, f ->
+                if (i > 0) RowDivider()
+                SwitchStepperRow(
+                    label = libelles[i],
+                    value = tailles[f] ?: DashboardFontDefaultSp,
+                    min = DashboardFontMinSp, max = DashboardFontMaxSp,
+                    checked = f !in masques, metrics = metrics,
+                    decreaseLabel = moins, increaseLabel = plus,
+                    onValue = { sp ->
+                        vm.save(cur.copy(dashboardFontSizes = DashboardField.withFontSize(cur.dashboardFontSizes, f, sp)))
+                    },
+                    onToggle = { on ->
+                        vm.save(cur.copy(dashboardHidden = DashboardField.withHidden(cur.dashboardHidden, f, hide = !on)))
+                    },
+                )
+            }
         }
     }
+    /*
+     * Le defaire des champs : les neuf reaffiches, et leurs tailles revenues a celle d'origine. Les deux
+     * ensemble et non deux liens - l'un sans l'autre laisserait une moitie de retour en arriere.
+     */
+    CardAction(stringResource(R.string.action_reset_defaults)) {
+        vm.save(cur.copy(dashboardHidden = "", dashboardFontSizes = ""))
+    }
+}
+
+/** Un intitule de rubrique DANS une carte : la meme typographie que [SectionTitle], au retrait des lignes. */
+@Composable private fun ColumnScopeMarker.InCardHeading(text: String) {
+    Text(
+        text.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.1.em, color = settingsPalette.section,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 4.dp),
+    )
 }
 
 /**
@@ -323,7 +386,7 @@ internal fun LazyListScope.mapTab(cur: SettingsEntity, vm: SettingsViewModel, gr
  * Le son ne montre son choix que s'il est actif : une ligne de reglage qui ne sert a rien vaut mieux
  * absente que grisee.
  */
-@Composable private fun OffTrackAlertSettings(cur: SettingsEntity, vm: SettingsViewModel) {
+@Composable private fun ColumnScopeMarker.OffTrackAlertRows(cur: SettingsEntity, vm: SettingsViewModel) {
     val ctx = LocalContext.current
     var demanderReveil by remember { mutableStateOf(false) }
     // Le selecteur de sonnerie du systeme : c'est lui qui liste les sonneries du telephone et les fait
@@ -336,8 +399,8 @@ internal fun LazyListScope.mapTab(cur: SettingsEntity, vm: SettingsViewModel, gr
     val soundLabel = remember(cur.offTrackAlertSoundUri) { alertSoundTitle(ctx, cur.offTrackAlertSoundUri) }
     val defaultSoundLabel = stringResource(R.string.settings_off_track_sound_default)
 
-    SectionTitle(stringResource(R.string.settings_section_off_track))
-    SettingsCard {
+    InCardHeading(stringResource(R.string.settings_section_off_track))
+    run {
         // Le curseur va par pas de dix metres : au metre pres, on reglerait la precision du capteur, pas
         // la distance a laquelle on veut etre prevenu.
         SliderRow(
@@ -481,11 +544,11 @@ private fun ringtonePickerIntent(ctx: android.content.Context, current: String):
     }
 }
 
-@Composable private fun GpsMarkerSettings(cur: SettingsEntity, vm: SettingsViewModel) {
+@Composable private fun GpsMarkerSettings(cur: SettingsEntity, vm: SettingsViewModel, titled: Boolean = true) {
     val marker = GpsMarkerStyle.of(cur.gpsMarkerStyle)
     val color = cur.gpsMarkerColor.takeIf { it.isNotBlank() } ?: marker.defaultColor
     var pickColor by remember { mutableStateOf(false) }
-    SectionTitle(stringResource(R.string.settings_section_gps_marker), tight = true)
+    if (titled) SectionTitle(stringResource(R.string.settings_section_gps_marker), tight = true)
     SettingsCard {
         // Changer de symbole rend sa couleur ET sa taille au nouveau : chacun a les siennes (bleu et 20 dp
         // pour la puce, rouge et 30 dp pour les fleches, qui doivent montrer une direction), et les heriter

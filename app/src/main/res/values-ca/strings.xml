@@ -337,12 +337,10 @@
     <string name="settings_basemap_control_width">Amplada del panell: %1$d%%</string>
     <string name="settings_basemap_control_opacity">Opacitat del plafó: %1$d%%</string>
     <string name="settings_bubble_opacity">Opacitat: %1$d%%</string>
-    <string name="settings_section_default_basemap">Mapes base</string>
-    <string name="settings_label_default_basemap">Mapa base predeterminat</string>
     <string name="settings_section_mbtiles_folder">Carpeta de MBTiles</string>
     <string name="settings_app_folder_default">Carpeta de l\'app (per defecte)</string>
     <string name="settings_section_basemaps">Mapes base</string>
-    <string name="settings_section_providers">Proveïdors</string>
+    <string name="settings_section_providers">Mapes de fons en línia</string>
     <string name="settings_basemap_label">Mapa base</string>
     <string name="settings_field_mbtiles_file">Fitxer MBTiles</string>
     <string name="settings_field_name">Nom</string>
@@ -465,7 +463,7 @@
     <string name="settings_group_gps">GPS</string>
     <string name="settings_section_map_buttons">Botons del mapa</string>
     <string name="settings_group_application">Aplicació</string>
-    <string name="settings_section_custom_basemaps">Mapes base personalitzats</string>
+    <string name="settings_section_custom_basemaps">Mapes de fons fora de línia</string>
     <string name="settings_section_services">Serveis</string>
     <string name="settings_section_profile_calc">Càlcul del perfil</string>
     <string name="settings_section_personalisation">Personalització</string>
@@ -635,7 +633,6 @@
     <string name="routing_zones_none">Cap zona baixada</string>
     <string name="routing_zones_hint">On hi ha una zona baixada, BRouter calcula la ruta al telèfon, sense xarxa.</string>
     <string name="routing_zones_add">Baixa zones</string>
-    <string name="routing_zones_add_sub">Països i grans regions</string>
     <string name="routing_zones_available">Zones disponibles</string>
     <string name="routing_zones_all_downloaded">Totes les zones estan baixades</string>
     <string name="routing_zone_tiles">Quadrats de dades</string>
@@ -701,17 +698,15 @@
     <string name="dash_title">Tauler</string>
     <string name="dash_reset_title">Vols restablir els comptadors?</string>
     <string name="dash_reset_text">La distància, la durada i el desnivell de la sortida tornen a zero.</string>
-    <string name="settings_group_dashboard">Tauler</string>
     <string name="content_desc_dashboard">Tauler</string>
     <string name="settings_section_dashboard_fields">Camps mostrats</string>
     <string name="dash_eta">Temps restant</string>
     <string name="dash_set_eta">Temps restant estimat</string>
-    <string name="settings_dashboard_off">Activa el botó del tauler a Botons i gestos, secció Posició.</string>
     <string name="offline_config_title_track">Descàrrega del mapa al llarg de la traça</string>
     <string name="offline_config_track_hint">Descarrega el mapa de fons actual a cada costat de la traça, en l\'amplada triada.</string>
     <string name="offline_config_section_label">Part de la traça</string>
     <string name="offline_config_section_value">km %1$d - %2$d</string>
-    <string name="settings_offline_routing_info">Són només les dades regionals del motor d\'itineraris (BRouter), per calcular un itinerari sense xarxa. Ni mapes de fons ni traces: el mapa fora de línia es descarrega a part.</string>
+    <string name="settings_offline_routing_info">Dades regionals del càlcul d\'itineraris sense xarxa</string>
     <string name="settings_updates_info">Auto: en iniciar-se, Tunturo comprova si hi ha una nova versió publicada i proposa instal·lar-la. Manual: la comprovació només es fa quan la demanes.</string>
     <string name="settings_expert_on">Mode expert activat</string>
     <string name="settings_expert_off">Mode expert desactivat</string>
@@ -830,4 +825,7 @@
     <string name="settings_section_recording">Enregistrament de recorregut</string>
     <string name="settings_label_recording_smooth_elevation">Suavitzar les altituds amb el model del terreny</string>
     <string name="settings_recording_smooth_elevation_hint">A cada pausa, les altituds del GPS se substitueixen per les del model del terreny (IGN a França, OpenTopography a la resta). Cal xarxa; sense, es manté l\'altitud del GPS.</string>
+    <string name="settings_sw_recording">Enregistrament</string>
+    <string name="settings_section_layer_manager">Gestor de capes</string>
+    <string name="location_channel_quiet_name">Seguiment de la posició (app oberta)</string>
 </resources>

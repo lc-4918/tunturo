@@ -419,7 +419,10 @@ disparaît aussi si sa trace est masquée, ou si le réglage qui l'a fait naîtr
 Commandé lui aussi par un réglage désactivé par défaut, il ouvre une bande qui tient la liste des étapes -
 au moins deux, jusqu'à 25, au-delà desquelles le moteur refuse la requête. Chaque étape est un lieu
 cherché par son nom, ou **la position du porteur**, résolue au moment du calcul et non au moment du choix :
-on pose ses étapes, puis on part de là où l'on est.
+on pose ses étapes, puis on part de là où l'on est. Le parcours qui en part **se refait tout seul** dès qu'on
+s'est éloigné de plus de 50 m de la position employée par le dernier calcul (et à la réouverture de la bande).
+Le bouton rond **Actualiser** n'apparaît qu'en cas de panne - ni réseau, ni zone hors ligne - et relance le
+calcul.
 
 Un **historique des lieux** est proposé au focus d'un champ d'étape vide, au même moment et au même
 endroit que la position du porteur : jusqu'à **huit** endroits, le plus récent en tête. Il s'efface dès la
@@ -515,7 +518,11 @@ protégeait un itinéraire, pendant qu'un mouvement du poignet l'emportait sans 
 l'écran éteint, l'application en arrière-plan, le téléphone en poche - c'est là que le suivi sert, et il
 s'arrêtait jusqu'ici à la première mise en veille. Une **notification permanente** l'annonce, dit l'écart à
 la trace suivie quand il y en a une, et porte un bouton d'arrêt ; le bouton de position de la carte reste le
-second. Le suivi s'arrête aussi de lui-même si la localisation est éteinte dans le téléphone, ou si
+second. Android impose cette notification dès que le suivi tourne, application à l'écran comprise (sans
+l'autorisation de localisation "toujours", que Tunturo ne demande pas) : elle est donc **discrète tant que
+l'application est à l'écran** - canal d'importance minimale, sans icône dans la barre d'état, repliée au bas
+du volet - et redevient normale dès que l'écran s'éteint ou que l'application passe en arrière-plan. Une
+alerte de suivi interrompu passe avant tout (cf. `TrackingNotificationChannel`). Le suivi s'arrête aussi de lui-même si la localisation est éteinte dans le téléphone, ou si
 l'application est balayée des tâches récentes : c'est une fonction de l'application, pas un agent qui lui
 survit. **Sauf pendant un enregistrement de trace** : balayée, l'application laisse le suivi tourner, et la
 notification dit "Enregistrement en cours".
@@ -774,15 +781,20 @@ sans se transformer en erreur.
 
 Quatre onglets :
 
-- **Carte** : boutons affichés sur la carte, échelle, rotation, suivi de la position et écran maintenu
-  allumé pendant celui-ci, alerte d'éloignement (son bouton, l'écart
-  qui la déclenche, son son), repère de position, gestionnaire de fonds,
-  marqueurs et infobulles, apparence du profil. Quatre boutons sont posés sur la carte **par défaut** : le burger, le
+- **Carte** : hors mode expert, ni groupe ni rubrique - une carte par bouton de la carte (tableau de bord,
+  géocodage, planificateur, points d'intérêt, mesure, retouche, enregistrement), puis le repère de position.
+  Sous l'interrupteur du tableau de bord se déplient, allumé seulement, l'alerte d'éloignement (l'écart qui
+  la déclenche, son son, la vibration) et, en mode expert, les champs affichés. Le mode expert garde ses
+  groupes : échelle, rotation, suivi de la position et écran maintenu allumé, trace, marqueurs et
+  infobulles, apparence du profil. Quatre boutons sont posés sur la carte **par défaut** : le burger, le
   GPS, le gestionnaire de fonds et le planificateur - plus le fond blanc translucide qui les porte. La
   recherche de lieu, la mesure sur trace, la retouche des traces et l'alerte d'éloignement, elles, ne le
   sont pas : ce sont celles qui s'ajoutent volontairement.
-- **Tuiles** : fond par défaut, catalogue des fournisseurs et composites, import/export
-  (cf. [`BASEMAPS.md`](BASEMAPS.md)).
+- **Tuiles** : fonds de plan en ligne (catalogue des fournisseurs), fonds de plan hors ligne (la liste des
+  MBTiles et des composites, puis Importer, Télécharger et Composite), import/export (cf.
+  [`BASEMAPS.md`](BASEMAPS.md)) ; en mode expert, le gestionnaire de couches (largeur et opacité du
+  panneau). Il n'y a plus de fond par défaut à choisir : le fond affiché au démarrage est le dernier
+  consulté, que le panneau de la carte enregistre à chaque choix.
 - **Trajets** : URL du géocodeur, URL du moteur d'itinéraire, discipline par défaut, catégories de points
   d'intérêt et vidage de leur cache, calcul du profil, et
   le complètement de l'altimétrie manquante avec ses deux services (cf. section 6), le lissage des

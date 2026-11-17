@@ -489,6 +489,11 @@ fun MainScreen(
      * La position actuelle est résolue ICI et non au moment où l'étape a été choisie : on pose souvent ses
      * étapes puis on se déplace avant de lancer, et c'est bien d'où l'on est alors qu'on veut partir.
      */
+    // Un parcours qui part de la position actuelle se refait tout seul des qu'on s'en est eloigne de plus
+    // de cinquante metres (cf. RoutePlannerState.refreshIfMoved) : sans cela, il montrerait le trajet
+    // depuis l'endroit d'ou l'on est parti.
+    val plannerPosition = location.lastUserLocation
+    LaunchedEffect(plannerPosition) { planner.refreshIfMoved(plannerPosition) }
     // La carte cadre le parcours ENTIER a son apparition, et seulement alors : une fois le trajet a
     // l'ecran, l'utilisateur le fait glisser et zoome a sa guise, et recadrer a chaque etape ajoutee
     // defairait son travail. Un parcours qui disparait (moins de deux etapes, ou echec) remet le drapeau,

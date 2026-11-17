@@ -1023,6 +1023,17 @@ class MigrationsTest {
         db.close()
     }
 
+    /** Le bouton d'enregistrement devient un reglage : il reste affiche chez qui le voyait deja. */
+    @Test fun `79 vers 80 garde le bouton d'enregistrement affiche`() {
+        val db = freshDb("m7980")
+        db.execSQL("CREATE TABLE settings (id INTEGER PRIMARY KEY NOT NULL)")
+        db.execSQL("INSERT INTO settings (id) VALUES (1)")
+        db.execSQL(MigrationSql.ADD_RECORDING_BUTTON_ENABLED)
+        assertEquals(1, scalar(db, "SELECT recordingButtonEnabled FROM settings") { it.getInt(0) })
+        assertTrue(SettingsEntity().recordingButtonEnabled)
+        db.close()
+    }
+
     // ---------- La base reelle s'ouvre et porte le schema courant ----------
 
     /**

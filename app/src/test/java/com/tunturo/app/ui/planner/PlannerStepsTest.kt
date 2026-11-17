@@ -905,4 +905,39 @@ class PlannerStepsTest {
         etat.chooseCurrentPosition(etat.steps.first())
         assertFalse(etat.centerOnPositionRequest)
     }
+
+    // ---------- Le parcours parti de la position se refait tout seul ----------
+
+    /** Parti de la position actuelle, le parcours se refait des qu'on s'en est eloigne de plus de 50 m. */
+    @Test fun `le parcours parti de la position se refait apres cinquante metres`() {
+        val etat = troisEtapes()
+        etat.choose(etat.steps.first(), StepTarget.CurrentPosition)
+        etat.rememberCurrentPosition(43.0 to 1.0)
+        val avant = etat.revision
+        assertFalse("trente metres", etat.refreshIfMoved(43.0 + 30 / 111_195.0 to 1.0))
+        assertEquals(avant, etat.revision)
+        assertTrue("soixante metres", etat.refreshIfMoved(43.0 + 60 / 111_195.0 to 1.0))
+        assertTrue(etat.revision > avant)
+    }
+
+    /** Un calcul deja en cours n'est pas relance a chaque position : sa position n'est pas encore retenue. */
+    @Test fun `pas de nouveau calcul pendant un calcul en cours`() {
+        val etat = troisEtapes()
+        etat.choose(etat.steps.first(), StepTarget.CurrentPosition)
+        etat.rememberCurrentPosition(43.0 to 1.0)
+        etat.beginRecompute()
+        assertFalse(etat.refreshIfMoved(43.01 to 1.0))
+    }
+
+    /** Un parcours fixe, ou un planificateur ferme, ne bouge pas avec le porteur. */
+    @Test fun `un parcours fixe ne se refait pas en marchant`() {
+        val etat = troisEtapes()
+        etat.rememberCurrentPosition(43.0 to 1.0)
+        assertFalse("sans etape en position actuelle", etat.refreshIfMoved(43.01 to 1.0))
+        val ferme = troisEtapes()
+        ferme.choose(ferme.steps.first(), StepTarget.CurrentPosition)
+        ferme.rememberCurrentPosition(43.0 to 1.0)
+        ferme.close()
+        assertFalse("planificateur ferme", ferme.refreshIfMoved(43.01 to 1.0))
+    }
 }

@@ -1,6 +1,7 @@
 package com.tunturo.app.ui.routes
 
 import com.tunturo.app.ui.recording.RecordButtonIcon
+import com.tunturo.app.ui.recording.recordButtonShown
 import com.tunturo.app.ui.recording.RecordingControls
 import com.tunturo.app.ui.recording.recordingNoticeText
 import androidx.compose.material3.MaterialTheme
@@ -580,11 +581,11 @@ internal fun BoxScope.MapBottomRightControls(
          *
          * Au-dessus du tableau de bord : les deux servent pendant la sortie.
          */
-        CoverableButton(coverTopPx) {
+        if (recordButtonShown(settings.recordingButtonEnabled, recording.phase)) CoverableButton(coverTopPx) {
             IconButton(
                 onClick = { recording.onTap(location) },
                 modifier = chrome.buttonBackground(recording.recording),
-            ) { RecordButtonIcon(recording.recording, chrome) }
+            ) { RecordButtonIcon(recording.recording) }
         }
         if (dashboardEnabled && !dashboardPanelShown) CoverableButton(coverTopPx) {
             IconButton(onClick = { onDashboardTap() }, modifier = chrome.buttonBackground(dashboardOpen)) {

@@ -410,6 +410,9 @@ data class SettingsEntity(
     // chaque rangement dans la bibliotheque, plutot qu'au GPS : celle d'un telephone tremble de plusieurs
     // metres et gonfle le denivele. Eteint par defaut : il fait partir des requetes vers un service tiers.
     val recordingSmoothElevation: Boolean = false,
+    // Bouton d'enregistrement de trace sur la carte. Affiche par defaut, comme a son arrivee (v0.35.0) ; un
+    // enregistrement en cours le garde a l'ecran meme masque (cf. recordButtonShown).
+    val recordingButtonEnabled: Boolean = true,
 )
 
 /** Les valeurs de [SettingsEntity.basemapControlMode]. */

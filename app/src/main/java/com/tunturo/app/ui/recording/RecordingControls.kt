@@ -2,7 +2,6 @@ package com.tunturo.app.ui.recording
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FiberManualRecord
-import androidx.compose.material.icons.outlined.RadioButtonChecked
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -30,7 +29,6 @@ import com.tunturo.app.domain.geo.TrackRecording
 import com.tunturo.app.location.RecordingSession
 import com.tunturo.app.location.TrackRecorder
 import com.tunturo.app.ui.location.LocationControls
-import com.tunturo.app.ui.routes.MapChrome
 import com.tunturo.app.ui.routes.OffTrackAlertColor
 import com.tunturo.app.ui.settings.ChoiceBlock
 import com.tunturo.app.ui.settings.ProvideSettingsPalette
@@ -162,15 +160,23 @@ fun RecordingLineEffect(controller: MapController, segments: List<List<RecordedP
 private const val RecordingLineKey = "recording"
 private const val RecordingLineColor = "#B3261E"
 
-/** Le dessin du bouton : un rond rouge plein en enregistrement, le symbole "enregistrer" sinon. */
+/**
+ * Le dessin du bouton : un rond rouge plein, sans cercle de contour, dans les deux etats - le symbole
+ * "enregistrer" de tout magnetophone, et rien qui rappelle la cible du bouton de recentrage. L'etat se lit
+ * au fond du bouton, allume pendant l'enregistrement comme celui des autres commandes actives.
+ */
 @Composable
-fun RecordButtonIcon(recording: Boolean, chrome: MapChrome) {
-    if (recording) {
-        Icon(Icons.Filled.FiberManualRecord, stringResource(R.string.recording_action_pause), tint = OffTrackAlertColor)
-    } else {
-        Icon(Icons.Outlined.RadioButtonChecked, stringResource(R.string.recording_action_record), tint = chrome.fg)
-    }
+fun RecordButtonIcon(recording: Boolean) {
+    Icon(
+        Icons.Filled.FiberManualRecord,
+        stringResource(if (recording) R.string.recording_action_pause else R.string.recording_action_record),
+        tint = OffTrackAlertColor,
+    )
 }
+
+/** Le bouton est sur la carte : le reglage l'y pose, et un enregistrement en cours l'y garde. */
+fun recordButtonShown(enabledInSettings: Boolean, phase: RecordingPhase): Boolean =
+    enabledInSettings || phase == RecordingPhase.RECORDING
 
 /** Le texte du bandeau. */
 @Composable

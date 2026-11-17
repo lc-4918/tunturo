@@ -60,7 +60,7 @@ class TrackDisplaySettingsUiTest {
     /** Le groupe Trace entier est un reglage expert : hors mode expert, ni lui ni sa largeur de trait. */
     @Test fun `le groupe Trace n'apparait qu'en mode expert`() {
         ouvrir(expert = false)
-        defileVers(app.getString(R.string.settings_section_gps_marker).uppercase())
+        defileVers(app.getString(R.string.settings_label_gps_marker_size))
         assertFalse("groupe Trace", present(app.getString(R.string.settings_group_track)))
         assertFalse("largeur du trait", present(app.getString(R.string.settings_track_line_width)))
     }

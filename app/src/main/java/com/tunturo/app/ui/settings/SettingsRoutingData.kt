@@ -124,8 +124,6 @@ internal fun OfflineRoutingZones(vm: SettingsViewModel) {
     SettingsCard {
         SetRow(
             stringResource(R.string.routing_zones_add),
-            // Une explication, et non un etat : derriere le "i", comme celles des autres lignes.
-            info = stringResource(R.string.routing_zones_add_sub),
             onClick = { catalogueOuvert = true },
         ) {
             RowIcon(Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.routing_zones_add))

@@ -88,14 +88,14 @@ synchronised elevation profile, without depending on any online service.
 - **Place and address search**, the place found being pinned on the map with its address.
 - **Route planning** from 2 to 25 stops, for five activities, with an elevation profile, surfaces, and a **recompute on every change**.
 - **Numbered stops on the map**: A and B for the ends, numbered dots in between, which you can move by hand or remove.
-- **Your own position as a stop**, up to date every time you reopen the planner, or on demand with the *Refresh* button.
+- **Your own position as a stop**, recomputed by itself as soon as you have moved more than 50 m; a *Refresh* button appears when a route could not be computed for lack of network and offline data.
 - **Start, end or stop in three gestures** from any info bubble, or from a long press anywhere on the map.
 - **Long press on the map**: the address of the spot, and the distance and time to reach it from your position or another point.
 - **Measuring along a track**: the distance between two points of a displayed track, along the route, with no network.
 - **Off-track alert**: pick the track you follow and get a banner, and a sound if you want one, as soon as you stray from it.
 - **Dashboard while following**: speed, time and distance done and left, ascent and descent done and ahead.
 - **Track recording**: a single button, recording or not; each pause saves the track in *My tracks*, named after its start and end towns.
-- **Tracking survives the screen going off**, with an ongoing notification and an option to keep the screen on.
+- **Tracking survives the screen going off**, with an ongoing notification - kept discreet while the app is on screen - and an option to keep the screen on.
 - **Heading arrow** that follows your direction of travel rather than the compass.
 - **Send to a Garmin watch**: the corridor of a track, as map tiles, through Garmin Connect.
 - **Built-in updates**, and an interface in French, English, German, Spanish, Catalan, Basque, Italian and Portuguese.

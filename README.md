@@ -62,6 +62,7 @@ synchronised elevation profile, without depending on any online service.
 - Download the basemap before the outing, over the whole area or along the route, to use it with no network.
 - Follow the route in the field, with an alert as soon as you stray from it.
 - Hiking, cycling, mountain biking: follow a route prepared in advance, offline.
+- Record your outing, with pauses, and find it in the *My tracks* folder.
 - Archive personal tracks, sorted into folders.
 - Explore specialised basemaps (national mapping agencies, hillshade, cycle routes...).
 
@@ -93,6 +94,7 @@ synchronised elevation profile, without depending on any online service.
 - **Measuring along a track**: the distance between two points of a displayed track, along the route, with no network.
 - **Off-track alert**: pick the track you follow and get a banner, and a sound if you want one, as soon as you stray from it.
 - **Dashboard while following**: speed, time and distance done and left, ascent and descent done and ahead.
+- **Track recording**: a single button, recording or not; each pause saves the track in *My tracks*, named after its start and end towns.
 - **Tracking survives the screen going off**, with an ongoing notification and an option to keep the screen on.
 - **Heading arrow** that follows your direction of travel rather than the compass.
 - **Send to a Garmin watch**: the corridor of a track, as map tiles, through Garmin Connect.
@@ -144,6 +146,7 @@ itself whether a newer version exists and offers to install it.
 - **Moving a stop**: tap a numbered dot for *Set as destination* or *Delete*, or hold it briefly and drop it elsewhere.
 - **Adding a stop beyond the ends**: a new start or end from the map keeps the old one as a stop.
 - **Measuring a section of a track**: enable the ruler button in **Settings / Map**, then tap two points on a track.
+- **Recording a track**: the button above the dashboard starts recording; tapping it again pauses and saves the track in *My tracks*, a folder created by the first recording. Tapping it once more asks how to resume: continue the same segment (a straight line joins the pause to the resume), continue in a new segment, or start a new track. The track is named `Start-End_YYYYMMDD`, for example `Paris-Brest_20261117`; rename it and it keeps your name. Elevations come from the GPS; *Settings / Trips* can smooth them on the terrain model.
 - **Colour by slope**: off by default, in *Settings / Trips*, for the route on the map and its profile.
 - **Hillshade**: enable relief shading in the map settings.
 - **Elevation profile**: zoom on a section (three levels), smoothing and vertical scale such as 1 cm = 100 m.
@@ -168,9 +171,14 @@ itself whether a newer version exists and offers to install it.
   OpenStreetMap - for the venues in the area you are looking at, and nothing else: not who you are, not
   where you are. It is **off by default**, and asks for nothing more as long as the map stays within what
   has already been loaded.
-- **Location tracking** never leaves the device: not recorded, not sent, not kept once tracking stops. It
-  runs in a service its notification announces at all times, and that you stop in one tap. Tunturo does
-  not ask for background location permission: tracking only ever starts from a gesture of yours.
+- **Location tracking** never leaves the device: not sent, and not kept once tracking stops, unless you
+  record a track. It runs in a service its notification announces at all times, and that you stop in one
+  tap. Tunturo does not ask for background location permission: tracking only ever starts from a gesture
+  of yours.
+- A **recorded track** is stored on the phone only, like an imported one. To name it, Tunturo asks for
+  the town of its first and last points: from the offline place index, or from the geocoder if place
+  search is enabled, which then receives those two points. **Smoothing elevations** on the terrain model,
+  off by default, sends the track's points to the elevation services (IGN, OpenTopography) at each pause.
 - **Measuring along a track**, on the other hand, never leaves the phone: it is read from the track
   you imported, and queries no service.
 

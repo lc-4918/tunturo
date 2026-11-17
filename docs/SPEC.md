@@ -26,10 +26,11 @@ Ce qu'elle fait :
 - télécharger une zone pour l'emporter sans réseau ;
 - décrire un point : adresse, distances, mesures le long d'une trace ;
 - préparer un itinéraire par étapes ;
+- enregistrer la trace parcourue, avec des pauses, rangée dans le dossier *Mes parcours* ;
 - afficher les points d'intérêt du parcours (hébergement, restauration, loisirs, services).
 
-Ce qu'elle n'est pas : un enregistreur de trace (pas de suivi GPS temps réel), un éditeur de tracé à la
-main, ni un service en ligne - aucun compte, aucune synchronisation, aucune télémétrie.
+Ce qu'elle n'est pas : un éditeur de tracé à la main, ni un service en ligne - aucun compte, aucune
+synchronisation, aucune télémétrie.
 
 ## 2. Pile technique
 
@@ -43,7 +44,7 @@ Architecture dépôt -> ViewModel (`StateFlow`) -> écrans Compose. Détail dans
 ```
 Folder(id, name, parentId?, sortOrder)             // arborescence, racine = parentId null
 LayerEntity(id, name, folderId, link?, description?,
-      source, importedAt, geometryFile,            // fichier de géométrie stocké
+      source, importedAt, geometryFile,            // source : import | bundled | record (enregistrement)
       distance, ascent, descent, minEle, maxEle, movingTime?,
       hasZ, hasTime, hasLine, hasPoints,           // ce que la couche porte réellement
       visible, color, sortOrder, west, south, east, north)
@@ -516,7 +517,8 @@ s'arrêtait jusqu'ici à la première mise en veille. Une **notification permane
 la trace suivie quand il y en a une, et porte un bouton d'arrêt ; le bouton de position de la carte reste le
 second. Le suivi s'arrête aussi de lui-même si la localisation est éteinte dans le téléphone, ou si
 l'application est balayée des tâches récentes : c'est une fonction de l'application, pas un agent qui lui
-survit.
+survit. **Sauf pendant un enregistrement de trace** : balayée, l'application laisse le suivi tourner, et la
+notification dit "Enregistrement en cours".
 
 **La veille survit à la mort du processus.** Android reprend sa mémoire quand il en manque, et tue
 l'application même pendant une sortie - il relance ensuite le service, qui est fait pour cela. Le capteur
@@ -544,6 +546,41 @@ d'écart, l'écart à la trace est dit lui aussi : le "restant" ne décrit alors
 Une trace **sans horodatage** reçoit un temps de marche estimé, marqué d'un `~`, calculé d'après la pente
 (fonction de Tobler) : cinq kilomètres de plat et cinq kilomètres de raide ne se marchent pas dans le même
 temps, et c'est la question qu'on se pose devant une trace inconnue.
+
+### Enregistrement de trace
+
+**Un seul bouton, deux états**, dans la colonne du pouce, au-dessus du tableau de bord : il enregistre (rond
+rouge plein, fond allumé), ou il n'enregistre pas (symbole "enregistrer").
+
+- **En enregistrement**, un appui met en pause, et la pause **range le parcours** dans le dossier *Mes
+  parcours*, créé à la racine au premier enregistrement (retrouvé par son identifiant, recréé s'il a été
+  supprimé). Il n'y a pas de bouton Stop : un parcours en pause est déjà rangé.
+- **Hors enregistrement**, un appui démarre - directement s'il n'y a rien à reprendre. Après une pause, une
+  boîte demande comment reprendre : **continuer le même segment** (un trait droit relie la pause à la
+  reprise, et sa longueur compte), **continuer dans un nouveau segment** (le même parcours, sans trait), ou
+  **nouveau parcours** (le précédent reste tel qu'il a été rangé).
+- Après "Continuer", la pause suivante **réécrit la même couche** avec tout ce qui a été enregistré depuis le
+  départ : elle garde sa couleur, sa place, sa visibilité et ses marqueurs. Une retouche faite entre-temps
+  (couper, inverser) est remplacée.
+- **Nom** : `Départ-Arrivée_AAAAMMJJ` (par exemple `Paris-Brest_20261117`), d'après la commune du premier et
+  du dernier point et le jour du départ. Une boucle ne nomme sa commune qu'une fois ; sans commune, le nom
+  est `Parcours_AAAAMMJJ` ; un nom déjà pris reçoit `_2`, `_3`. La commune vient du géocodeur si la
+  recherche de lieux est activée (il passe de lui-même à l'index hors ligne sans réseau), sinon du seul
+  index hors ligne. Après "Continuer", le nom suit la nouvelle arrivée, **sauf si le parcours a été renommé
+  à la main**.
+- **Points gardés** : précision de 30 m au plus, cinq mètres (ou la précision) depuis le point précédent du
+  segment, temps croissant. Une position **mesurée** avant le démarrage ou la reprise est écartée - c'est la
+  dernière position connue rendue à l'abonnement. Ce n'est pas l'âge à la réception qui compte : une salve
+  livrée au réveil, quand l'économie d'énergie a coupé le GPS écran éteint, est du parcours.
+- **Altitude** : celle du GPS. Le réglage *Lisser les altitudes sur le modèle de terrain* (onglet Trajets,
+  éteint par défaut) la remplace à chaque pause par celle de l'IGN en France, d'OpenTopography ailleurs ;
+  là où le service ne répond pas, l'altitude du GPS reste.
+- **Sur la carte**, le parcours en cours se dessine en direct, en rouge bordé de blanc. Il s'efface dès la
+  pause : la couche rangée dans *Mes parcours* prend le relais.
+- **Robustesse** : l'enregistrement s'écrit sur le disque au fil de l'eau (un point par ligne, en ajout
+  seul). Repris après la mort du processus, il continue dans un nouveau segment : un trait droit
+  remplacerait par sa corde ce qui a été parcouru entre-temps. "Arrêter" dans la notification met en pause
+  et range le parcours.
 
 ### Alerte d'éloignement
 
@@ -748,7 +785,8 @@ Quatre onglets :
   (cf. [`BASEMAPS.md`](BASEMAPS.md)).
 - **Trajets** : URL du géocodeur, URL du moteur d'itinéraire, discipline par défaut, catégories de points
   d'intérêt et vidage de leur cache, calcul du profil, et
-  le complètement de l'altimétrie manquante avec ses deux services (cf. section 6).
+  le complètement de l'altimétrie manquante avec ses deux services (cf. section 6), le lissage des
+  altitudes des parcours enregistrés (cf. section 14 bis).
 - **Système** : dossiers d'import et des MBTiles, **sauvegarde et restauration**, menu latéral, tolérances
   de tap, simplification du rendu,
   unités, mises à jour, langue, thème, avatar, remise à zéro.

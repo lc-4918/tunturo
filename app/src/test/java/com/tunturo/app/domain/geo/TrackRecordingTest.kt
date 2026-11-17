@@ -136,6 +136,17 @@ class TrackRecordingTest {
         assertEquals(100_000L, end.timeMs)
     }
 
+    /** En pause, la couche rangee montre le parcours : le trait en direct le doublerait. */
+    @Test fun `le trait en direct ne se dessine que pendant l'enregistrement`() {
+        val running = recordingWith(0.0, 50.0)
+        assertEquals(running.segments, TrackRecording.drawn(running))
+        val paused = TrackRecording.pause(running)
+        assertEquals(emptyList<List<RecordedPoint>>(), TrackRecording.drawn(paused))
+        val resumed = TrackRecording.resume(paused, ResumeMode.SAME_SEGMENT, 1L)
+        assertEquals(resumed.segments, TrackRecording.drawn(resumed))
+        assertEquals(emptyList<List<RecordedPoint>>(), TrackRecording.drawn(Recording()))
+    }
+
     /** Le modele de terrain a repondu pour une partie seulement : le reste garde l'altitude du GPS. */
     @Test fun `le lissage garde l'altitude du GPS la ou le modele n'a rien rendu`() {
         val gps = listOf(listOf(TrackPoint(6.0, 45.0, 1000.0), TrackPoint(6.0, 45.1, 1010.0)))

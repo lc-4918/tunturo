@@ -26,6 +26,7 @@ import com.tunturo.app.domain.geo.Recording
 import com.tunturo.app.ui.components.MapController
 import com.tunturo.app.domain.geo.RecordingPhase
 import com.tunturo.app.domain.geo.ResumeMode
+import com.tunturo.app.domain.geo.TrackRecording
 import com.tunturo.app.location.RecordingSession
 import com.tunturo.app.location.TrackRecorder
 import com.tunturo.app.ui.location.LocationControls
@@ -66,8 +67,8 @@ class RecordingControls internal constructor(
     /** Le bouton est allume : les positions s'enregistrent. */
     val recording: Boolean get() = phase == RecordingPhase.RECORDING
 
-    /** Les segments enregistres, a dessiner sur la carte. */
-    val segments get() = recordingState.value.segments
+    /** Les segments a dessiner sur la carte : rien en pause (cf. TrackRecording.drawn). */
+    val drawnSegments get() = TrackRecording.drawn(recordingState.value)
 
     /** La boite "Comment reprendre ?" est ouverte. */
     var showResumeDialog by mutableStateOf(false)
@@ -146,7 +147,7 @@ fun rememberRecordingControls(location: LocationControls): RecordingControls {
 /**
  * Le parcours enregistre, dessine en direct sur la carte : rouge comme le bouton qui l'enregistre, borde
  * de blanc comme les traits mis en evidence. Rejoue a chaque style (cf. MapOverlayEffects) et a chaque
- * point garde. Rien a dessiner hors enregistrement et hors pause.
+ * point garde. Efface des la pause : la couche rangee dans la bibliotheque prend le relais.
  */
 @Composable
 fun RecordingLineEffect(controller: MapController, segments: List<List<RecordedPoint>>, styleTick: Int) {

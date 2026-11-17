@@ -250,7 +250,7 @@ fun MainScreen(
     val location = rememberLocationControls(controller)
     // L'enregistrement de trace : un bouton de la colonne du pouce, sa boite de reprise, son trace en direct.
     val recording = rememberRecordingControls(location)
-    RecordingLineEffect(controller, recording.segments, styleTick)
+    RecordingLineEffect(controller, recording.drawnSegments, styleTick)
     // Ecran maintenu allume tant que le suivi tourne, si le reglage le demande (cf. KeepScreenOnEffect).
     // L'annonce d'un arret subi du suivi : voir la banniere posee avec celle de l'alerte d'eloignement.
     val stopNotice by LocationHub.stopNotice.collectAsState()

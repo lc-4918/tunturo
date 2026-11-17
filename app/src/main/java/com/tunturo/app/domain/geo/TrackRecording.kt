@@ -132,6 +132,14 @@ object TrackRecording {
         return recording.copy(segments = segments.dropLast(1) + listOf(segments.last() + point))
     }
 
+    /**
+     * Ce que la carte dessine en direct : les segments, pendant l'enregistrement seulement. En pause, le
+     * parcours est range dans la bibliotheque et sa couche le montre deja ; le trait en direct le
+     * doublerait.
+     */
+    fun drawn(recording: Recording): List<List<RecordedPoint>> =
+        if (recording.phase == RecordingPhase.RECORDING) recording.segments else emptyList()
+
     /** Les lignes a ranger dans la bibliotheque : un segment d'un seul point n'en est pas une. */
     fun lines(recording: Recording): List<List<TrackPoint>> =
         recording.segments.filter { it.size >= 2 }.map { segment -> segment.map { it.toTrackPoint() } }

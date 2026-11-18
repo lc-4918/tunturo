@@ -118,7 +118,6 @@
     <string name="label_pinned_image">Imatge de portada</string>
     <string name="action_create_composite">Compost</string>
     <string name="action_reset_defaults">Restableix els valors per defecte</string>
-    <string name="action_manage_providers">Gestiona els proveïdors</string>
     <string name="action_offline_download">Mapa sense connexió</string>
     <string name="offline_action_back">Enrere</string>
     <string name="offline_config_title">Baixada de tessel·les</string>
@@ -234,9 +233,8 @@
     <!-- Configuració: pestanyes -->
     <string name="settings_title">Configuració</string>
     <string name="settings_tab_general">Sistema</string>
-    <string name="settings_tab_routes">Trajectes</string>
+    <string name="settings_tab_routes">Rutes</string>
     <string name="settings_tab_map">Mapa</string>
-    <string name="settings_tab_tiles">Tessel·les</string>
 
     <!-- Configuració: Sistema -->
     <string name="settings_section_language">Idioma</string>
@@ -327,7 +325,6 @@
     <string name="settings_route_engine_hint">Els dos motors responen a les mateixes disciplines i a les mateixes preferències. BRouter segueix millor les vies verdes i els senders; Valhalla és l\'original.</string>
     <string name="settings_section_default_discipline">Disciplina per defecte</string>
     <string name="settings_enable_geocoding">Activa la cerca de llocs i adreces</string>
-    <string name="settings_section_markers">Marcadors (mapa)</string>
     <string name="settings_marker_size">Mida dels marcadors (dp)</string>
     <string name="settings_section_folders">Carpetes</string>
     <string name="settings_section_import_folder">Carpeta inicial d\'importacions</string>
@@ -340,7 +337,6 @@
     <string name="settings_section_mbtiles_folder">Carpeta de MBTiles</string>
     <string name="settings_app_folder_default">Carpeta de l\'app (per defecte)</string>
     <string name="settings_section_basemaps">Mapes base</string>
-    <string name="settings_section_providers">Mapes de fons en línia</string>
     <string name="settings_basemap_label">Mapa base</string>
     <string name="settings_field_mbtiles_file">Fitxer MBTiles</string>
     <string name="settings_field_name">Nom</string>
@@ -462,7 +458,6 @@
     <string name="settings_group_gps">GPS</string>
     <string name="settings_section_map_buttons">Botons del mapa</string>
     <string name="settings_group_application">Aplicació</string>
-    <string name="settings_section_custom_basemaps">Mapes de fons fora de línia</string>
     <string name="settings_section_services">Serveis</string>
     <string name="settings_section_profile_calc">Càlcul del perfil</string>
     <string name="settings_section_personalisation">Personalització</string>
@@ -488,8 +483,6 @@
     <string name="settings_sw_planner_step_numbers">Números de les etapes a la llista</string>
     <string name="settings_sw_gps_recenter">Recentra a la posició</string>
     <string name="settings_sw_gps_recenter_sub">Recentra a la posició en activar la localització GPS.</string>
-    <string name="settings_sw_gps_last_fix">Mostra l\'última posició mesurada</string>
-    <string name="settings_sw_gps_last_fix_sub">En aturar el seguiment, es queda al mapa en gris, immòbil.</string>
     <string name="settings_sw_geocoding">Cerca de lloc i adreça</string>
     <string name="settings_sw_planner">Càlcul d\'itinerari</string>
     <string name="settings_sw_measure">Mesura sobre traça</string>
@@ -502,8 +495,6 @@
     <string name="poi_filter_hide_all">Amaga-ho tot</string>
     <string name="poi_filter_hide_layer">Amaga els punts d\'interès</string>
     <string name="poi_filter_show_layer">Mostra els punts d\'interès</string>
-    <string name="settings_section_gps_tracking">Seguiment de la posició</string>
-    <string name="settings_section_gps_marker">Marca de posició</string>
     <string name="settings_label_gps_marker_style">Símbol</string>
     <string name="settings_label_gps_marker_color">Color</string>
     <string name="settings_label_gps_marker_size">Mida del símbol</string>
@@ -818,6 +809,9 @@
     <string name="settings_label_recording_smooth_elevation">Suavitzar les altituds amb el model digital del terreny</string>
     <string name="settings_recording_smooth_elevation_hint">En desar el recorregut, les altituds del GPS se substitueixen per les del model del terreny (IGN a França, OpenTopography a la resta). Cal xarxa; sense, es manté l\'altitud del GPS.</string>
     <string name="settings_sw_recording">Enregistrament</string>
+    <string name="settings_line_online_maps">Mapes en línia</string>
+    <string name="settings_line_offline_maps">Mapes fora de línia</string>
+    <string name="settings_offline_maps_empty">Cap mapa fora de línia: importeu un fitxer MBTiles o baixeu una zona del mapa mostrat.</string>
     <string name="settings_group_recording">Enregistrament</string>
     <string name="settings_recording_resume_info">Activat, la represa després d\'una pausa continua el mateix segment: una línia recta uneix el lloc de la pausa i el de la represa. Desactivat, obre un segment nou, sense línia.</string>
     <string name="recording_action_pause_short">Pausa</string>

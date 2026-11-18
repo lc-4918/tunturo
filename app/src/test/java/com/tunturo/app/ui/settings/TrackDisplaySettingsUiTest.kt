@@ -26,8 +26,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * L'affichage des traces et la coloration par pente dans les reglages : le groupe "Trace" de l'onglet
- * Carte, la rubrique de l'itineraire dans l'onglet Trajets, et le profil qui a perdu sa ligne du restant.
+ * L'affichage des traces et la coloration par pente dans les reglages : la rubrique "Trace" de l'onglet
+ * Carte, la rubrique de l'itineraire dans l'onglet Parcours, et le profil qui a perdu sa ligne du restant.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "fr", application = TestTunturoApp::class)
@@ -57,23 +57,21 @@ class TrackDisplaySettingsUiTest {
         compose.waitForIdle()
     }
 
-    /** Le groupe Trace entier est un reglage expert : hors mode expert, ni lui ni sa largeur de trait. */
-    @Test fun `le groupe Trace n'apparait qu'en mode expert`() {
+    /** La rubrique Trace entiere est un reglage expert : hors mode expert, ni elle ni sa largeur de trait. */
+    @Test fun `la rubrique Trace n'apparait qu'en mode expert`() {
         ouvrir(expert = false)
-        defileVers(app.getString(R.string.settings_label_gps_marker_size))
-        assertFalse("groupe Trace", present(app.getString(R.string.settings_group_track)))
+        defileVers(app.getString(R.string.settings_label_gps_marker_style))
+        assertFalse("rubrique Trace", present(app.getString(R.string.settings_group_track).uppercase()))
         assertFalse("largeur du trait", present(app.getString(R.string.settings_track_line_width)))
     }
 
-    @Test fun `en mode expert, le groupe Trace regle la largeur du trait`() {
+    /** En mode expert, la ligne "Trace" deplie la largeur du trait et le sens de parcours. */
+    @Test fun `en mode expert, la ligne Trace deplie la largeur du trait et le sens de parcours`() {
         ouvrir(expert = true)
-        defileVers(app.getString(R.string.settings_track_line_width))
-        assertTrue(present(app.getString(R.string.settings_group_track)))
-    }
-
-    @Test fun `le sens de parcours se montre en mode expert`() {
-        ouvrir(expert = true)
-        defileVers(app.getString(R.string.settings_track_direction))
+        defileVers(app.getString(R.string.settings_group_track).uppercase())
+        assertFalse("replie", present(app.getString(R.string.settings_track_line_width)))
+        compose.onNodeWithText(app.getString(R.string.settings_group_track)).performClick()
+        compose.waitUntil(5_000) { present(app.getString(R.string.settings_track_line_width)) }
         assertTrue(present(app.getString(R.string.settings_track_direction)))
     }
 
@@ -82,7 +80,7 @@ class TrackDisplaySettingsUiTest {
      * classes des pentes ; la ligne du restant a disparu aussi.
      */
     @Test fun `le profil ne regle plus la pente`() {
-        // Le groupe du profil altimetrique est un reglage expert.
+        // La rubrique du profil altimetrique est un reglage expert.
         ouvrir(expert = true)
         defileVers(app.getString(R.string.settings_profile_grid))
         assertFalse(present("Colorer l'aire par pente"))
@@ -108,19 +106,14 @@ class TrackDisplaySettingsUiTest {
         assertTrue(present(info))
     }
 
-    /** L'onglet Trajets finit par l'altimetrie manquante : les points d'interet sont passes dans l'onglet Carte. */
-    @Test fun `l'altimetrie manquante ferme l'onglet Trajets`() {
+    /** L'onglet Parcours finit par les services : l'altimetrie et les points d'interet sont partis dans l'onglet Carte. */
+    @Test fun `l'onglet Parcours finit par les services`() {
         ouvrir(expert = true)
         compose.onNodeWithText(app.getString(R.string.settings_tab_routes)).performClick()
         compose.waitForIdle()
-        // La position, et non les bornes : celles-ci s'arretent au bord de la liste, et deux rubriques
-        // hors de l'ecran y auraient la meme.
-        fun haut(res: Int) = compose.onNodeWithText(app.getString(res).uppercase(), useUnmergedTree = true)
-            .fetchSemanticsNode().positionInRoot.y
-        val services = haut(R.string.settings_section_services)
-        val altimetrie = haut(R.string.settings_section_elevation_fill)
-        assertTrue("altimetrie apres les services", altimetrie > services)
-        assertTrue("plus de points d'interet ici",
-            compose.onAllNodesWithText(app.getString(R.string.settings_section_poi).uppercase()).fetchSemanticsNodes().isEmpty())
+        fun absent(res: Int) = compose.onAllNodesWithText(app.getString(res).uppercase()).fetchSemanticsNodes().isEmpty()
+        assertFalse(absent(R.string.settings_section_services))
+        assertTrue("plus d'altimetrie ici", absent(R.string.settings_section_elevation_fill))
+        assertTrue("plus de points d'interet ici", absent(R.string.settings_section_poi))
     }
 }

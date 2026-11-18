@@ -118,7 +118,6 @@
     <string name="label_pinned_image">Titelbild</string>
     <string name="action_create_composite">Kombi-Karte</string>
     <string name="action_reset_defaults">Auf Standardwerte zurücksetzen</string>
-    <string name="action_manage_providers">Anbieter verwalten</string>
     <string name="action_offline_download">Offlinekarte</string>
     <string name="offline_action_back">Zurück</string>
     <string name="offline_config_title">Kachel-Download</string>
@@ -234,9 +233,8 @@
     <!-- Einstellungen: Tabs -->
     <string name="settings_title">Einstellungen</string>
     <string name="settings_tab_general">System</string>
-    <string name="settings_tab_routes">Strecken</string>
+    <string name="settings_tab_routes">Routen</string>
     <string name="settings_tab_map">Karte</string>
-    <string name="settings_tab_tiles">Kacheln</string>
 
     <!-- Einstellungen: System -->
     <string name="settings_section_language">Sprache</string>
@@ -327,7 +325,6 @@
     <string name="settings_route_engine_hint">Beide Engines beantworten dieselben Sportarten und dieselben Einstellungen. BRouter folgt Radwegen und Wanderpfaden besser; Valhalla ist die ursprüngliche.</string>
     <string name="settings_section_default_discipline">Standarddisziplin</string>
     <string name="settings_enable_geocoding">Orts- und Adresssuche aktivieren</string>
-    <string name="settings_section_markers">Markierungen (Karte)</string>
     <string name="settings_marker_size">Markierungsgröße (dp)</string>
     <string name="settings_section_folders">Ordner</string>
     <string name="settings_section_import_folder">Standard-Importordner</string>
@@ -340,7 +337,6 @@
     <string name="settings_section_mbtiles_folder">MBTiles-Ordner</string>
     <string name="settings_app_folder_default">App-Ordner (Standard)</string>
     <string name="settings_section_basemaps">Kartengrundlagen</string>
-    <string name="settings_section_providers">Online-Hintergrundkarten</string>
     <string name="settings_basemap_label">Grundlage</string>
     <string name="settings_field_mbtiles_file">MBTiles-Datei</string>
     <string name="settings_field_name">Name</string>
@@ -462,7 +458,6 @@
     <string name="settings_group_gps">GPS</string>
     <string name="settings_section_map_buttons">Kartenschaltflächen</string>
     <string name="settings_group_application">Anwendung</string>
-    <string name="settings_section_custom_basemaps">Offline-Hintergrundkarten</string>
     <string name="settings_section_services">Dienste</string>
     <string name="settings_section_profile_calc">Profilberechnung</string>
     <string name="settings_section_personalisation">Personalisierung</string>
@@ -488,8 +483,6 @@
     <string name="settings_sw_planner_step_numbers">Schrittnummern in der Liste</string>
     <string name="settings_sw_gps_recenter">Auf Position zentrieren</string>
     <string name="settings_sw_gps_recenter_sub">Beim Einschalten der GPS-Ortung auf die Position zentrieren.</string>
-    <string name="settings_sw_gps_last_fix">Letzte gemessene Position anzeigen</string>
-    <string name="settings_sw_gps_last_fix_sub">Nach dem Stoppen bleibt sie grau und unbewegt auf der Karte.</string>
     <string name="settings_sw_geocoding">Orts- und Adresssuche</string>
     <string name="settings_sw_planner">Routenberechnung</string>
     <string name="settings_sw_measure">Messen auf Track</string>
@@ -502,8 +495,6 @@
     <string name="poi_filter_hide_all">Alle ausblenden</string>
     <string name="poi_filter_hide_layer">Points of Interest ausblenden</string>
     <string name="poi_filter_show_layer">Points of Interest anzeigen</string>
-    <string name="settings_section_gps_tracking">Standortverfolgung</string>
-    <string name="settings_section_gps_marker">Positionsmarke</string>
     <string name="settings_label_gps_marker_style">Symbol</string>
     <string name="settings_label_gps_marker_color">Farbe</string>
     <string name="settings_label_gps_marker_size">Symbolgröße</string>
@@ -818,6 +809,9 @@
     <string name="settings_label_recording_smooth_elevation">Höhen am digitalen Geländemodell glätten</string>
     <string name="settings_recording_smooth_elevation_hint">Beim Speichern der Strecke werden die GPS-Höhen durch die des Geländemodells ersetzt (IGN in Frankreich, sonst OpenTopography). Dafür ist ein Netz nötig; ohne Netz bleibt die GPS-Höhe erhalten.</string>
     <string name="settings_sw_recording">Aufzeichnung</string>
+    <string name="settings_line_online_maps">Online-Karten</string>
+    <string name="settings_line_offline_maps">Offline-Karten</string>
+    <string name="settings_offline_maps_empty">Keine Offline-Karte: Importieren Sie eine MBTiles-Datei oder laden Sie ein Gebiet der angezeigten Karte herunter.</string>
     <string name="settings_group_recording">Aufzeichnung</string>
     <string name="settings_recording_resume_info">Eingeschaltet setzt das Fortsetzen nach einer Pause dasselbe Segment fort: Eine gerade Linie verbindet den Ort der Pause mit dem der Fortsetzung. Ausgeschaltet beginnt ein neues Segment, ohne Linie.</string>
     <string name="recording_action_pause_short">Pause</string>

@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import com.tunturo.app.ui.components.BusySpinner
 import com.tunturo.app.ui.routes.MainScreen
 import com.tunturo.app.routing.offline.ZoneUpdateNotice
-import com.tunturo.app.ui.settings.SETTINGS_TAB_ROUTES
+import com.tunturo.app.ui.settings.SETTINGS_TAB_ZONES
 import com.tunturo.app.ui.settings.SettingsScreen
 import com.tunturo.app.update.ReleaseInfo
 import com.tunturo.app.update.UpdateCheck
@@ -35,13 +35,13 @@ fun AppRoot(autoCheckUpdates: Boolean) {
     // Les reglages se referment, la carte reprend la main, et le cadrage s'ouvre : trois etapes, et entre
     // le tap et la derniere il se passe un temps que rien n'annoncait.
     var cadrageEnAttente by remember { mutableStateOf(false) }
-    // La notification "zone a mettre a jour" touchee : les reglages s'ouvrent sur l'onglet des itineraires,
+    // La notification "zone a mettre a jour" touchee : les reglages s'ouvrent sur l'onglet Carte, sous le calcul d'itineraire,
     // ou sont les zones (cf. ZoneUpdateCheck).
     var requestedSettingsTab by rememberSaveable { mutableStateOf<Int?>(null) }
     val openZonesPending by ZoneUpdateNotice.openZonesPending.collectAsState()
     LaunchedEffect(openZonesPending) {
         if (openZonesPending && ZoneUpdateNotice.consumeOpenZones()) {
-            requestedSettingsTab = SETTINGS_TAB_ROUTES
+            requestedSettingsTab = SETTINGS_TAB_ZONES
             showSettings = true
         }
     }

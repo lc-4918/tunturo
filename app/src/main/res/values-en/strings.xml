@@ -118,7 +118,6 @@
     <string name="label_pinned_image">Cover image</string>
     <string name="action_create_composite">Composite</string>
     <string name="action_reset_defaults">Reset to defaults</string>
-    <string name="action_manage_providers">Manage providers</string>
     <string name="action_offline_download">Offline map</string>
     <string name="offline_action_back">Back</string>
     <string name="offline_config_title">Tile download</string>
@@ -234,9 +233,8 @@
     <!-- Settings: tabs -->
     <string name="settings_title">Settings</string>
     <string name="settings_tab_general">System</string>
-    <string name="settings_tab_routes">Trips</string>
+    <string name="settings_tab_routes">Routes</string>
     <string name="settings_tab_map">Map</string>
-    <string name="settings_tab_tiles">Tiles</string>
 
     <!-- Settings: System -->
     <string name="settings_section_language">Language</string>
@@ -327,7 +325,6 @@
     <string name="settings_route_engine_hint">Both engines answer the same activities and the same preferences. BRouter follows greenways and hiking paths more closely; Valhalla is the original one.</string>
     <string name="settings_section_default_discipline">Default discipline</string>
     <string name="settings_enable_geocoding">Enable place and address search</string>
-    <string name="settings_section_markers">Markers (map)</string>
     <string name="settings_marker_size">Marker size (dp)</string>
     <string name="settings_section_folders">Folders</string>
     <string name="settings_section_import_folder">Default import folder</string>
@@ -340,7 +337,6 @@
     <string name="settings_section_mbtiles_folder">MBTiles folder</string>
     <string name="settings_app_folder_default">App folder (default)</string>
     <string name="settings_section_basemaps">Basemaps</string>
-    <string name="settings_section_providers">Online basemaps</string>
     <string name="settings_basemap_label">Basemap</string>
     <string name="settings_field_mbtiles_file">MBTiles file</string>
     <string name="settings_field_name">Name</string>
@@ -462,7 +458,6 @@
     <string name="settings_group_gps">GPS</string>
     <string name="settings_section_map_buttons">Map buttons</string>
     <string name="settings_group_application">Application</string>
-    <string name="settings_section_custom_basemaps">Offline basemaps</string>
     <string name="settings_section_services">Services</string>
     <string name="settings_section_profile_calc">Profile computation</string>
     <string name="settings_section_personalisation">Personalisation</string>
@@ -488,8 +483,6 @@
     <string name="settings_sw_planner_step_numbers">Step numbers in the list</string>
     <string name="settings_sw_gps_recenter">Recentre on position</string>
     <string name="settings_sw_gps_recenter_sub">Recentre on the position when GPS location is turned on.</string>
-    <string name="settings_sw_gps_last_fix">Show the last measured position</string>
-    <string name="settings_sw_gps_last_fix_sub">When tracking stops, it stays on the map in grey, motionless.</string>
     <string name="settings_sw_geocoding">Place and address search</string>
     <string name="settings_sw_planner">Route planning</string>
     <string name="settings_sw_measure">Measure on track</string>
@@ -502,8 +495,6 @@
     <string name="poi_filter_hide_all">Hide all</string>
     <string name="poi_filter_hide_layer">Hide points of interest</string>
     <string name="poi_filter_show_layer">Show points of interest</string>
-    <string name="settings_section_gps_tracking">Position tracking</string>
-    <string name="settings_section_gps_marker">Position marker</string>
     <string name="settings_label_gps_marker_style">Symbol</string>
     <string name="settings_label_gps_marker_color">Colour</string>
     <string name="settings_label_gps_marker_size">Symbol size</string>
@@ -818,6 +809,9 @@
     <string name="settings_label_recording_smooth_elevation">Smooth elevations on the digital terrain model</string>
     <string name="settings_recording_smooth_elevation_hint">When the track is saved, GPS elevations are replaced with terrain model ones (IGN in France, OpenTopography elsewhere). This needs a network; without one, the GPS elevation is kept.</string>
     <string name="settings_sw_recording">Recording</string>
+    <string name="settings_line_online_maps">Online maps</string>
+    <string name="settings_line_offline_maps">Offline maps</string>
+    <string name="settings_offline_maps_empty">No offline map: import an MBTiles file, or download an area of the displayed map.</string>
     <string name="settings_group_recording">Recording</string>
     <string name="settings_recording_resume_info">On, resuming after a pause continues the same segment: a straight line joins where you paused to where you resumed. Off, it starts a new segment, with no line.</string>
     <string name="recording_action_pause_short">Pause</string>

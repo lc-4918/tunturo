@@ -1,5 +1,8 @@
 package com.tunturo.app.ui.settings
 
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -88,10 +91,33 @@ class SettingsTabScope(private val scope: LazyListScope, private val groupes: Ta
     private val starts = mutableListOf<Pair<Int, Int>>()
     private var n = 0
 
-    /** Un bloc de l'onglet. [group] est la chaine du groupe quand ce bloc l'ouvre. */
-    fun bloc(group: Int? = null, content: @Composable () -> Unit) {
+    /**
+     * Un bloc de l'onglet. [group] est la chaine du groupe quand ce bloc l'ouvre. Un bloc a [key] apparait et
+     * disparait en fondu, et les blocs suivants glissent a leur place : c'est le cas du contenu d'un
+     * accordeon a en-tete collant, ou chaque ligne est un element de la liste.
+     */
+    fun bloc(group: Int? = null, key: Any? = null, content: @Composable () -> Unit) {
         if (group != null) starts += n to group
-        scope.item { content() }
+        if (key == null) scope.item { content() }
+        else scope.item(key = key) { Box(Modifier.animateItem()) { content() } }
+        n++
+    }
+
+    /**
+     * Un en-tete COLLANT : il reste en haut de la liste tant que les blocs qui le suivent defilent dessous,
+     * jusqu'a ce que l'en-tete suivant le pousse. D'ou [finCollant], un en-tete vide qui clot la section :
+     * sans lui, l'en-tete resterait colle jusqu'au bas de l'onglet.
+     */
+    @OptIn(ExperimentalFoundationApi::class)
+    fun enTeteCollant(key: Any, content: @Composable () -> Unit) {
+        scope.stickyHeader(key = key) { Box(Modifier.animateItem()) { content() } }
+        n++
+    }
+
+    /** La fin de la section d'un en-tete collant : un en-tete sans hauteur, qui pousse le precedent. */
+    @OptIn(ExperimentalFoundationApi::class)
+    fun finCollant(key: Any) {
+        scope.stickyHeader(key = key) {}
         n++
     }
 

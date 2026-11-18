@@ -32,7 +32,7 @@ class SettingsRequestedTabUiTest {
         var shown = 0
         compose.setContent {
             MaterialTheme {
-                SettingsScreen(onBack = {}, requestedTab = SETTINGS_TAB_ROUTES, onRequestedTabShown = { shown++ })
+                SettingsScreen(onBack = {}, requestedTab = SETTINGS_TAB_ZONES, onRequestedTabShown = { shown++ })
             }
         }
         compose.waitUntil(5_000) { zonesSectionShown() }

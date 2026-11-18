@@ -261,21 +261,7 @@ fun MainScreen(
     // la puce, le rouge des flèches et de la croix) - une couleur vide n'est pas un choix, c'est l'absence
     // de choix, et elle doit suivre le symbole quand on en change.
     val gpsMarker = GpsMarkerStyle.of(settings.gpsMarkerStyle)
-    val gpsMarkerColorReglee = settings.gpsMarkerColor.takeIf { it.isNotBlank() } ?: gpsMarker.defaultColor
-    /**
-     * Le repere passe au GRIS quand il n'est plus suivi.
-     *
-     * **Ce n'est plus l'immobilite qui le grise.** Il virait au gris des que le capteur n'avait plus rien
-     * donne depuis trente secondes - l'idee etant qu'un repere fige ressemble a un repere juste. Mais un
-     * cycliste s'arrete, et le repere annoncait alors un doute qui n'existait pas, sur ce qui est le plus
-     * regarde de la carte.
-     *
-     * Le gris dit desormais quelque chose de sur : ce point est la derniere position MESUREE, le suivi
-     * est arrete, et il ne bougera plus (cf. LocationControls.lastFixShown). Le reglage de couleur reprend
-     * la main des que le suivi repart.
-     */
-    val gpsMarkerColor =
-        if (location.lastFixShown != null) GpsStaleColor else gpsMarkerColorReglee
+    val gpsMarkerColor = settings.gpsMarkerColor.takeIf { it.isNotBlank() } ?: gpsMarker.defaultColor
     val gpsMarkerSizeDp = (settings.gpsMarkerSizeDp).toFloat()
 
     // Orientation du telephone, quand le symbole choisi en porte une (cf. HeadingEffect).
@@ -454,8 +440,6 @@ fun MainScreen(
     // Le reglage de recentrage, tenu a jour comme le precedent : l'allumage du capteur ne deplace la
     // camera que si on le lui a demande, et ne touche jamais au zoom (cf. LocationControls.startGps).
     location.recenterOnStart = settings.gpsRecenterOnStart
-    // Le reglage "Afficher la derniere position mesuree" : lu ici, applique a l'arret du suivi.
-    location.showLastFix = settings.gpsShowLastFix
     /*
      * Le panneau du tableau de bord est a l'ecran. Il s'efface tant que le bas est occupe - le profil, la
      * bande deployee du planificateur, le viewer des voies, une consigne de saisie - ou qu'on l'a range

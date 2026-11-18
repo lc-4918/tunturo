@@ -142,12 +142,12 @@ itself whether a newer version exists and offers to install it.
 - **Basemap legend**: some basemaps, such as the AF3V cycle routes, unfold their legend from a button on the map.
 - **Searching for a place**: enable geocoding in **Settings / Map**; results mix a place's importance and its distance.
 - **Querying a point**: a long press off a marker pins the spot, gives its address and two measurements.
-- **Distance and time to a point**: those of the recommended route for the activity set in *Settings / Trips* (Photon and Valhalla, or your own instances).
+- **Distance and time to a point**: those of the recommended route for the activity set in *Settings / Map*, under route planning (Photon and Valhalla, or your own instances).
 - **Moving a stop**: tap a numbered dot for *Set as destination* or *Delete*, or hold it briefly and drop it elsewhere.
 - **Adding a stop beyond the ends**: a new start or end from the map keeps the old one as a stop.
 - **Measuring a section of a track**: enable the ruler button in **Settings / Map**, then tap two points on a track.
 - **Recording a track**: the button above the dashboard starts recording. While recording, tapping it opens a bubble: *Pause* turns the button off; while paused, the bubble offers *Resume* (in the same segment by default, or a new segment if you turn off the switch in *Settings / System / Recording*); *Finish* opens a dialog where you name the track, suggested as `Start-End_YYYYMMDD` (for example `Paris-Brest_20261117`). Its *Details* set the activity, elevation smoothing on the digital terrain model and the folder: *My tracks* by default, created by the first recording. Elevations come from the GPS unless smoothed.
-- **Colour by slope**: off by default, in *Settings / Trips* (expert mode), for the route on the map and its profile.
+- **Colour by slope**: off by default, in *Settings / Routes* (expert mode), for the route on the map and its profile.
 - **Hillshade**: enable relief shading in the map settings.
 - **Elevation profile**: zoom on a section (three levels), smoothing and vertical scale such as 1 cm = 100 m.
 - **Sending to a Garmin watch**: choose the width of the corridor, then start the sync from the watch.

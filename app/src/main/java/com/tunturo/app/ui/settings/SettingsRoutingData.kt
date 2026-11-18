@@ -87,7 +87,7 @@ private val ZoneGap = 8.dp
  * son emprise ; la liste des zones disponibles, dans une popup, a la meme presentation.
  */
 @Composable
-internal fun OfflineRoutingZones(vm: SettingsViewModel) {
+internal fun ColumnScopeMarker.OfflineRoutingRows(vm: SettingsViewModel) {
     val app = LocalContext.current.applicationContext as? TunturoApp ?: return
     val data = app.brouterData
     val s by data.state.collectAsState()
@@ -102,32 +102,30 @@ internal fun OfflineRoutingZones(vm: SettingsViewModel) {
     LaunchedEffect(Unit) { style = vm.zoneMapStyle() }
     var catalogueOuvert by remember { mutableStateOf(false) }
 
-    // Le "i" leve la confusion la plus probable : ce ne sont ni des fonds de plan ni des traces, seulement
-    // ce qu'il faut au moteur pour calculer sans reseau.
-    SectionTitle(
+    // Dans l'accordeon du calcul d'itineraire (onglet Carte) : un intitule, les zones telechargees une par
+    // ligne, et la ligne qui ouvre le catalogue. Le "i" leve la confusion la plus probable : ce ne sont ni
+    // des fonds de plan ni des traces, seulement ce qu'il faut au moteur pour calculer sans reseau.
+    InCardHeading(
         stringResource(R.string.settings_section_offline_routing),
         info = stringResource(R.string.settings_offline_routing_info),
     )
     val telechargees = BrouterZones.all.filter { it.id in s.zones }
     if (telechargees.isEmpty()) {
-        SettingsCard {
-            SetRow(stringResource(R.string.routing_zones_none))
-            Hint(stringResource(R.string.routing_zones_hint))
-        }
+        SetRow(stringResource(R.string.routing_zones_none))
+        Hint(stringResource(R.string.routing_zones_hint))
     } else {
-        Column(verticalArrangement = Arrangement.spacedBy(ZoneGap)) {
-            telechargees.forEach { z -> ZoneItem(z, s, data, style, downloaded = true) }
+        telechargees.forEach { z ->
+            ZoneItem(z, s, data, style, downloaded = true, inCard = true)
+            RowDivider()
         }
     }
-    Spacer(Modifier.height(ZoneGap))
-    // Meme grammaire que "Gerer les fournisseurs" : une ligne qui ouvre une popup.
-    SettingsCard {
-        SetRow(
-            stringResource(R.string.routing_zones_add),
-            onClick = { catalogueOuvert = true },
-        ) {
-            RowIcon(Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.routing_zones_add))
-        }
+    if (telechargees.isEmpty()) RowDivider()
+    // Une ligne qui ouvre une popup : le catalogue des zones est long, et chacune s'y deplie.
+    SetRow(
+        stringResource(R.string.routing_zones_add),
+        onClick = { catalogueOuvert = true },
+    ) {
+        RowIcon(Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.routing_zones_add))
     }
 
     if (catalogueOuvert) {
@@ -174,6 +172,8 @@ private fun ZoneItem(
     data: BrouterDownloads,
     style: StyleBuilder.Result?,
     downloaded: Boolean,
+    /** Une ligne d'une carte (l'accordeon du calcul d'itineraire), et non une carte a elle. */
+    inCard: Boolean = false,
 ) {
     val p = settingsPalette
     var deplie by remember(zone.id) { mutableStateOf(false) }
@@ -186,7 +186,8 @@ private fun ZoneItem(
     val progression = s.zoneProgress(zone)
     Column {
         Row(
-            Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).background(p.card)
+            Modifier.fillMaxWidth()
+                .then(if (inCard) Modifier else Modifier.clip(MaterialTheme.shapes.medium).background(p.card))
                 .clickable { deplie = !deplie }
                 .defaultMinSize(minHeight = 48.dp)
                 .padding(horizontal = 14.dp, vertical = 10.dp),
@@ -224,8 +225,8 @@ private fun ZoneItem(
             }
         }
         if (deplie) {
-            Spacer(Modifier.height(4.dp))
-            SettingsCard {
+            if (!inCard) Spacer(Modifier.height(4.dp))
+            ZoneDetailCard(inCard) {
                 SetRow(stringResource(R.string.routing_zone_tiles)) { ValueText("${zone.tiles.size}") }
                 RowDivider()
                 SetRow(stringResource(R.string.routing_zone_size)) {
@@ -300,6 +301,15 @@ private fun ZoneItem(
             },
         )
     }
+}
+
+/** Le detail d'une zone : sa propre carte dans le catalogue, en retrait sous sa ligne dans une carte. */
+@Composable
+private fun ZoneDetailCard(inCard: Boolean, content: @Composable ColumnScopeMarker.() -> Unit) {
+    if (inCard) Column(Modifier.padding(start = AccordionIndent)) {
+        ColumnScopeMarker.RowDivider()
+        ColumnScopeMarker.content()
+    } else SettingsCard(content)
 }
 
 /** Ce qu'il reste a telecharger : une taille, rien si tout est deja la, ou l'aveu qu'on ne sait pas. */

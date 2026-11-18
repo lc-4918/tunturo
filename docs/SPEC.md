@@ -197,12 +197,11 @@ son rangement est justement ce qu'on ne voulait pas parcourir.
   icône porte le bleu du point de position. La comparaison se fait à l'écran et non sur les coordonnées :
   la question est "la position est-elle au milieu de ce que je vois", et sa réponse doit valoir à tout
   zoom. Le planificateur, sous lui, ne bouge pas pour autant : la colonne est alignée en bas.
-- **Le gris dit que le repère n'est plus suivi**, et non qu'il est immobile. Il passait au gris au-delà de
-  trente secondes sans mesure : l'idée était qu'un repère figé est visuellement identique à un repère
-  juste. Mais un cycliste s'arrête - un col, un pique-nique, une réparation - et la couleur annonçait alors
-  un doute qui n'existait pas, sur ce qui est le plus regardé de la carte. Un réglage (Carte > Position,
-  éteint par défaut) garde désormais la **dernière position mesurée** sur la carte quand le suivi s'arrête :
-  elle y reste grise et immobile, on retrouve d'où l'on vient sans la confondre avec un repère vivant.
+- **Le repère ne vire plus au gris.** Il passait au gris au-delà de trente secondes sans mesure : l'idée
+  était qu'un repère figé est visuellement identique à un repère juste. Mais un cycliste s'arrête - un col,
+  un pique-nique, une réparation - et la couleur annonçait alors un doute qui n'existait pas, sur ce qui est
+  le plus regardé de la carte. Le suivi arrêté, le repère s'efface (le réglage qui gardait en gris la
+  dernière position mesurée a été retiré le 2026-11-18).
 - **La flèche montre la direction du DÉPLACEMENT**, non l'orientation du téléphone. Elle tirait son cap de
   la boussole, si bien qu'elle tournait sur elle-même dès qu'on prenait l'appareil en main, et s'affichait
   de biais sur la trace suivie - un téléphone sur un guidon pointe où son support le tient. Le cap du GPS
@@ -650,7 +649,7 @@ lui-même si le capteur s'éteint ou si la trace quitte la carte.
 
 Une couche de **points d'intérêt** se pose sur la carte, tirée de **deux sources** : **DATAtourisme**, la
 base publique française du tourisme (Licence Ouverte Etalab 2.0), et **OpenStreetMap** (licence ODbL), toutes
-deux mentionnées dans l'onglet Trajets.
+deux mentionnées sous l'interrupteur des points d'intérêt (onglet Carte).
 
 **Qui répond, et où.** Hors de France, DATAtourisme n'a rien à dire : OpenStreetMap répond seul, pour toutes
 les catégories cochées. En France, DATAtourisme garde **l'hébergement et les loisirs** - qu'il décrit mieux et
@@ -773,7 +772,7 @@ manquait pour tenir la promesse du hors-ligne : le cache ordinaire ne retient qu
 l'endroit où elle sert le plus. Chercher un point d'eau à 18 h dans une vallée sans réseau est exactement le
 cas d'usage.
 
-**Le cache se vide à la demande**, sous les catégories dans *Réglages / Trajets* : il porte le compte des
+**Le cache se vide à la demande**, dans *Réglages / Système / Stockage* : il porte le compte des
 lieux retenus et la corbeille qui les efface. C'est ce qui manquait quand une source rend une fiche fausse -
 rien ne permettait alors de la forcer à redemander, et il fallait attendre la semaine de péremption. Les
 lieux **emportés** avec une zone hors ligne, eux, ne sont pas touchés, et l'écran le dit : un cache se refait
@@ -786,32 +785,49 @@ sans se transformer en erreur.
 
 ## 15. Réglages
 
-Quatre onglets :
+Trois onglets : **Carte**, **Parcours** (mode expert seulement : il ne porte que des réglages experts) et
+**Système**. L'onglet Tuiles a disparu, son contenu est passé en tête de l'onglet Carte.
 
-- **Carte** : hors mode expert, ni groupe ni rubrique - une carte par bouton de la carte, dans l'ordre :
-  calcul d'itinéraire, enregistrement, tableau de bord, points d'intérêt, recherche de lieu, mesure sur
-  trace, retouche des traces ; puis le repère de position. Sous l'interrupteur du tableau de bord se
-  déplient, allumé seulement, l'alerte d'éloignement (l'écart qui la déclenche, son son, la vibration) et,
-  en mode expert, les champs affichés. Sous celui des points d'intérêt se déplient le couloir des traces,
-  l'attribution des données et, en mode expert, le complément OpenStreetMap. Les accordéons se déroulent
-  vers le bas. Le mode expert garde ses groupes : échelle, rotation, suivi de la position, trace,
-  marqueurs et infobulles, apparence du profil. Quatre boutons sont posés sur la carte **par défaut** : le
-  burger, le GPS, le gestionnaire de fonds et le planificateur - plus le fond blanc translucide qui les
-  porte. La recherche de lieu, la mesure sur trace, la retouche des traces et l'alerte d'éloignement, elles,
-  ne le sont pas : ce sont celles qui s'ajoutent volontairement.
-- **Tuiles** : fonds de plan en ligne (catalogue des fournisseurs), fonds de plan hors ligne (la liste des
-  MBTiles et des composites, puis Importer, Télécharger et Composite), import/export (cf.
-  [`BASEMAPS.md`](BASEMAPS.md)) ; en mode expert, le gestionnaire de couches (largeur et opacité du
-  panneau). Il n'y a plus de fond par défaut à choisir : le fond affiché au démarrage est le dernier
-  consulté, que le panneau de la carte enregistre à chaque choix.
-- **Trajets** : discipline par défaut, itinéraire hors ligne ; en mode expert, préférences de tracé,
-  coloration de l'itinéraire suivant la pente, calcul du profil, moteur et services (géocodeur, Overpass,
-  moteur d'itinéraire), complètement de l'altimétrie manquante avec ses deux services (cf. section 6).
+Dans toutes les cartes, **le contenu d'un accordéon est en retrait** sous la ligne qui l'ouvre, filets
+compris, et il se déroule vers le bas. Une ligne d'accordéon porte un chevron ; un appui l'ouvre, un autre
+la referme.
+
+- **Carte** :
+  - En tête, sans titre, **Cartes en ligne** (le catalogue des fournisseurs, sans leur type XYZ ou VECTOR :
+    activation, édition, clé d'API, plage de zoom) et **Cartes hors ligne** (les MBTiles et les
+    composites). Chacune est une ligne en accordéon dont l'en-tête **reste collé** en haut de la liste tant
+    que ses lignes défilent dessous : Importer et Exporter pour les cartes en ligne, Importer, Télécharger
+    et Composite pour les cartes hors ligne, calés à droite, au dessin des gestes du calcul d'itinéraire.
+  - Hors mode expert, ni groupe ni rubrique : une carte par bouton de la carte, dans l'ordre calcul
+    d'itinéraire, enregistrement, tableau de bord, points d'intérêt, recherche de lieu, mesure sur trace,
+    retouche des traces ; puis le repère de position.
+  - Sous le **calcul d'itinéraire** se déplient la discipline par défaut, les numéros des étapes (mode
+    expert) et l'**itinéraire hors ligne** (les zones téléchargées, une par ligne, et le catalogue). La
+    notification d'une zone à mettre à jour ouvre cet onglet.
+  - Sous le **tableau de bord** : l'alerte d'éloignement et, en mode expert, les champs affichés. Sous les
+    **points d'intérêt** : le couloir des traces, l'attribution et, en mode expert, le complément
+    OpenStreetMap.
+  - Le **repère de position** tient en une ligne, *Symbole* : son dessin, sa couleur et sa taille ; un appui
+    sur la taille (« 20 dp ») ouvre une bulle avec son curseur.
+  - En mode expert, dans le groupe Boutons et gestes, après l'échelle et la rotation : la rubrique **GPS**
+    (deux lignes : recentrer sur la position à l'allumage, et le symbole du repère), puis les rubriques
+    **Trace** (une ligne en accordéon : largeur du trait, sens de
+    parcours), **Points d'intérêt** (taille des marqueurs, et Infobulles en accordéon) et **Profil
+    altimétrique** (la grille, puis en accordéon les infos de la ligne de titre, le point courant, les
+    styles, le calcul du profil et l'altimétrie manquante avec ses services, cf. section 6) ; tout en bas,
+    le **gestionnaire de couches** (largeur et opacité du panneau).
+  - Quatre boutons sont posés sur la carte **par défaut** : le burger, le GPS, le gestionnaire de fonds et
+    le planificateur - plus le fond blanc translucide qui les porte. La recherche de lieu, la mesure sur
+    trace, la retouche des traces et l'alerte d'éloignement ne le sont pas : ce sont celles qui s'ajoutent
+    volontairement. Il n'y a plus de fond par défaut à choisir : le fond affiché au démarrage est le dernier
+    consulté, que le panneau de la carte enregistre à chaque choix.
+- **Parcours** (mode expert) : préférences de tracé, coloration de l'itinéraire suivant la pente, moteur et
+  services (géocodeur, Overpass, moteur d'itinéraire).
 - **Système** : Affichage (écran allumé, barre d'état ; thème, langue, et les unités en mode expert),
   Interaction (menu latéral, gestionnaire de fonds, tolérances de tap en mode expert), **Enregistrement**
-  (interrupteur de reprise dans le même segment, cf. section 14 bis), Stockage (caches ; dossiers et **sauvegarde et
-  restauration** en mode expert), Application (simplification du rendu et personnalisation en mode expert,
-  mises à jour, remise à zéro).
+  (interrupteur de reprise dans le même segment, cf. section 14 bis), Stockage (caches ; dossiers et
+  **sauvegarde et restauration** en mode expert), Application (simplification du rendu et personnalisation
+  en mode expert, mises à jour, remise à zéro).
 
 Tout tient dans une seule ligne de base, écrite à chaque changement.
 

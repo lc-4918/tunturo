@@ -189,17 +189,6 @@ internal val MapChromeActive = Color(GpsMarkerStyle.DOT.defaultColor.toColorInt(
 internal val OffTrackAlertColor = Color(0xFFB3261E)
 
 /**
- * Le repere de position quand il ne dit plus la verite : gris, et non la couleur reglee.
- *
- * Le capteur muet depuis une demi-minute laisse un repere fige, visuellement identique a un repere juste.
- * Le gris est la seule teinte de l'application qui dise un doute - tout le reste affirme quelque chose.
- *
- * Une chaine et non une Color : c'est [MapController.setUserMarker] qui la recoit, et MapLibre travaille
- * en hexadecimal.
- */
-internal const val GpsStaleColor = "#8A8A8A"
-
-/**
  * Fond d'un bouton pose sur la carte : un carre a peine adouci, resserre autour de l'icone.
  *
  * Dessine SOUS le contenu plutot que pose sur toute la surface : un IconButton mesure 48 dp pour la zone

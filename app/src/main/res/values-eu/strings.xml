@@ -118,7 +118,6 @@
     <string name="label_pinned_image">Azaleko irudia</string>
     <string name="action_create_composite">Konposatua</string>
     <string name="action_reset_defaults">Berrezarri balio lehenetsiak</string>
-    <string name="action_manage_providers">Kudeatu hornitzaileak</string>
     <string name="action_offline_download">Lineaz kanpoko mapa</string>
     <string name="offline_action_back">Atzera</string>
     <string name="offline_config_title">Lauzen deskarga</string>
@@ -234,9 +233,8 @@
     <!-- Ezarpenak: fitxak -->
     <string name="settings_title">Ezarpenak</string>
     <string name="settings_tab_general">Sistema</string>
-    <string name="settings_tab_routes">Bidaiak</string>
+    <string name="settings_tab_routes">Ibilbideak</string>
     <string name="settings_tab_map">Mapa</string>
-    <string name="settings_tab_tiles">Lauzak</string>
 
     <!-- Ezarpenak: Sistema -->
     <string name="settings_section_language">Hizkuntza</string>
@@ -327,7 +325,6 @@
     <string name="settings_route_engine_hint">Bi motorrek diziplina eta lehentasun berberei erantzuten diete. BRouter-ek bidegorriak eta mendi-bideak hobeto jarraitzen ditu; Valhalla da jatorrizkoa.</string>
     <string name="settings_section_default_discipline">Diziplina lehenetsia</string>
     <string name="settings_enable_geocoding">Gaitu leku eta helbideen bilaketa</string>
-    <string name="settings_section_markers">Markatzaileak (mapa)</string>
     <string name="settings_marker_size">Markatzaileen tamaina (dp)</string>
     <string name="settings_section_folders">Karpetak</string>
     <string name="settings_section_import_folder">Inportazioen abiapuntu-karpeta</string>
@@ -340,7 +337,6 @@
     <string name="settings_section_mbtiles_folder">MBTiles karpeta</string>
     <string name="settings_app_folder_default">Appren karpeta (lehenetsia)</string>
     <string name="settings_section_basemaps">Oinarrizko mapak</string>
-    <string name="settings_section_providers">Lineako oinarri-mapak</string>
     <string name="settings_basemap_label">Oinarrizko mapa</string>
     <string name="settings_field_mbtiles_file">MBTiles fitxategia</string>
     <string name="settings_field_name">Izena</string>
@@ -462,7 +458,6 @@
     <string name="settings_group_gps">GPS</string>
     <string name="settings_section_map_buttons">Maparen botoiak</string>
     <string name="settings_group_application">Aplikazioa</string>
-    <string name="settings_section_custom_basemaps">Lineaz kanpoko oinarri-mapak</string>
     <string name="settings_section_services">Zerbitzuak</string>
     <string name="settings_section_profile_calc">Profilaren kalkulua</string>
     <string name="settings_section_personalisation">Pertsonalizazioa</string>
@@ -488,8 +483,6 @@
     <string name="settings_sw_planner_step_numbers">Urratsen zenbakiak zerrendan</string>
     <string name="settings_sw_gps_recenter">Kokapenean zentratu</string>
     <string name="settings_sw_gps_recenter_sub">GPS kokapena pizten denean kokapenean zentratu.</string>
-    <string name="settings_sw_gps_last_fix">Erakutsi neurtutako azken kokapena</string>
-    <string name="settings_sw_gps_last_fix_sub">Jarraipena gelditzean, mapan geratzen da grisez, geldirik.</string>
     <string name="settings_sw_geocoding">Leku eta helbide bilaketa</string>
     <string name="settings_sw_planner">Ibilbidearen kalkulua</string>
     <string name="settings_sw_measure">Neurketa arrastoan</string>
@@ -502,8 +495,6 @@
     <string name="poi_filter_hide_all">Ezkutatu dena</string>
     <string name="poi_filter_hide_layer">Ezkutatu intereseko puntuak</string>
     <string name="poi_filter_show_layer">Erakutsi intereseko puntuak</string>
-    <string name="settings_section_gps_tracking">Kokapenaren jarraipena</string>
-    <string name="settings_section_gps_marker">Kokapen markatzailea</string>
     <string name="settings_label_gps_marker_style">Ikurra</string>
     <string name="settings_label_gps_marker_color">Kolorea</string>
     <string name="settings_label_gps_marker_size">Ikurraren tamaina</string>
@@ -818,6 +809,9 @@
     <string name="settings_label_recording_smooth_elevation">Altuerak lursailaren eredu digitalarekin leundu</string>
     <string name="settings_recording_smooth_elevation_hint">Ibilbidea gordetzean, GPSaren altuerak lur-ereduarenekin ordezten dira (IGN Frantzian, OpenTopography beste leku batzuetan). Sarea behar da; gabe, GPSaren altuera gordetzen da.</string>
     <string name="settings_sw_recording">Grabaketa</string>
+    <string name="settings_line_online_maps">Lineako mapak</string>
+    <string name="settings_line_offline_maps">Lineaz kanpoko mapak</string>
+    <string name="settings_offline_maps_empty">Ez dago lineaz kanpoko maparik: inportatu MBTiles fitxategi bat, edo deskargatu erakutsitako maparen eremu bat.</string>
     <string name="settings_group_recording">Grabaketa</string>
     <string name="settings_recording_resume_info">Aktibatuta, etenaldiaren ondorengo jarraipenak segmentu bera jarraitzen du: lerro zuzen batek etenaldiaren lekua eta jarraipenarena lotzen ditu. Desaktibatuta, segmentu berri bat irekitzen du, lerrorik gabe.</string>
     <string name="recording_action_pause_short">Eten</string>

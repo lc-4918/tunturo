@@ -140,12 +140,12 @@ lui-même s'il existe une version plus récente et vous propose de l'installer.
 - **Légende d'un fond** : certains fonds, comme les voies cyclables AF3V, déplient leur légende depuis un bouton de la carte.
 - **Chercher un lieu** : activez le géocodage dans **Réglages / Carte** ; les résultats mêlent l'importance du lieu et sa distance.
 - **Interroger un point** : un appui long hors d'un marqueur pose une épingle, donne l'adresse et propose deux mesures.
-- **Distance et durée jusqu'au point** : celles de l'itinéraire recommandé pour la discipline réglée dans *Réglages / Trajets* (Photon et Valhalla, ou vos instances).
+- **Distance et durée jusqu'au point** : celles de l'itinéraire recommandé pour la discipline réglée dans *Réglages / Carte*, sous le calcul d'itinéraire (Photon et Valhalla, ou vos instances).
 - **Déplacer une étape** : un tap sur une pastille numérotée propose *Définir comme arrivée* ou *Supprimer* ; un appui bref la saisit pour la déposer ailleurs.
 - **Prolonger un trajet** : un nouveau départ ou une nouvelle arrivée posés depuis la carte gardent l'ancien bout comme étape.
 - **Enregistrer un parcours** : le bouton au-dessus du tableau de bord lance l'enregistrement. Pendant l'enregistrement, un appui ouvre une bulle : *Pause* éteint le bouton ; en pause, la bulle propose *Reprendre* (dans le même segment par défaut, ou un nouveau segment si l'on éteint l'interrupteur de *Réglages / Système / Enregistrement*) ; *Terminer* ouvre une boîte où l'on nomme le parcours, proposé sous la forme `Départ-Arrivée_AAAAMMJJ` (par exemple `Paris-Brest_20261117`). Ses *Détails* règlent la discipline, le lissage des altitudes sur le modèle numérique de terrain et le dossier : *Mes parcours* par défaut, créé au premier enregistrement. Les altitudes sont celles du GPS tant qu'on ne les lisse pas.
 - **Mesurer une portion de trace** : activez le bouton règle dans **Réglages / Carte**, puis tapez deux points sur une trace.
-- **Colorer suivant la pente** : désactivé par défaut, dans *Réglages / Trajets* (mode expert), pour l'itinéraire sur la carte et son profil.
+- **Colorer suivant la pente** : désactivé par défaut, dans *Réglages / Parcours* (mode expert), pour l'itinéraire sur la carte et son profil.
 - **Relief** : activez l'ombrage de relief dans les réglages carte.
 - **Profil altimétrique** : zoom sur une portion (trois niveaux), lissage et échelle verticale, par exemple 1 cm = 100 m.
 - **Envoi à une montre Garmin** : réglez la largeur du couloir, puis lancez la synchronisation depuis la montre.

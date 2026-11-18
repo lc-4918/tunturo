@@ -540,46 +540,18 @@ class LocationControls internal constructor(
     /** Une position de plus : le repere se deplace, et la camera le suit si un recentrage etait du - sauf
      *  si le planificateur deploye l'interdit entre-temps (cf. [plannerExpanded]). */
     internal fun onFix(fix: LocationHub.Fix) {
-        // Le suivi a repris : le point fige n'a plus lieu d'etre, celui-ci est vivant. C'est ce qui rend
-        // le gris honnete - il dirait "plus suivi" sur un repere qui vient de recommencer a bouger.
-        lastFixShown = null
         controller.setUserLocation(fix.lon, fix.lat, fix.accuracyM)
         if (pendingCenter && !plannerExpanded) { controller.centerOn(fix.lat, fix.lon); pendingCenter = false }
     }
 
     /**
-     * Suivi arrete : le repere s'efface, ou reste en gris a la derniere position mesuree.
-     *
-     * Le reglage eteint - le defaut - rien ne subsiste : c'est le comportement de toujours. Allume, le
-     * point reste la ou le capteur l'a laisse, dans le gris qui dit "ce n'est plus suivi" : on retrouve
-     * d'ou l'on vient sur la carte, sans confondre avec un repere vivant.
+     * Suivi arrete : le repere s'efface. La derniere position mesuree, que l'on pouvait garder en gris sur
+     * la carte, n'est plus proposee (reglage retire le 2026-11-18).
      */
     internal fun onTrackingStopped() {
-        val derniere = fixState.value?.takeIf { showLastFix }
-        lastFixShown = derniere
-        if (derniere == null) controller.clearUserLocation()
-        else controller.setUserLocation(derniere.lon, derniere.lat, derniere.accuracyM)
+        controller.clearUserLocation()
         pendingCenter = false
     }
-
-    /**
-     * La derniere position mesuree, gardee APRES l'arret du suivi (cf. `SettingsEntity.gpsShowLastFix`).
-     *
-     * **Ce qui a disparu d'ici, et pourquoi.** Le repere passait au gris quand le capteur n'avait plus
-     * rien donne depuis trente secondes : l'idee etait qu'un repere fige est visuellement identique a un
-     * repere juste. Mais un cycliste s'arrete - un col, un pique-nique, une reparation - et le repere
-     * virait au gris alors qu'il disait parfaitement vrai. La couleur annoncait un doute qui n'existait
-     * pas, sur ce qui est le plus regarde de la carte.
-     *
-     * Le gris sert desormais a autre chose, et a quelque chose de sur : dire que ce point n'est PLUS
-     * suivi. Le suivi arrete, la derniere position reste sur la carte, immobile et grise - on sait d'ou
-     * l'on vient, sans croire un instant que le point continue de suivre.
-     */
-    var lastFixShown by mutableStateOf<LocationHub.Fix?>(null)
-        private set
-
-    /** Le reglage "Afficher la derniere position mesuree", tenu a jour par l'ecran comme les autres. */
-    var showLastFix: Boolean = false
 
     /**
      * La camera est LAISSEE OU ELLE EST : l'allumage du suivi ne doit pas l'emmener sur la position.

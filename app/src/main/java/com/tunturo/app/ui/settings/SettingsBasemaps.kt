@@ -1,5 +1,11 @@
 package com.tunturo.app.ui.settings
 
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.semantics.Role
 import com.tunturo.app.ui.theme.smallButtonBackground
 import com.tunturo.app.ui.theme.smallButtonContent
 import com.tunturo.app.ui.offline.offlineDownloadAvailable
@@ -90,215 +96,275 @@ import kotlinx.coroutines.launch
 import com.tunturo.app.ui.theme.TunturoIcons
 
 /**
- * L'onglet Fonds : le catalogue des fonds de carte, leurs dossiers, et les composites.
+ * Les fonds de plan, en tete de l'onglet Carte : les cartes en ligne (le catalogue des fournisseurs) et les
+ * cartes hors ligne (MBTiles et composites), chacune une ligne qui s'ouvre en accordeon. L'onglet Tuiles,
+ * qui les portait, a disparu : on y venait surtout depuis la carte, pour un fond qu'on allait regarder.
  *
- * Le plus dense des quatre, parce qu'une ligne de fond porte beaucoup : un apercu, une cle d'API, une plage
- * de zoom, une attribution, et de quoi la modifier sans quitter la liste.
+ * **Chaque ligne d'accordeon est un element de la liste**, et son en-tete - les gestes qui l'alimentent -
+ * reste colle en haut tant que ses lignes defilent dessous : la liste des fonds hors ligne peut etre
+ * longue, et l'import ne doit pas se chercher au bout.
  */
 
 /**
- * Les marges d'un bouton qui partage sa rangee avec un voisin : pleine au bord de la carte, moitie du
- * cote du voisin. Les deux moities font l'ecart que deux lignes de boutons laissent deja entre elles,
- * et les boutons gagnent en largeur ce que l'ancien double bord leur prenait.
+ * L'etat des fonds de plan de l'onglet : les deux accordeons, les boites ouvertes, et les gestes qui
+ * passent par un selecteur du systeme.
+ *
+ * **Tenu par l'ecran, et non par un element de la liste** : un element qui defile hors de l'ecran est
+ * oublie, et avec lui un selecteur de fichier ouvert depuis lui - le fichier choisi n'aurait plus personne
+ * a qui revenir. Cf. [rememberBasemapSettings], [BasemapSettingsDialogs].
  */
-private fun margesDePaire(premier: Boolean) = PaddingValues(
-    start = if (premier) CardButtonEdge else CardButtonHalfGap,
-    end = if (premier) CardButtonHalfGap else CardButtonEdge,
-    top = CardButtonHalfGap,
-    bottom = CardButtonHalfGap,
-)
-
-@Composable internal fun TilesTab(
-    cur: SettingsEntity, providers: List<ProviderEntity>, composites: List<CompositeEntity>, vm: SettingsViewModel,
-    onPickMbtiles: () -> Unit,
-    /** Ouvre le cadrage d'une zone a telecharger, sur la carte (cf. AppRoot). */
-    onDownloadArea: () -> Unit = {},
+@Stable
+class BasemapSettingsState internal constructor(
+    onlineOpen: MutableState<Boolean>,
+    offlineOpen: MutableState<Boolean>,
 ) {
-    // Le Relief (type DEM) est un fournisseur standard (URL, activation, edition) : il suit les memes
-    // regles que les autres et figure donc dans "Gerer les fournisseurs", pas dans les fonds MBTILES.
-    val basemapEntries = providers.filter { it.type == "MBTILES" }
-    val otherProviders = providers.filter { it.type != "MBTILES" }
-    var creatingComposite by remember { mutableStateOf(false) }
-    var editingComposite by remember { mutableStateOf<CompositeEntity?>(null) }
-    var providersDialogOpen by remember { mutableStateOf(false) }
-    val ctx = LocalContext.current
-    // Dossier reel des .mbtiles (miroir de TunturoRepository.mbtilesDir) : affiche dans l'editeur MBTILES.
-    val mbtilesDirPath = cur.mbtilesDir.ifBlank { File(ctx.filesDir, "mbtiles").absolutePath }
+    var onlineOpen by onlineOpen
+    var offlineOpen by offlineOpen
+    var creatingComposite by mutableStateOf(false)
+    var editingComposite by mutableStateOf<CompositeEntity?>(null)
+    /** Le fond affiche ne se telecharge pas : la boite qui le dit, en le nommant. */
+    var downloadRefused by mutableStateOf(false)
+    internal var importProviders: () -> Unit = {}
+    internal var exportProviders: () -> Unit = {}
+    internal var importMbtiles: () -> Unit = {}
+    internal var downloadArea: () -> Unit = {}
+}
 
-    /*
-     * Plus de "fond par defaut" a choisir ici : le fond affiche au demarrage est celui qu'on regardait en
-     * quittant l'application. Le panneau de la carte l'enregistre a chaque choix (cf.
-     * MainViewModel.selectBasemap), et c'est aussi celui que "Telecharger" emporte.
-     *
-     * Reste l'aspect du panneau qui sert a en changer, en mode expert : sa largeur et son opacite.
-     */
-    if (cur.expertMode) {
-        SectionTitle(stringResource(R.string.settings_section_layer_manager), tight = true)
-        SettingsCard {
-            SliderRow(
-                stringResource(R.string.settings_label_panel_width), "${cur.basemapControlWidthPct} %",
-                fractionOf(cur.basemapControlWidthPct, 20, 90),
-                { vm.save(cur.copy(basemapControlWidthPct = valueOf(it, 20, 90))) },
-            )
-            RowDivider()
-            SliderRow(
-                stringResource(R.string.settings_label_panel_opacity), "${cur.basemapControlOpacityPct} %",
-                fractionOf(cur.basemapControlOpacityPct, 30, 100),
-                { vm.save(cur.copy(basemapControlOpacityPct = valueOf(it, 30, 100))) },
-            )
-            CardAction(stringResource(R.string.action_reset_defaults)) {
-                vm.save(cur.copy(basemapControlWidthPct = 70, basemapControlOpacityPct = 90))
-            }
-        }
+@Composable
+internal fun rememberBasemapSettings(
+    vm: SettingsViewModel,
+    onPickMbtiles: () -> Unit,
+    onDownloadArea: () -> Unit,
+): BasemapSettingsState {
+    val onlineOpen = rememberSaveable { mutableStateOf(false) }
+    val offlineOpen = rememberSaveable { mutableStateOf(false) }
+    val state = remember { BasemapSettingsState(onlineOpen, offlineOpen) }
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        uri?.let { vm.exportProviders(it) }
     }
-
-    // En tete de l'onglet : c'est la rubrique qu'on rouvre le plus souvent (activer un fond, y coller une
-    // cle d'API), la ou les fonds hors ligne ci-dessous ne servent qu'aux quelques fonds qu'on a apportes.
-    SectionTitle(stringResource(R.string.settings_section_providers), tight = !cur.expertMode)
-    SettingsCard {
-        SetRow(
-            stringResource(R.string.action_manage_providers),
-            info = stringResource(R.string.settings_providers_subtitle),
-            onClick = { providersDialogOpen = true },
-        ) {
-            RowIcon(Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.action_manage_providers))
-        }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { vm.requestImportProviders(it) }
     }
+    state.importProviders = { importLauncher.launch("application/json") }
+    state.exportProviders = { exportLauncher.launch("tunturo_providers.json") }
+    state.importMbtiles = onPickMbtiles
+    state.downloadArea = onDownloadArea
+    return state
+}
 
-    /*
-     * Fonds de plan hors ligne : ce qu'on a soi-meme apporte a l'application - importe, telecharge ou
-     * compose -, a la difference des fonds en ligne qu'elle fournit (rubrique juste au-dessus). La liste
-     * vient en tete, et les gestes qui l'alimentent dessous.
-     */
-    SectionTitle(stringResource(R.string.settings_section_custom_basemaps))
-    SettingsCard {
-        // La liste d'abord : c'est elle qu'on vient consulter. Ce qui l'alimente - importer, telecharger,
-        // composer - vient dessous.
-        basemapEntries.forEachIndexed { i, p ->
-            if (i > 0) RowDivider()
-            val onDelete: (() -> Unit)? = if (!p.builtin) { { vm.deleteProvider(p) } } else null
-            ProviderRow(p, onSave = vm::saveProvider, onDelete = onDelete, mbtilesDirPath = mbtilesDirPath)
-        }
-        composites.forEachIndexed { i, c ->
-            if (i > 0 || basemapEntries.isNotEmpty()) RowDivider()
-            CompositeRow(c, onToggle = { vm.saveComposite(c.copy(enabled = it)) },
-                onEdit = { editingComposite = c }, onDelete = { vm.deleteComposite(c) })
-        }
-        if (basemapEntries.isNotEmpty() || composites.isNotEmpty()) RowDivider()
-        // Les deux facons d'apporter un fond : l'importer, ou le telecharger depuis celui qu'on affiche -
-        // une zone qu'on cadre sur la carte. Composer vient en dessous : il assemble ce qu'on a deja.
-        val telechargeable = offlineDownloadAvailable(cur.defaultBasemapId, providers)
-        var refusFond by remember { mutableStateOf(false) }
-        // Le haut de la carte au meme retrait que ses cotes : les boutons portent deja six points de
-        // marge verticale, contre quatorze de marge laterale, et la rangee s'en trouvait collee au bord
-        // haut. Les huit points manquants sont poses ici.
-        Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-            CardButton(
-                stringResource(R.string.action_import), painterResource(R.drawable.ic_settings_import),
-                modifier = Modifier.weight(1f), margins = margesDePaire(premier = true),
-                onClick = onPickMbtiles,
-            )
-            CardButton(
-                stringResource(R.string.offline_action_download),
-                rememberVectorPainter(Icons.Outlined.CloudDownload),
-                modifier = Modifier.weight(1f),
-                margins = margesDePaire(premier = false),
-                // Le "i" DANS le bouton, et non pose a cote : il explique ce que ce bouton fait, pas la
-                // rubrique, et il volait a la rangee une largeur que les deux boutons se partagent.
-                info = stringResource(R.string.offline_download_area_info),
-            ) {
-                // Un fond qu'on ne peut pas telecharger le dit, en se NOMMANT, plutot que d'ouvrir un
-                // cadrage qui n'aboutira a rien.
-                if (telechargeable) onDownloadArea() else refusFond = true
-            }
-        }
-        if (refusFond) {
-            val nom = basemapLabel(cur.defaultBasemapId, providers, composites)
-            AlertDialog(
-                onDismissRequest = { refusFond = false },
-                title = { Text(stringResource(R.string.offline_action_download)) },
-                text = {
-                    Text(
-                        if (nom.isBlank()) stringResource(R.string.offline_unavailable)
-                        else stringResource(R.string.offline_unavailable_named, nom),
-                    )
-                },
-                confirmButton = {
-                    TextButton(onClick = { refusFond = false }) { Text(stringResource(R.string.action_ok)) }
-                },
-            )
-        }
-        CardButton(
-            stringResource(R.string.action_create_composite), painterResource(R.drawable.ic_settings_layers),
-        ) { creatingComposite = true }
-    }
-
+/** Les boites des fonds de plan, posees par l'ecran (cf. [BasemapSettingsState]). */
+@Composable
+internal fun BasemapSettingsDialogs(
+    state: BasemapSettingsState, cur: SettingsEntity,
+    providers: List<ProviderEntity>, composites: List<CompositeEntity>, vm: SettingsViewModel,
+) {
     /*
      * Pas de rond d'attente ici, et c'est une mesure qui l'a tranche : ouvrir le composeur est de la
      * COMPOSITION, pas une attente - le fil d'affichage est occupe, aucune image n'est produite, et un
      * temoin pose la resterait fige. Il ne dirait rien que l'ecran fige ne dise deja.
      */
-    if (creatingComposite) {
+    if (state.creatingComposite) {
         CompositeEditorDialog(null, providers,
-            onSave = { vm.saveComposite(it); creatingComposite = false }, onDismiss = { creatingComposite = false })
+            onSave = { vm.saveComposite(it); state.creatingComposite = false },
+            onDismiss = { state.creatingComposite = false })
     }
-    editingComposite?.let { c ->
+    state.editingComposite?.let { c ->
         CompositeEditorDialog(c, providers,
-            onSave = { vm.saveComposite(it); editingComposite = null }, onDismiss = { editingComposite = null })
+            onSave = { vm.saveComposite(it); state.editingComposite = null },
+            onDismiss = { state.editingComposite = null })
     }
-    if (providersDialogOpen) {
-        val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-            uri?.let { vm.exportProviders(it) }
+    if (state.downloadRefused) {
+        val nom = basemapLabel(cur.defaultBasemapId, providers, composites)
+        AlertDialog(
+            onDismissRequest = { state.downloadRefused = false },
+            title = { Text(stringResource(R.string.offline_action_download)) },
+            text = {
+                Text(
+                    if (nom.isBlank()) stringResource(R.string.offline_unavailable)
+                    else stringResource(R.string.offline_unavailable_named, nom),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { state.downloadRefused = false }) { Text(stringResource(R.string.action_ok)) }
+            },
+        )
+    }
+    val pendingImport by vm.pendingProvidersImport.collectAsState()
+    pendingImport?.let { pending ->
+        AlertDialog(
+            onDismissRequest = { vm.cancelImportProviders() },
+            title = { Text(stringResource(R.string.dialog_import_providers_title)) },
+            text = { Text(stringResource(R.string.dialog_import_providers_text, pending.size)) },
+            confirmButton = { TextButton(onClick = { vm.confirmImportProviders() }) { Text(stringResource(R.string.action_import)) } },
+            dismissButton = { TextButton(onClick = { vm.cancelImportProviders() }) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
+}
+
+/**
+ * Les deux lignes des fonds de plan, en blocs de l'onglet Carte : la ligne, l'en-tete collant de ses
+ * gestes, une ligne par fond, et la fin de la section collante.
+ */
+internal fun SettingsTabScope.basemapBlocs(
+    cur: SettingsEntity, providers: List<ProviderEntity>, composites: List<CompositeEntity>,
+    vm: SettingsViewModel, state: BasemapSettingsState,
+) {
+    // Le Relief (type DEM) est un fournisseur standard (URL, activation, edition) : il suit les memes regles
+    // que les autres et figure donc parmi les cartes en ligne, pas parmi les fonds MBTILES.
+    val online = providers.filter { it.type != "MBTILES" }
+    val mbtiles = providers.filter { it.type == "MBTILES" }
+
+    // ---- Cartes en ligne : le catalogue, que l'on rouvre le plus souvent (activer un fond, une cle d'API).
+    bloc(key = "basemaps-online") {
+        CardSegment(top = true, bottom = !state.onlineOpen) {
+            SetRow(
+                stringResource(R.string.settings_line_online_maps),
+                info = stringResource(R.string.settings_providers_subtitle),
+                onClick = { state.onlineOpen = !state.onlineOpen }, role = Role.Button,
+            ) { AccordionChevron(state.onlineOpen) }
         }
-        val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            uri?.let { vm.requestImportProviders(it) }
+    }
+    if (state.onlineOpen) {
+        enTeteCollant("basemaps-online-header") {
+            CardSegment(top = false, bottom = online.isEmpty()) {
+                AccordionHeader {
+                    // La fleche montante charge dans l'application (importer), la descendante en sort un
+                    // fichier (exporter) : meme sens que dans le tiroir principal.
+                    HeaderAction(rememberVectorPainter(Icons.Filled.FileUpload), stringResource(R.string.action_import)) { state.importProviders() }
+                    HeaderAction(rememberVectorPainter(Icons.Filled.FileDownload), stringResource(R.string.action_export)) { state.exportProviders() }
+                }
+            }
         }
-        val pendingImport by vm.pendingProvidersImport.collectAsState()
-        Dialog(onDismissRequest = { providersDialogOpen = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-            // La popup reprend le fond et les cartes de l'ecran : elle en est le prolongement, pas une
-            // fenetre d'un autre monde.
-            Surface(
-                modifier = Modifier.fillMaxWidth(0.92f).fillMaxHeight(0.85f),
-                shape = MaterialTheme.shapes.extraLarge, color = settingsPalette.screen,
-            ) {
-                Column(Modifier.fillMaxSize().padding(14.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.settings_section_providers), style = MaterialTheme.typography.titleLarge,
-                            color = settingsPalette.label,
-                            modifier = Modifier.weight(1f))
-                        // La fleche montante charge dans l'application (importer), la descendante en sort
-                        // un fichier (exporter) : meme sens que dans le tiroir principal, ou la fleche
-                        // montante ouvre deja l'import.
-                        RowIcon(Icons.Filled.FileUpload, stringResource(R.string.action_import)) { importLauncher.launch("application/json") }
-                        RowIcon(Icons.Filled.FileDownload, stringResource(R.string.action_export)) { exportLauncher.launch("tunturo_providers.json") }
-                        RowIcon(Icons.Filled.Close, stringResource(R.string.action_close)) { providersDialogOpen = false }
+        online.forEachIndexed { i, p ->
+            bloc(key = "basemaps-online-${p.id}") {
+                CardSegment(top = false, bottom = i == online.lastIndex) {
+                    AccordionItem { ProviderRow(p, onSave = vm::saveProvider) }
+                }
+            }
+        }
+        finCollant("basemaps-online-end")
+    }
+
+    // ---- Cartes hors ligne : ce qu'on a soi-meme apporte - importe, telecharge ou compose.
+    bloc(key = "basemaps-offline") {
+        Column {
+            Spacer(Modifier.height(MapCardGap))
+            CardSegment(top = true, bottom = !state.offlineOpen) {
+                SetRow(
+                    stringResource(R.string.settings_line_offline_maps),
+                    onClick = { state.offlineOpen = !state.offlineOpen }, role = Role.Button,
+                ) { AccordionChevron(state.offlineOpen) }
+            }
+        }
+    }
+    if (state.offlineOpen) {
+        val empty = mbtiles.isEmpty() && composites.isEmpty()
+        enTeteCollant("basemaps-offline-header") {
+            CardSegment(top = false, bottom = false) {
+                AccordionHeader {
+                    HeaderAction(painterResource(R.drawable.ic_settings_import), stringResource(R.string.action_import)) {
+                        state.importMbtiles()
                     }
-                    Spacer(Modifier.height(8.dp))
-                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                        SettingsCard {
-                            otherProviders.forEachIndexed { i, p ->
-                                if (i > 0) RowDivider()
-                                ProviderRow(p, onSave = vm::saveProvider)
-                            }
-                        }
+                    // Un fond qu'on ne peut pas telecharger le dit, en se NOMMANT, plutot que d'ouvrir un
+                    // cadrage qui n'aboutira a rien.
+                    HeaderAction(rememberVectorPainter(Icons.Outlined.CloudDownload), stringResource(R.string.offline_action_download)) {
+                        if (offlineDownloadAvailable(cur.defaultBasemapId, providers)) state.downloadArea()
+                        else state.downloadRefused = true
+                    }
+                    HeaderAction(painterResource(R.drawable.ic_settings_layers), stringResource(R.string.action_create_composite)) {
+                        state.creatingComposite = true
                     }
                 }
             }
         }
-        if (pendingImport != null) {
-            AlertDialog(
-                onDismissRequest = { vm.cancelImportProviders() },
-                title = { Text(stringResource(R.string.dialog_import_providers_title)) },
-                text = { Text(stringResource(R.string.dialog_import_providers_text, pendingImport!!.size)) },
-                confirmButton = { TextButton(onClick = { vm.confirmImportProviders() }) { Text(stringResource(R.string.action_import)) } },
-                dismissButton = { TextButton(onClick = { vm.cancelImportProviders() }) { Text(stringResource(R.string.action_cancel)) } },
-            )
+        if (empty) {
+            bloc(key = "basemaps-offline-empty") {
+                CardSegment(top = false, bottom = true) {
+                    AccordionItem {
+                        Spacer(Modifier.height(10.dp))
+                        Hint(stringResource(R.string.settings_offline_maps_empty))
+                    }
+                }
+            }
+        }
+        val mbtilesDirPath = cur.mbtilesDir.ifBlank { null }
+        mbtiles.forEachIndexed { i, p ->
+            bloc(key = "basemaps-offline-${p.id}") {
+                val ctx = LocalContext.current
+                // Dossier reel des .mbtiles (miroir de TunturoRepository.mbtilesDir) : affiche dans l'editeur.
+                val dir = mbtilesDirPath ?: File(ctx.filesDir, "mbtiles").absolutePath
+                CardSegment(top = false, bottom = composites.isEmpty() && i == mbtiles.lastIndex) {
+                    AccordionItem {
+                        val onDelete: (() -> Unit)? = if (!p.builtin) { { vm.deleteProvider(p) } } else null
+                        ProviderRow(p, onSave = vm::saveProvider, onDelete = onDelete, mbtilesDirPath = dir)
+                    }
+                }
+            }
+        }
+        composites.forEachIndexed { i, c ->
+            bloc(key = "basemaps-composite-${c.id}") {
+                CardSegment(top = false, bottom = i == composites.lastIndex) {
+                    AccordionItem {
+                        CompositeRow(c, onToggle = { vm.saveComposite(c.copy(enabled = it)) },
+                            onEdit = { state.editingComposite = c }, onDelete = { vm.deleteComposite(c) })
+                    }
+                }
+            }
+        }
+        finCollant("basemaps-offline-end")
+    }
+}
+
+/** L'en-tete d'un accordeon a gestes : un filet, puis les gestes cales a droite. */
+@Composable
+private fun ColumnScopeMarker.AccordionHeader(actions: @Composable RowScope.() -> Unit) {
+    Column(Modifier.padding(start = AccordionIndent)) {
+        RowDivider()
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+            verticalAlignment = Alignment.CenterVertically,
+            content = actions,
+        )
+    }
+}
+
+/** Une ligne d'accordeon, quand elle est son propre element de liste : en retrait, sous un filet. */
+@Composable
+private fun ColumnScopeMarker.AccordionItem(content: @Composable ColumnScopeMarker.() -> Unit) {
+    Column(Modifier.padding(start = AccordionIndent)) {
+        RowDivider()
+        ColumnScopeMarker.content()
+    }
+}
+
+/**
+ * Le gestionnaire de couches, en mode expert, au bas de l'onglet Carte : la largeur et l'opacite du
+ * panneau des fonds.
+ */
+@Composable
+internal fun LayerManagerSettings(cur: SettingsEntity, vm: SettingsViewModel) {
+    SectionTitle(stringResource(R.string.settings_section_layer_manager))
+    SettingsCard {
+        SliderRow(
+            stringResource(R.string.settings_label_panel_width), "${cur.basemapControlWidthPct} %",
+            fractionOf(cur.basemapControlWidthPct, 20, 90),
+            { vm.save(cur.copy(basemapControlWidthPct = valueOf(it, 20, 90))) },
+        )
+        RowDivider()
+        SliderRow(
+            stringResource(R.string.settings_label_panel_opacity), "${cur.basemapControlOpacityPct} %",
+            fractionOf(cur.basemapControlOpacityPct, 30, 100),
+            { vm.save(cur.copy(basemapControlOpacityPct = valueOf(it, 30, 100))) },
+        )
+        CardAction(stringResource(R.string.action_reset_defaults)) {
+            vm.save(cur.copy(basemapControlWidthPct = 70, basemapControlOpacityPct = 90))
         }
     }
 }
 
 /** Ligne d'un composite : meme grammaire qu'un fond (cf. ProviderRow) - symbole, nom, actions, etat. */
-@Composable private fun CompositeRow(c: CompositeEntity, onToggle: (Boolean) -> Unit, onEdit: () -> Unit, onDelete: () -> Unit) {
+@Composable private fun ColumnScopeMarker.CompositeRow(c: CompositeEntity, onToggle: (Boolean) -> Unit, onEdit: () -> Unit, onDelete: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().defaultMinSize(minHeight = 46.dp).padding(horizontal = 14.dp, vertical = 9.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -476,8 +542,7 @@ private fun margesDePaire(premier: Boolean) = PaddingValues(
     }
     Column(Modifier.fillMaxWidth()) {
         // Meme grammaire que les lignes des onglets : drapeau ou rien, libelle, actions a droite, l'etat
-        // en dernier. Le type ne s'affiche plus a cote du nom mais sous lui - il decrit le fond, il ne le
-        // nomme pas.
+        // en dernier.
         Row(
             Modifier.fillMaxWidth().defaultMinSize(minHeight = 46.dp).padding(horizontal = 14.dp, vertical = 9.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -487,12 +552,8 @@ private fun margesDePaire(premier: Boolean) = PaddingValues(
                 AsyncImage(model = flagAssetModel(flagCode), contentDescription = null, contentScale = ContentScale.Crop,
                     modifier = Modifier.size(18.dp, 13.dp).clip(RoundedCornerShape(3.dp)))
             }
-            Column(Modifier.weight(1f)) {
-                Text(p.name, style = MaterialTheme.typography.bodyMedium, color = settingsPalette.label)
-                // Le type du fond, sous son nom : une donnee de la liste, et non une explication - il reste
-                // ecrit, la ou les sous-titres des lignes de reglage ont rejoint leur "i".
-                Text(p.type, style = MaterialTheme.typography.bodySmall, color = settingsPalette.subtle, modifier = Modifier.padding(top = 2.dp))
-            }
+            // Le nom seul : le type du fond (XYZ, VECTOR...) ne disait rien a qui choisit une carte.
+            Text(p.name, style = MaterialTheme.typography.bodyMedium, color = settingsPalette.label, modifier = Modifier.weight(1f))
             RowIcon(
                 if (expanded) Icons.Filled.Close else Icons.Filled.Edit,
                 if (expanded) stringResource(R.string.action_close) else stringResource(R.string.action_edit),

@@ -59,6 +59,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
@@ -1003,7 +1004,13 @@ fun ColumnScopeMarker.ChoiceBlock(label: String, hint: String, onClick: () -> Un
 }
 
 /**
- * Un accordeon dans une carte : ce que l'interrupteur au-dessus commande, deplie sous lui.
+ * Le retrait du contenu d'un accordeon : ce qui se deplie sous une ligne s'en distingue au premier coup
+ * d'oeil, filets compris - on voit ou l'accordeon commence et ou il finit.
+ */
+val AccordionIndent = 16.dp
+
+/**
+ * Un accordeon dans une carte : ce que la ligne au-dessus commande, deplie sous elle, en retrait.
  *
  * **Il se deroule vers le bas, et seulement verticalement.** L'AnimatedVisibility generique - celle qu'on
  * obtient hors d'une ColumnScope, et une carte n'en offre pas (cf. [ColumnScopeMarker]) - grandit depuis
@@ -1017,6 +1024,91 @@ fun ColumnScopeMarker.CardAccordion(visible: Boolean, content: @Composable Colum
         enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
         exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
     ) {
-        Column { ColumnScopeMarker.content() }
+        Column(Modifier.padding(start = AccordionIndent)) { ColumnScopeMarker.content() }
+    }
+}
+
+/**
+ * La fin d'une ligne qui ouvre un accordeon : un chevron, tourne vers le haut quand il est ouvert. Il dit
+ * que la ligne se deplie sur place, la ou la fleche vers la droite disait qu'elle menait ailleurs.
+ */
+@Composable
+fun AccordionChevron(open: Boolean) {
+    val angle by animateFloatAsState(if (open) 180f else 0f, tween(200), label = "chevron")
+    RowIcon(Icons.Filled.KeyboardArrowDown, null, rotation = angle)
+}
+
+/**
+ * Une ligne qui s'ouvre en accordeon : son libelle, son chevron, et dessous, en retrait, [content]. Un
+ * appui sur la ligne l'ouvre, un autre la referme. Fermee a l'arrivee : ce qu'on y range se regle rarement.
+ */
+@Composable
+fun ColumnScopeMarker.AccordionLine(
+    label: String, info: String? = null,
+    content: @Composable ColumnScopeMarker.() -> Unit,
+) {
+    var open by rememberSaveable(label) { mutableStateOf(false) }
+    SetRow(label, onClick = { open = !open }, role = Role.Button, info = info) { AccordionChevron(open) }
+    CardAccordion(open) {
+        RowDivider()
+        content()
+    }
+}
+
+/** Un intitule de rubrique DANS une carte : la meme typographie que [SectionTitle], au retrait des lignes. */
+@Composable
+fun ColumnScopeMarker.InCardHeading(text: String, info: String? = null) {
+    val modifier = Modifier.padding(start = RowPadH, end = RowPadH, top = 14.dp, bottom = 4.dp)
+    val heading = @Composable { m: Modifier ->
+        Text(
+            text.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.1.em, color = settingsPalette.section, modifier = m,
+        )
+    }
+    if (info == null) heading(modifier)
+    else Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        heading(Modifier)
+        InfoTip(info)
+    }
+}
+
+/**
+ * Un morceau de carte, quand une carte s'etend sur plusieurs elements de la liste - un accordeon a en-tete
+ * collant (cf. SettingsTabScope.enTeteCollant). Seuls le haut du premier morceau et le bas du dernier sont
+ * arrondis : bout a bout, ils dessinent une seule carte.
+ *
+ * **Le fond prend la forme, le contenu n'est pas decoupe.** Un decoupage aux coins inegaux passe, pour
+ * savoir si un doigt tombe dedans, par une operation sur les chemins que l'environnement des tests ne sait
+ * pas faire : la ligne ne recevait plus aucun appui. Le fond seul suffit au dessin.
+ */
+@Composable
+fun CardSegment(top: Boolean, bottom: Boolean, content: @Composable ColumnScopeMarker.() -> Unit) {
+    val corners = MaterialTheme.shapes.large
+    val none = androidx.compose.foundation.shape.CornerSize(0.dp)
+    val shape = corners.copy(
+        topStart = if (top) corners.topStart else none, topEnd = if (top) corners.topEnd else none,
+        bottomStart = if (bottom) corners.bottomStart else none, bottomEnd = if (bottom) corners.bottomEnd else none,
+    )
+    Column(Modifier.fillMaxWidth().background(settingsPalette.card, shape)) {
+        ColumnScopeMarker.content()
+    }
+}
+
+/**
+ * Un geste d'en-tete d'accordeon : l'icone sur son libelle, comme Enregistrer, Exporter et Reinitialiser
+ * du calcul d'itineraire (cf. RoutePlannerBand).
+ */
+@Composable
+fun HeaderAction(icon: Painter, label: String, onClick: () -> Unit) {
+    val color = settingsPalette.accent
+    Column(
+        Modifier.width(72.dp).height(52.dp).clip(MaterialTheme.shapes.small)
+            .clickable(role = Role.Button, onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically),
+    ) {
+        Icon(icon, null, Modifier.size(20.dp), tint = color)
+        Text(label, style = MaterialTheme.typography.labelSmall, letterSpacing = 0.sp, color = color,
+            maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }

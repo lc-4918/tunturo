@@ -9,6 +9,14 @@ import androidx.core.content.IntentCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -64,6 +72,9 @@ import com.tunturo.app.data.db.MaxTrackLineWidthDp
 import com.tunturo.app.data.db.MinTrackLineWidthDp
 import com.tunturo.app.data.db.OffTrackAlertStepM
 import com.tunturo.app.data.db.SettingsEntity
+import com.tunturo.app.data.db.CompositeEntity
+import com.tunturo.app.data.db.ProviderEntity
+import com.tunturo.app.domain.model.RoutingProfile
 import com.tunturo.app.domain.model.BubblePosition
 import com.tunturo.app.domain.model.GpsMarkerStyle
 import com.tunturo.app.location.AlertWakeScreen
@@ -101,9 +112,16 @@ import kotlinx.coroutines.launch
  * sait, a l'indice de l'element en tete, dans quel groupe on se trouve. Rien n'est a tenir a jour a
  * cote - l'indice se compte ici meme, au fil des blocs.
  */
-internal fun LazyListScope.mapTab(cur: SettingsEntity, vm: SettingsViewModel, groupes: TabGroups) {
+internal fun LazyListScope.mapTab(
+    cur: SettingsEntity, vm: SettingsViewModel, groupes: TabGroups,
+    providers: List<ProviderEntity>, composites: List<CompositeEntity>, basemaps: BasemapSettingsState,
+) {
     val onglet = SettingsTabScope(this, groupes)
     onglet.run {
+    // Les fonds de plan d'abord, en ligne puis hors ligne, sans titre au-dessus : c'est ce qu'on vient
+    // chercher le plus souvent dans cet onglet (cf. basemapBlocs).
+    basemapBlocs(cur, providers, composites, vm, basemaps)
+
     /*
      * Hors mode expert, ni groupe ni rubrique : une carte par bouton de la carte, espacees, et le repere de
      * position a la suite. Ce sont des interrupteurs qui se lisent d'un coup d'oeil ; des titres au-dessus
@@ -115,17 +133,22 @@ internal fun LazyListScope.mapTab(cur: SettingsEntity, vm: SettingsViewModel, gr
      * carte, au bouton a trois etats du coin bas-droit (cf. MapBottomRightControls).
      */
     if (!cur.expertMode) {
-        bloc { MapButtonCards(cur, vm) }
         bloc {
-            Spacer(Modifier.height(CardGap))
-            GpsMarkerSettings(cur, vm, titled = false)
+            Column {
+                Spacer(Modifier.height(MapCardGap))
+                MapButtonCards(cur, vm)
+            }
+        }
+        bloc {
+            Spacer(Modifier.height(MapCardGap))
+            GpsMarkerSettings(cur, vm, expert = false)
         }
         publier()
         return
     }
 
     bloc(R.string.settings_section_map_controls) {
-        GroupTitle(stringResource(R.string.settings_section_map_controls), first = true)
+        GroupTitle(stringResource(R.string.settings_section_map_controls))
         SettingsCard {
             mapButtonRows(cur, vm).forEachIndexed { index, row ->
                 if (index > 0) RowDivider()
@@ -134,8 +157,8 @@ internal fun LazyListScope.mapTab(cur: SettingsEntity, vm: SettingsViewModel, gr
         }
     }
 
-    // Affichage : les boutons de carte qui ne servent qu'aux reglages fins, mode expert seulement.
-    if (cur.expertMode) bloc {
+    // Affichage : les boutons de carte qui ne servent qu'aux reglages fins.
+    bloc {
         SectionTitle(stringResource(R.string.settings_section_display))
         SettingsCard {
             // Le bouton du gestionnaire de fonds n'est plus un interrupteur d'ici : il suit le mode d'ouverture
@@ -146,44 +169,29 @@ internal fun LazyListScope.mapTab(cur: SettingsEntity, vm: SettingsViewModel, gr
         }
     }
 
-    bloc(R.string.settings_group_gps) {
-        /*
-         * GPS : le repere qu'on voit, puis la veille qui s'en nourrit.
-         *
-         * Les deux rubriques etaient voisines sans rien pour le dire, entre les boutons de la carte et les
-         * points d'interet. Elles parlent pourtant de la meme matiere - la position - et l'une ne sert pas
-         * sans l'autre : le repere d'abord, parce qu'il s'affiche des qu'on allume le capteur, l'alerte
-         * ensuite, parce qu'elle demande en plus une trace a suivre.
-         */
-        GroupTitle(stringResource(R.string.settings_group_gps))
-    }
-
-    // Suivi de la position : mode expert seulement, ses reglages par defaut conviennent a qui ne les cherche pas.
-    if (cur.expertMode) bloc {
-        GpsTrackingSettings(cur, vm)
-    }
-
+    // GPS : une rubrique de deux lignes, le recentrage a l'allumage puis le repere qu'on voit.
     bloc {
-        GpsMarkerSettings(cur, vm)
+        GpsMarkerSettings(cur, vm, expert = true)
     }
 
-    // Trace, points d'interet et profil altimetrique : des reglages d'apparence fins, mode expert seulement.
-    if (cur.expertMode) bloc(R.string.settings_group_track) {
-        /*
-         * Trace : comment les traces et l'itineraire se dessinent sur la carte. Le trait de chaque trace
-         * garde sa couleur, reglee dans le menu lateral ; ce qui est reglable ici vaut pour toutes.
-         */
-        GroupTitle(stringResource(R.string.settings_group_track))
-        SectionTitle(stringResource(R.string.settings_section_display), tight = true)
+    /*
+     * Trace, points d'interet, profil altimetrique : des rubriques et non plus des groupes, chacune quelques
+     * lignes dont le detail se deplie. Trois groupes d'une ou deux rubriques allongeaient l'onglet de titres
+     * qui ne disaient rien de plus que leurs lignes.
+     */
+    bloc {
+        // Comment les traces et l'itineraire se dessinent : le trait de chaque trace garde sa couleur, reglee
+        // dans le menu lateral ; ce qui est reglable ici vaut pour toutes.
+        SectionTitle(stringResource(R.string.settings_group_track))
         SettingsCard {
-            StepperLine(
-                stringResource(R.string.settings_track_line_width), cur.trackLineWidth,
-                MinTrackLineWidthDp, MaxTrackLineWidthDp,
-                info = stringResource(R.string.settings_track_line_width_info),
-            ) { vm.save(cur.copy(trackLineWidth = it)) }
-            // Les chevrons du sens de parcours : reglage expert, eteint par defaut.
-            if (cur.expertMode) {
+            AccordionLine(stringResource(R.string.settings_group_track)) {
+                StepperLine(
+                    stringResource(R.string.settings_track_line_width), cur.trackLineWidth,
+                    MinTrackLineWidthDp, MaxTrackLineWidthDp,
+                    info = stringResource(R.string.settings_track_line_width_info),
+                ) { vm.save(cur.copy(trackLineWidth = it)) }
                 RowDivider()
+                // Les chevrons du sens de parcours, eteints par defaut.
                 SwitchLine(
                     stringResource(R.string.settings_track_direction), cur.trackDirectionArrows,
                     info = stringResource(R.string.settings_track_direction_info),
@@ -192,63 +200,62 @@ internal fun LazyListScope.mapTab(cur: SettingsEntity, vm: SettingsViewModel, gr
         }
     }
 
-    if (cur.expertMode) bloc(R.string.settings_group_pois) {
-        GroupTitle(stringResource(R.string.settings_group_pois))
-        // La taille des marqueurs : reglage fin, mode expert seulement. Celle par defaut convient a qui ne se
-        // pose pas la question, et la rubrique des infobulles suit juste apres.
-        if (cur.expertMode) {
-            SectionTitle(stringResource(R.string.settings_section_markers), tight = true)
-            SettingsCard {
-                StepperLine(stringResource(R.string.settings_label_marker_size), cur.markerSize, 16, 80) {
-                    vm.save(cur.copy(markerSize = it))
-                }
-            }
-        }
-        SectionTitle(stringResource(R.string.settings_section_bubbles), tight = !cur.expertMode)
+    bloc {
+        SectionTitle(stringResource(R.string.settings_group_pois))
         SettingsCard {
-            StepperLine(stringResource(R.string.settings_font_size), cur.bubbleFont, 7, 28,
-                bold = cur.bubbleBold, onBold = { vm.save(cur.copy(bubbleBold = it)) }) { vm.save(cur.copy(bubbleFont = it)) }
+            StepperLine(stringResource(R.string.settings_label_marker_size), cur.markerSize, 16, 80) {
+                vm.save(cur.copy(markerSize = it))
+            }
             RowDivider()
-            StepperLine(stringResource(R.string.font_title), cur.bubbleTitleFont, 7, 28,
-                bold = cur.bubbleTitleBold, onBold = { vm.save(cur.copy(bubbleTitleBold = it)) }) { vm.save(cur.copy(bubbleTitleFont = it)) }
-            RowDivider()
-            PickRow(
-                stringResource(R.string.settings_label_bubble_position),
-                BubblePosition.of(cur.bubblePosition), BubblePosition.entries,
-                optionLabel = { bubblePositionLabel(it) },
-            ) { vm.save(cur.copy(bubblePosition = it.key)) }
-            RowDivider()
-            SliderRow(
-                stringResource(R.string.settings_label_opacity), "${cur.bubbleOpacityPct} %",
-                fractionOf(cur.bubbleOpacityPct, 30, 100),
-                { vm.save(cur.copy(bubbleOpacityPct = valueOf(it, 30, 100))) },
-            )
-            CardAction(stringResource(R.string.action_reset_defaults)) {
-                vm.save(cur.copy(
-                    bubbleFont = 14, bubbleTitleFont = 16,
-                    bubblePosition = BubblePosition.BOTTOM_LEFT.key, bubbleOpacityPct = 100,
-                ))
+            AccordionLine(stringResource(R.string.settings_section_bubbles)) {
+                StepperLine(stringResource(R.string.settings_font_size), cur.bubbleFont, 7, 28,
+                    bold = cur.bubbleBold, onBold = { vm.save(cur.copy(bubbleBold = it)) }) { vm.save(cur.copy(bubbleFont = it)) }
+                RowDivider()
+                StepperLine(stringResource(R.string.font_title), cur.bubbleTitleFont, 7, 28,
+                    bold = cur.bubbleTitleBold, onBold = { vm.save(cur.copy(bubbleTitleBold = it)) }) { vm.save(cur.copy(bubbleTitleFont = it)) }
+                RowDivider()
+                PickRow(
+                    stringResource(R.string.settings_label_bubble_position),
+                    BubblePosition.of(cur.bubblePosition), BubblePosition.entries,
+                    optionLabel = { bubblePositionLabel(it) },
+                ) { vm.save(cur.copy(bubblePosition = it.key)) }
+                RowDivider()
+                SliderRow(
+                    stringResource(R.string.settings_label_opacity), "${cur.bubbleOpacityPct} %",
+                    fractionOf(cur.bubbleOpacityPct, 30, 100),
+                    { vm.save(cur.copy(bubbleOpacityPct = valueOf(it, 30, 100))) },
+                )
+                CardAction(stringResource(R.string.action_reset_defaults)) {
+                    vm.save(cur.copy(
+                        bubbleFont = 14, bubbleTitleFont = 16,
+                        bubblePosition = BubblePosition.BOTTOM_LEFT.key, bubbleOpacityPct = 100,
+                    ))
+                }
             }
         }
     }
 
-    if (cur.expertMode) bloc(R.string.settings_group_elevation_profile) {
-        GroupTitle(stringResource(R.string.settings_group_elevation_profile))
+    bloc {
+        SectionTitle(stringResource(R.string.settings_group_elevation_profile))
         ProfileSettings(cur, vm)
     }
+
+    // Le gestionnaire de couches - largeur et opacite du panneau des fonds - tout en bas : il se regle une
+    // fois pour toutes.
+    bloc { LayerManagerSettings(cur, vm) }
         publier()
     }
 }
 
 /** L'ecart entre deux cartes posees l'une sous l'autre, sans titre entre elles. */
-private val CardGap = 12.dp
+internal val MapCardGap = 12.dp
 
 /**
- * Les boutons de la carte, hors mode expert : une carte par interrupteur, espacees de [CardGap] - rien
+ * Les boutons de la carte, hors mode expert : une carte par interrupteur, espacees de [MapCardGap] - rien
  * avant la premiere, rien apres la derniere.
  */
 @Composable private fun MapButtonCards(cur: SettingsEntity, vm: SettingsViewModel) {
-    Column(verticalArrangement = Arrangement.spacedBy(CardGap)) {
+    Column(verticalArrangement = Arrangement.spacedBy(MapCardGap)) {
         mapButtonRows(cur, vm).forEach { row -> SettingsCard { row() } }
     }
 }
@@ -259,9 +266,7 @@ private val CardGap = 12.dp
  * sortie (enregistrement, tableau de bord, points d'interet), puis les outils.
  */
 private fun mapButtonRows(cur: SettingsEntity, vm: SettingsViewModel): List<@Composable ColumnScopeMarker.() -> Unit> = listOf(
-    {
-        SwitchLine(stringResource(R.string.settings_sw_planner), cur.routePlannerEnabled) { vm.save(cur.copy(routePlannerEnabled = it)) }
-    },
+    { PlannerSwitch(cur, vm) },
     { RecordingSwitch(cur, vm) },
     { DashboardSwitch(cur, vm) },
     { PoiSwitch(cur, vm) },
@@ -278,6 +283,29 @@ private fun mapButtonRows(cur: SettingsEntity, vm: SettingsViewModel): List<@Com
         ) { vm.save(cur.copy(trackEditEnabled = it)) }
     },
 )
+
+/**
+ * L'interrupteur du calcul d'itineraire, et dessous en accordeon ce qui le regle : la discipline par
+ * defaut, les numeros des etapes (mode expert) et les zones de l'itineraire hors ligne. Ils vivaient dans
+ * l'onglet Trajets, loin du bouton qu'ils accompagnent.
+ */
+@Composable private fun ColumnScopeMarker.PlannerSwitch(cur: SettingsEntity, vm: SettingsViewModel) {
+    SwitchLine(stringResource(R.string.settings_sw_planner), cur.routePlannerEnabled) { vm.save(cur.copy(routePlannerEnabled = it)) }
+    CardAccordion(visible = cur.routePlannerEnabled) {
+        RowDivider()
+        InCardHeading(stringResource(R.string.settings_section_default_discipline))
+        RoutingProfilePicker(RoutingProfile.of(cur.routingProfile)) { vm.save(cur.copy(routingProfile = it.key)) }
+        // Libelles A, 1, 2, B devant les etapes du planificateur : mode expert seulement.
+        if (cur.expertMode) {
+            RowDivider()
+            SwitchLine(stringResource(R.string.settings_sw_planner_step_numbers), cur.plannerStepNumbers) {
+                vm.save(cur.copy(plannerStepNumbers = it))
+            }
+        }
+        RowDivider()
+        OfflineRoutingRows(vm)
+    }
+}
 
 /** Le bouton d'enregistrement de trace sur la carte (cf. recordButtonShown). */
 @Composable private fun ColumnScopeMarker.RecordingSwitch(cur: SettingsEntity, vm: SettingsViewModel) {
@@ -372,15 +400,6 @@ private fun mapButtonRows(cur: SettingsEntity, vm: SettingsViewModel): List<@Com
     CardAction(stringResource(R.string.action_reset_defaults)) {
         vm.save(cur.copy(dashboardHidden = "", dashboardFontSizes = ""))
     }
-}
-
-/** Un intitule de rubrique DANS une carte : la meme typographie que [SectionTitle], au retrait des lignes. */
-@Composable private fun ColumnScopeMarker.InCardHeading(text: String) {
-    Text(
-        text.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.1.em, color = settingsPalette.section,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 4.dp),
-    )
 }
 
 /**
@@ -491,95 +510,81 @@ private fun ringtonePickerIntent(ctx: android.content.Context, current: String):
     }
 
 /**
- * Repere de position GPS : son symbole, sa couleur, sa taille.
+ * GPS : en mode expert, une rubrique de deux lignes - recentrer a l'allumage, puis le symbole du repere ;
+ * hors mode expert, la seule ligne du symbole, sans titre.
  *
- * Juste apres les boutons de la carte, et non avec les marqueurs des points d'interet : ce repere n'est
- * pas un point pose sur la carte mais l'etat du capteur qu'allume le bouton juste au-dessus.
+ * Recentrer a l'allumage, ou rester ou l'on regarde : eteint par defaut, "ou suis-je" et "emmene-moi" sont
+ * deux questions distinctes. Le ZOOM ne bouge jamais, recentrage demande ou non (cf. LocationControls.startGps).
  *
  * La couleur affichee est la couleur EFFECTIVE - celle reglee, ou celle propre au symbole tant qu'on n'a
  * rien choisi -, si bien que la pastille dit toujours ce qu'on verra sur la carte.
  */
-/**
- * Ce que la carte fait quand le suivi s'allume, et quand il s'arrete.
- *
- * **Ces deux reglages etaient dans "Boutons et gestes"**, aupres de l'interrupteur qui POSE le bouton de
- * localisation. Ils n'y parlaient pas de la meme chose : celui-la decide si un bouton s'affiche, ceux-ci
- * de ce qui arrive a la camera et au repere. Leur place est dans le groupe GPS, avec le symbole du repere
- * et l'alerte d'eloignement - tout ce que la position commande.
- *
- * En TETE du groupe, et avant le symbole : on regle d'abord ce que le suivi fait, ensuite a quoi il
- * ressemble.
- */
-@Composable private fun GpsTrackingSettings(cur: SettingsEntity, vm: SettingsViewModel) {
-    SectionTitle(stringResource(R.string.settings_section_gps_tracking), tight = true)
-    SettingsCard {
-        /*
-         * Recentrer a l'allumage, ou rester ou l'on regarde.
-         *
-         * Eteint par defaut : "ou suis-je" et "emmene-moi" sont deux questions distinctes. On regardait une
-         * vallee pour preparer la suite, on touchait le bouton pour se situer, et l'on se retrouvait au coin
-         * d'une rue - la zone qu'on etudiait perdue, et rien pour la retrouver. Le repere se pose sur la
-         * carte de toute facon ; le bouton de recentrage est la pour qui veut l'y rejoindre.
-         *
-         * Le ZOOM ne bouge jamais, recentrage demande ou non : ce n'est donc pas un reglage, c'est une
-         * regle (cf. LocationControls.startGps).
-         */
-        SwitchLine(
-            stringResource(R.string.settings_sw_gps_recenter), cur.gpsRecenterOnStart,
-            info = stringResource(R.string.settings_sw_gps_recenter_sub),
-        ) { vm.save(cur.copy(gpsRecenterOnStart = it)) }
-        // Reglage fin : mode expert seulement (cf. SettingsEntity.expertMode).
-        if (cur.expertMode) {
-            RowDivider()
-            /*
-             * La derniere position mesuree, gardee sur la carte quand le suivi s'arrete.
-             *
-             * Elle y reste en GRIS et immobile - la teinte qui servait a dire "cette position est vieille", et
-             * qui dit desormais quelque chose de sur : ce point n'est plus suivi. On retrouve d'ou l'on vient
-             * sans confondre avec un repere vivant.
-             *
-             * Eteint par defaut : la carte se rend nue a qui vient de couper le suivi, comme toujours.
-             */
-            SwitchLine(
-                stringResource(R.string.settings_sw_gps_last_fix), cur.gpsShowLastFix,
-                info = stringResource(R.string.settings_sw_gps_last_fix_sub),
-            ) { vm.save(cur.copy(gpsShowLastFix = it)) }
-        }
-    }
-}
-
-@Composable private fun GpsMarkerSettings(cur: SettingsEntity, vm: SettingsViewModel, titled: Boolean = true) {
+@Composable private fun GpsMarkerSettings(cur: SettingsEntity, vm: SettingsViewModel, expert: Boolean) {
     val marker = GpsMarkerStyle.of(cur.gpsMarkerStyle)
     val color = cur.gpsMarkerColor.takeIf { it.isNotBlank() } ?: marker.defaultColor
     var pickColor by remember { mutableStateOf(false) }
-    if (titled) SectionTitle(stringResource(R.string.settings_section_gps_marker), tight = true)
+    var pickStyle by remember { mutableStateOf(false) }
+    var sizeBubble by remember { mutableStateOf(false) }
+    if (expert) SectionTitle(stringResource(R.string.settings_group_gps))
     SettingsCard {
-        // Changer de symbole rend sa couleur ET sa taille au nouveau : chacun a les siennes (bleu et 20 dp
-        // pour la puce, rouge et 30 dp pour les fleches, qui doivent montrer une direction), et les heriter
-        // du precedent donnerait une fleche bleue et minuscule a qui vient de quitter la puce sans avoir
-        // rien choisi.
-        PickRow(
+        if (expert) {
+            SwitchLine(
+                stringResource(R.string.settings_sw_gps_recenter), cur.gpsRecenterOnStart,
+                info = stringResource(R.string.settings_sw_gps_recenter_sub),
+            ) { vm.save(cur.copy(gpsRecenterOnStart = it)) }
+            RowDivider()
+        }
+        /*
+         * Une seule ligne, "Symbole" : son dessin, sa couleur et sa taille au bout, chacun se touchant a part.
+         * Trois lignes pour trois proprietes d'un meme repere en faisaient une rubrique ; la taille, qui se
+         * regle rarement, ouvre son curseur dans une bulle (cf. [SizeBubble]).
+         */
+        SetRow(
             stringResource(R.string.settings_label_gps_marker_style),
-            marker, GpsMarkerStyle.entries, optionLabel = { gpsMarkerLabel(it) },
             // L'orientation des fleches, dite au "i" du symbole plutot qu'en bas de la carte.
             info = stringResource(R.string.settings_gps_marker_heading_hint),
         ) {
-            vm.save(cur.copy(
-                gpsMarkerStyle = it.key, gpsMarkerColor = "", gpsMarkerSizeDp = it.defaultSizeDp,
-            ))
+            // Changer de symbole rend sa couleur ET sa taille au nouveau : chacun a les siennes (bleu et 20 dp
+            // pour la puce, rouge et 30 dp pour les fleches, qui doivent montrer une direction), et les heriter
+            // du precedent donnerait une fleche bleue et minuscule a qui vient de quitter la puce.
+            Box(Modifier.clip(MaterialTheme.shapes.small).clickable { pickStyle = true }) {
+                PickValue(gpsMarkerLabel(marker), pickStyle, { pickStyle = false }) {
+                    GpsMarkerStyle.entries.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(gpsMarkerLabel(option)) },
+                            onClick = {
+                                pickStyle = false
+                                vm.save(cur.copy(
+                                    gpsMarkerStyle = option.key, gpsMarkerColor = "", gpsMarkerSizeDp = option.defaultSizeDp,
+                                ))
+                            },
+                        )
+                    }
+                }
+            }
+            Box(
+                Modifier.size(32.dp).clip(CircleShape).clickable { pickColor = true },
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(Modifier.size(22.dp).clip(CircleShape).background(Color(color.toColorInt()))
+                    .testTag("gps_marker_color"))
+            }
+            Box {
+                Box(Modifier.clip(MaterialTheme.shapes.small).clickable { sizeBubble = true }.padding(horizontal = 4.dp, vertical = 6.dp)) {
+                    ValueText("${cur.gpsMarkerSizeDp} dp")
+                }
+                if (sizeBubble) {
+                    SizeBubble(
+                        label = stringResource(R.string.settings_label_gps_marker_size),
+                        value = "${cur.gpsMarkerSizeDp} dp",
+                        fraction = fractionOf(cur.gpsMarkerSizeDp, MinGpsMarkerSizeDp, MaxGpsMarkerSizeDp),
+                        steps = MaxGpsMarkerSizeDp - MinGpsMarkerSizeDp - 1,
+                        onFraction = { vm.save(cur.copy(gpsMarkerSizeDp = valueOf(it, MinGpsMarkerSizeDp, MaxGpsMarkerSizeDp))) },
+                        onDismiss = { sizeBubble = false },
+                    )
+                }
+            }
         }
-        RowDivider()
-        SetRow(stringResource(R.string.settings_label_gps_marker_color), onClick = { pickColor = true }) {
-            Box(Modifier.size(24.dp).clip(CircleShape).background(Color(color.toColorInt())))
-        }
-        RowDivider()
-        SliderRow(
-            label = stringResource(R.string.settings_label_gps_marker_size),
-            value = "${cur.gpsMarkerSizeDp} dp",
-            fraction = fractionOf(cur.gpsMarkerSizeDp, MinGpsMarkerSizeDp, MaxGpsMarkerSizeDp),
-            steps = MaxGpsMarkerSizeDp - MinGpsMarkerSizeDp - 1,
-            onFraction = { vm.save(cur.copy(gpsMarkerSizeDp = valueOf(it, MinGpsMarkerSizeDp, MaxGpsMarkerSizeDp))) },
-        )
     }
     if (pickColor) {
         ColorPickerDialog(
@@ -589,6 +594,31 @@ private fun ringtonePickerIntent(ctx: android.content.Context, current: String):
             // Le repere de position n'est pas une trace : toutes les couleurs lui restent permises.
             excludeReserved = false,
         )
+    }
+}
+
+/**
+ * La bulle d'un curseur, ouverte d'un appui sur sa valeur : le libelle, la valeur qui suit le doigt, et la
+ * piste. Elle se referme d'un appui a cote.
+ */
+@Composable private fun SizeBubble(
+    label: String, value: String, fraction: Float, steps: Int,
+    onFraction: (Float) -> Unit, onDismiss: () -> Unit,
+) {
+    Popup(
+        alignment = Alignment.BottomEnd,
+        offset = IntOffset(0, 0),
+        onDismissRequest = onDismiss,
+        properties = PopupProperties(focusable = true),
+    ) {
+        Card(
+            modifier = Modifier.width(240.dp).testTag("gps_marker_size_bubble"),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(containerColor = settingsPalette.card),
+        ) {
+            ColumnScopeMarker.SliderRow(label, value, fraction, onFraction, steps = steps)
+        }
     }
 }
 

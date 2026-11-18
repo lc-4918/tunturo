@@ -39,9 +39,7 @@ import com.tunturo.app.ui.location.LocationNoticeBar
  * ce qui est exactement ce qu'une alerte ne doit pas devenir.
  *
  * Le repere qui passait au gris pour la meme raison a suivi : un cycliste s'arrete - un col, un
- * pique-nique, une reparation - et le gris annoncait alors un doute qui n'existait pas. Il dit desormais
- * quelque chose de sur : le suivi est arrete, et ce point est la derniere position mesuree
- * (cf. LocationControls.lastFixShown).
+ * pique-nique, une reparation - et le gris annoncait alors un doute qui n'existait pas.
  *
  * L'ecart et le son ne se calculent pas ici mais dans le service (cf. LocationService.watchTrack) :
  * l'ecran eteint, la composition s'arrete, et une alerte qui ne se declenche que sous les yeux de celui

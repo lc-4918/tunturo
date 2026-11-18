@@ -103,7 +103,7 @@ y allume ou éteint son ombrage - deux états distincts, le second dans `setting
 
 Ses tuiles brutes ne sont pas des images à regarder - elles codent des altitudes - ce qui lui vaut son
 seul réglage propre : la **force de son ombrage** (`opacityPct`), réglable dans sa fiche, sous
-*Réglages / Tuiles / Fonds de plan en ligne*, avec un retour à la valeur par défaut. 40 % : au-delà, l'ombre mange
+*Réglages / Carte / Cartes en ligne*, avec un retour à la valeur par défaut. 40 % : au-delà, l'ombre mange
 le fond posé dessous.
 
 ## Composites

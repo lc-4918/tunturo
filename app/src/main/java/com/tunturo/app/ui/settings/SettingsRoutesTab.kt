@@ -88,25 +88,13 @@ import kotlinx.coroutines.launch
  * de la planification, et les deux URL se reglent ensemble. Les interrupteurs qui montrent leurs boutons
  * sur la carte, eux, restent dans l'onglet "Carte".
  */
+/**
+ * Onglet "Parcours" : comment le calcul d'itineraire se fait - preferences de trace, coloration, moteur et
+ * services. Tout y est reglage expert : la discipline par defaut et l'itineraire hors ligne sont passes sous
+ * l'interrupteur du calcul d'itineraire (onglet Carte), le profil dans sa rubrique de l'onglet Carte. Hors
+ * mode expert, l'onglet n'est donc pas montre (cf. SettingsScreen).
+ */
 @Composable internal fun RoutesTab(cur: SettingsEntity, vm: SettingsViewModel) {
-    SectionTitle(stringResource(R.string.settings_section_default_discipline), tight = true)
-    SettingsCard {
-        RoutingProfilePicker(RoutingProfile.of(cur.routingProfile)) { vm.save(cur.copy(routingProfile = it.key)) }
-    }
-
-    // Libelles A, 1, 2, B devant les etapes du planificateur : mode expert seulement (cf. SettingsEntity.plannerStepNumbers).
-    if (cur.expertMode) {
-        SettingsCard {
-            SwitchLine(stringResource(R.string.settings_sw_planner_step_numbers), cur.plannerStepNumbers) {
-                vm.save(cur.copy(plannerStepNumbers = it))
-            }
-        }
-    }
-
-    // L'itineraire hors ligne en deuxieme, juste apres la discipline : c'est la qu'on vient voir si
-    // l'application saura calculer sans reseau, avant de partir.
-    OfflineRoutingZones(vm)
-
     /*
      * Ce que le calcul doit privilégier - et qu'il ignorait jusqu'ici, d'où cette rubrique : sans elle, un
      * VTC part sur la départementale quand la voie verte longe la même vallée.
@@ -121,7 +109,7 @@ import kotlinx.coroutines.launch
      */
     // Mode expert seulement, comme le moteur et les services plus bas (cf. SettingsEntity.expertMode).
     if (cur.expertMode) {
-        SectionTitle(stringResource(R.string.settings_section_route_prefs))
+        SectionTitle(stringResource(R.string.settings_section_route_prefs), tight = true)
         var tuned by remember(cur.routingProfile) { mutableStateOf(RoutingProfile.of(cur.routingProfile)) }
         SettingsCard {
             RoutingProfilePicker(tuned) { tuned = it }
@@ -162,14 +150,128 @@ import kotlinx.coroutines.launch
         }
     }
 
-    // Le lissage et l'echelle verticale ont quitte l'onglet "Carte" pour celui-ci : ils ne decrivent pas
-    // ce qui s'affiche mais comment le profil se CALCULE, la ligne de partage que les deux onglets
-    // revendiquent depuis toujours.
-    // Lissage et echelle verticale : mode expert seulement. Ce sont des reglages de CALCUL, dont la bonne
-    // valeur ne se devine pas a l'oeil, et dont les defauts conviennent a qui ne les cherche pas.
+    /*
+     * Moteur d'itineraire et services techniques, en fin de liste : ce sont des reglages qu'on pose une
+     * fois puis qu'on oublie, a la difference de la discipline et des preferences de trace, ajustees a
+     * chaque sortie. Le moteur juste avant les services, puisque c'est lui qui decide QUELLE des deux
+     * adresses en dessous est la sienne.
+     */
     if (cur.expertMode) {
-        SectionTitle(stringResource(R.string.settings_section_profile_calc))
+        SectionTitle(
+            stringResource(R.string.settings_section_route_engine),
+            info = stringResource(R.string.settings_route_engine_hint),
+        )
         SettingsCard {
+            SegChips(RouteEngine.entries.map { it.key to routeEngineLabel(it) }, cur.routeEngine) {
+                vm.save(cur.copy(routeEngine = it))
+            }
+        }
+    }
+
+    if (cur.expertMode) {
+        SectionTitle(
+            stringResource(R.string.settings_section_services),
+            info = stringResource(R.string.settings_services_hint),
+        )
+        SettingsCard {
+            FieldRow(stringResource(R.string.settings_section_geocoding_service)) {
+                SettingsTextField(cur.geocodingUrl, Photon.DEFAULT_URL) { vm.save(cur.copy(geocodingUrl = it.trim())) }
+            }
+            RowDivider()
+            /*
+             * L'instance Overpass, aupres du geocodeur et du moteur d'itineraire : c'est le troisieme service
+             * tiers que l'application interroge, et le seul qui n'etait pas reglable.
+             *
+             * Ce n'est pas un raffinement : releve sur cinq tentatives identiques, l'instance publique a rendu
+             * deux 504 et trois reponses, entre 1,6 et 9,3 s. Une instance de repli est la seule parade a la
+             * disposition de l'utilisateur quand celle-ci sature.
+             */
+            if (cur.poiEnabled) {
+                FieldRow(stringResource(R.string.settings_section_poi_osm_service)) {
+                    SettingsTextField(cur.poiOsmUrl, Overpass.DEFAULT_URL) {
+                        vm.save(cur.copy(poiOsmUrl = it.trim()))
+                    }
+                }
+                RowDivider()
+            }
+            FieldRow(stringResource(R.string.settings_section_routing_service)) {
+                // Le champ ENTIER suit le moteur retenu, valeur et gabarit : chaque moteur garde son adresse,
+                // si bien que basculer pour comparer ne fait pas perdre celle de l'autre - et qu'on n'envoie
+                // jamais la requete d'un moteur au serveur du voisin, faute qui echouerait en silence.
+                val moteur = RouteEngine.of(cur.routeEngine)
+                SettingsTextField(cur.routeUrl(moteur), Router.defaultUrlOf(moteur)) {
+                    vm.save(cur.withRouteUrl(moteur, it.trim()))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Reglages d'apparence du profil altimetrique, communs au profil d'une trace et a celui d'un itineraire
+ * planifie. Composable a part, et non un onglet : ils tiennent desormais a la fin de l'onglet "Carte",
+ * l'onglet qu'ils occupaient etant rendu au calcul d'itineraire.
+ */
+@Composable internal fun ProfileSettings(cur: SettingsEntity, vm: SettingsViewModel) {
+    SettingsCard {
+        SwitchLine(stringResource(R.string.settings_profile_grid), cur.profileGrid) { vm.save(cur.copy(profileGrid = it)) }
+        // Ni coloration par pente ni largeur des classes ici : l'aire d'un profil se colorie des que sa
+        // couche l'est (menu de la couche), et les classes gardent leur largeur par defaut
+        // (SlopeRamp.DefaultClassTenths). Les colonnes profileSlope et slopeClassTenths ne sont plus lues.
+        RowDivider()
+        AccordionLine(stringResource(R.string.settings_section_title_line_info)) {
+            // Un interrupteur par info, comme les champs du tableau de bord : on en allume autant qu'on veut.
+            // Les noms ENTIERS, ceux des bulles du profil, et non les abreviations des colonnes.
+            InfoSwitchRows(
+                listOf(
+                    "dist" to stringResource(R.string.info_name_distance),
+                    "asc" to stringResource(R.string.info_name_ascent),
+                    "desc" to stringResource(R.string.info_name_descent),
+                    "dur" to stringResource(R.string.info_name_duration),
+                    "min" to stringResource(R.string.info_name_alt_min),
+                    "max" to stringResource(R.string.info_name_alt_max),
+                ),
+                cur.titleInfos,
+            ) { vm.save(cur.copy(titleInfos = it)) }
+        }
+        RowDivider()
+        AccordionLine(stringResource(R.string.settings_label_current_point)) {
+            InfoSwitchRows(
+                listOf("dist" to stringResource(R.string.chip_distance), "ele" to stringResource(R.string.chip_altitude),
+                    "slope" to stringResource(R.string.chip_slope), "time" to stringResource(R.string.chip_time)),
+                cur.cursorInfos,
+            ) { vm.save(cur.copy(cursorInfos = it)) }
+        }
+        RowDivider()
+        AccordionLine(stringResource(R.string.settings_section_font_sizes)) {
+            StepperLine(stringResource(R.string.font_axes), cur.profAxisFont, 7, 28,
+                bold = cur.profAxisBold, onBold = { vm.save(cur.copy(profAxisBold = it)) }) { vm.save(cur.copy(profAxisFont = it)) }
+            RowDivider()
+            StepperLine(stringResource(R.string.font_title), cur.profTitleFont, 7, 28,
+                bold = cur.profTitleBold, onBold = { vm.save(cur.copy(profTitleBold = it)) }) { vm.save(cur.copy(profTitleFont = it)) }
+            RowDivider()
+            StepperLine(stringResource(R.string.font_title_bar_info), cur.profBarFont, 7, 28,
+                bold = cur.profBarBold, onBold = { vm.save(cur.copy(profBarBold = it)) }) { vm.save(cur.copy(profBarFont = it)) }
+            RowDivider()
+            StepperLine(stringResource(R.string.settings_profile_slope_legend), cur.profLegendFont, 7, 28,
+                bold = cur.profLegendBold, onBold = { vm.save(cur.copy(profLegendBold = it)) }) { vm.save(cur.copy(profLegendFont = it)) }
+            RowDivider()
+            StepperLine(stringResource(R.string.font_cursor_point), cur.profCursorFont, 7, 28,
+                bold = cur.profCursorBold, onBold = { vm.save(cur.copy(profCursorBold = it)) }) { vm.save(cur.copy(profCursorFont = it)) }
+            CardAction(stringResource(R.string.action_reset_defaults)) {
+                vm.save(cur.copy(
+                    profAxisFont = 9, profAxisBold = false,
+                    profTitleFont = 16, profTitleBold = true,
+                    profBarFont = 11, profBarBold = false,
+                    profLegendFont = 9, profLegendBold = false,
+                    profCursorFont = 11, profCursorBold = false,
+                ))
+            }
+        }
+        RowDivider()
+        // Le lissage et l'echelle verticale : comment le profil se CALCULE, venus de l'onglet Trajets. Leur
+        // bonne valeur ne se devine pas a l'oeil, et leurs defauts conviennent a qui ne les cherche pas.
+        AccordionLine(stringResource(R.string.settings_section_profile_calc)) {
             // Valeurs autorisees : 1 m, puis pas de 5 jusqu'a 100 m (souvent ~1 point GPS tous les 80 m). Non
             // equidistantes (1->5) : le curseur parcourt un index et rend la valeur, plutot qu'une plage
             // continue. Un reglage existant hors liste est ramene a la valeur la plus proche.
@@ -237,171 +339,37 @@ import kotlinx.coroutines.launch
                 ))
             }
         }
-    }
-
-    /*
-     * Moteur d'itineraire et services techniques, en fin de liste : ce sont des reglages qu'on pose une
-     * fois puis qu'on oublie, a la difference de la discipline et des preferences de trace, ajustees a
-     * chaque sortie. Le moteur juste avant les services, puisque c'est lui qui decide QUELLE des deux
-     * adresses en dessous est la sienne.
-     */
-    if (cur.expertMode) {
-        SectionTitle(
-            stringResource(R.string.settings_section_route_engine),
-            info = stringResource(R.string.settings_route_engine_hint),
-        )
-        SettingsCard {
-            SegChips(RouteEngine.entries.map { it.key to routeEngineLabel(it) }, cur.routeEngine) {
-                vm.save(cur.copy(routeEngine = it))
-            }
-        }
-    }
-
-    if (cur.expertMode) {
-        SectionTitle(
-            stringResource(R.string.settings_section_services),
-            info = stringResource(R.string.settings_services_hint),
-        )
-        SettingsCard {
-            FieldRow(stringResource(R.string.settings_section_geocoding_service)) {
-                SettingsTextField(cur.geocodingUrl, Photon.DEFAULT_URL) { vm.save(cur.copy(geocodingUrl = it.trim())) }
-            }
-            RowDivider()
-            /*
-             * L'instance Overpass, aupres du geocodeur et du moteur d'itineraire : c'est le troisieme service
-             * tiers que l'application interroge, et le seul qui n'etait pas reglable.
-             *
-             * Ce n'est pas un raffinement : releve sur cinq tentatives identiques, l'instance publique a rendu
-             * deux 504 et trois reponses, entre 1,6 et 9,3 s. Une instance de repli est la seule parade a la
-             * disposition de l'utilisateur quand celle-ci sature.
-             */
-            if (cur.poiEnabled) {
-                FieldRow(stringResource(R.string.settings_section_poi_osm_service)) {
-                    SettingsTextField(cur.poiOsmUrl, Overpass.DEFAULT_URL) {
-                        vm.save(cur.copy(poiOsmUrl = it.trim()))
+        RowDivider()
+        // L'altimetrie manquante, completee a l'import : la matiere du profil, venue de l'onglet Trajets. Les
+        // adresses des services ne s'ouvrent qu'une fois le completement demande.
+        AccordionLine(stringResource(R.string.settings_section_elevation_fill)) {
+            SwitchLine(
+                stringResource(R.string.settings_label_fill_elevation), cur.fillMissingElevation,
+                info = stringResource(R.string.settings_fill_elevation_hint),
+            ) { vm.save(cur.copy(fillMissingElevation = it)) }
+            // Les adresses des services : mode expert seulement. Le completement se demande d'un interrupteur,
+            // et ses serveurs par defaut conviennent a qui ne les a jamais regardes.
+            if (cur.fillMissingElevation) {
+                RowDivider()
+                FieldRow(stringResource(R.string.settings_label_elevation_france)) {
+                    SettingsTextField(cur.elevationIgnUrl, IgnElevation.DEFAULT_URL) {
+                        vm.save(cur.copy(elevationIgnUrl = it.trim()))
                     }
                 }
                 RowDivider()
-            }
-            FieldRow(stringResource(R.string.settings_section_routing_service)) {
-                // Le champ ENTIER suit le moteur retenu, valeur et gabarit : chaque moteur garde son adresse,
-                // si bien que basculer pour comparer ne fait pas perdre celle de l'autre - et qu'on n'envoie
-                // jamais la requete d'un moteur au serveur du voisin, faute qui echouerait en silence.
-                val moteur = RouteEngine.of(cur.routeEngine)
-                SettingsTextField(cur.routeUrl(moteur), Router.defaultUrlOf(moteur)) {
-                    vm.save(cur.withRouteUrl(moteur, it.trim()))
+                FieldRow(stringResource(R.string.settings_label_elevation_world)) {
+                    SettingsTextField(cur.elevationWorldUrl, OpenTopo.DEFAULT_URL) {
+                        vm.save(cur.copy(elevationWorldUrl = it.trim()))
+                    }
                 }
-            }
-        }
-    }
-
-    // L'altimetrie manquante puis les points d'interet, en fin d'onglet : ils se reglent une fois pour
-    // toutes, le second en dernier parce qu'il se choisit surtout depuis la bulle de la carte.
-    //
-    // Dans cet onglet et non dans "Carte" : c'est de la matiere du profil qu'il s'agit, comme le lissage
-    // au-dessus, et non de ce qui s'affiche. Les deux services ne s'ouvrent qu'une fois le completement
-    // demande - trois champs d'URL sous un interrupteur eteint n'auraient rien a regler.
-    // Mode expert seulement : le completement suit son reglage par defaut pour qui ne l'a jamais regarde.
-    if (cur.expertMode) {
-    SectionTitle(stringResource(R.string.settings_section_elevation_fill))
-    SettingsCard {
-        SwitchLine(
-            stringResource(R.string.settings_label_fill_elevation), cur.fillMissingElevation,
-            info = stringResource(R.string.settings_fill_elevation_hint),
-        ) { vm.save(cur.copy(fillMissingElevation = it)) }
-        // Les adresses des services : mode expert seulement. Le completement se demande d'un interrupteur,
-        // et ses serveurs par defaut conviennent a qui ne les a jamais regardes.
-        if (cur.fillMissingElevation) {
-            RowDivider()
-            FieldRow(stringResource(R.string.settings_label_elevation_france)) {
-                SettingsTextField(cur.elevationIgnUrl, IgnElevation.DEFAULT_URL) {
-                    vm.save(cur.copy(elevationIgnUrl = it.trim()))
+                RowDivider()
+                FieldRow(stringResource(R.string.settings_label_elevation_world_key)) {
+                    SettingsTextField(cur.elevationWorldKey, OpenTopo.DEFAULT_KEY) {
+                        vm.save(cur.copy(elevationWorldKey = it.trim()))
+                    }
                 }
+                Hint(stringResource(R.string.settings_services_hint))
             }
-            RowDivider()
-            FieldRow(stringResource(R.string.settings_label_elevation_world)) {
-                SettingsTextField(cur.elevationWorldUrl, OpenTopo.DEFAULT_URL) {
-                    vm.save(cur.copy(elevationWorldUrl = it.trim()))
-                }
-            }
-            RowDivider()
-            FieldRow(stringResource(R.string.settings_label_elevation_world_key)) {
-                SettingsTextField(cur.elevationWorldKey, OpenTopo.DEFAULT_KEY) {
-                    vm.save(cur.copy(elevationWorldKey = it.trim()))
-                }
-            }
-            Hint(stringResource(R.string.settings_services_hint))
-        }
-    }
-    }
-}
-
-/**
- * Reglages d'apparence du profil altimetrique, communs au profil d'une trace et a celui d'un itineraire
- * planifie. Composable a part, et non un onglet : ils tiennent desormais a la fin de l'onglet "Carte",
- * l'onglet qu'ils occupaient etant rendu au calcul d'itineraire.
- */
-@Composable internal fun ProfileSettings(cur: SettingsEntity, vm: SettingsViewModel) {
-    SectionTitle(stringResource(R.string.settings_section_display), tight = true)
-    SettingsCard {
-        SwitchLine(stringResource(R.string.settings_profile_grid), cur.profileGrid) { vm.save(cur.copy(profileGrid = it)) }
-        // Ni coloration par pente ni largeur des classes ici : l'aire d'un profil se colorie des que sa
-        // couche l'est (menu de la couche), et les classes gardent leur largeur par defaut
-        // (SlopeRamp.DefaultClassTenths). Les colonnes profileSlope et slopeClassTenths ne sont plus lues.
-    }
-
-    SectionTitle(stringResource(R.string.settings_section_title_line_info))
-    SettingsCard {
-        // Un interrupteur par info, comme les champs du tableau de bord : on en allume autant qu'on veut,
-        // et les puces le disaient mal (cf. InfoSwitchRows).
-        // Les noms ENTIERS, ceux des bulles du profil, et non les abreviations des colonnes : "D+" tient
-        // dans une colonne de graphe, pas dans une liste de reglages ou rien ne presse.
-        InfoSwitchRows(
-            listOf(
-                "dist" to stringResource(R.string.info_name_distance),
-                "asc" to stringResource(R.string.info_name_ascent),
-                "desc" to stringResource(R.string.info_name_descent),
-                "dur" to stringResource(R.string.info_name_duration),
-                "min" to stringResource(R.string.info_name_alt_min),
-                "max" to stringResource(R.string.info_name_alt_max),
-            ),
-            cur.titleInfos,
-        ) { vm.save(cur.copy(titleInfos = it)) }
-    }
-
-    SectionTitle(stringResource(R.string.settings_label_current_point))
-    SettingsCard {
-        InfoSwitchRows(
-            listOf("dist" to stringResource(R.string.chip_distance), "ele" to stringResource(R.string.chip_altitude),
-                "slope" to stringResource(R.string.chip_slope), "time" to stringResource(R.string.chip_time)),
-            cur.cursorInfos,
-        ) { vm.save(cur.copy(cursorInfos = it)) }
-    }
-
-    SectionTitle(stringResource(R.string.settings_section_font_sizes))
-    SettingsCard {
-        StepperLine(stringResource(R.string.font_axes), cur.profAxisFont, 7, 28,
-            bold = cur.profAxisBold, onBold = { vm.save(cur.copy(profAxisBold = it)) }) { vm.save(cur.copy(profAxisFont = it)) }
-        RowDivider()
-        StepperLine(stringResource(R.string.font_title), cur.profTitleFont, 7, 28,
-            bold = cur.profTitleBold, onBold = { vm.save(cur.copy(profTitleBold = it)) }) { vm.save(cur.copy(profTitleFont = it)) }
-        RowDivider()
-        StepperLine(stringResource(R.string.font_title_bar_info), cur.profBarFont, 7, 28,
-            bold = cur.profBarBold, onBold = { vm.save(cur.copy(profBarBold = it)) }) { vm.save(cur.copy(profBarFont = it)) }
-        RowDivider()
-        StepperLine(stringResource(R.string.settings_profile_slope_legend), cur.profLegendFont, 7, 28,
-            bold = cur.profLegendBold, onBold = { vm.save(cur.copy(profLegendBold = it)) }) { vm.save(cur.copy(profLegendFont = it)) }
-        RowDivider()
-        StepperLine(stringResource(R.string.font_cursor_point), cur.profCursorFont, 7, 28,
-            bold = cur.profCursorBold, onBold = { vm.save(cur.copy(profCursorBold = it)) }) { vm.save(cur.copy(profCursorFont = it)) }
-        CardAction(stringResource(R.string.action_reset_defaults)) {
-            vm.save(cur.copy(
-                profAxisFont = 9, profAxisBold = false,
-                profTitleFont = 16, profTitleBold = true,
-                profBarFont = 11, profBarBold = false,
-                profLegendFont = 9, profLegendBold = false,
-                profCursorFont = 11, profCursorBold = false,
-            ))
         }
     }
 }

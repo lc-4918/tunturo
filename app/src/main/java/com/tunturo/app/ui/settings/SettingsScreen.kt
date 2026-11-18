@@ -114,8 +114,13 @@ internal fun groupeEnTete(etat: LazyListState, starts: List<Pair<Int, String>>, 
     return nom
 }
 
-/** L'onglet des itineraires, ou sont les zones hors ligne (cf. l'ordre des onglets plus bas). */
-const val SETTINGS_TAB_ROUTES = 2
+/** Les onglets, par identifiant : l'ordre ou ils se montrent. */
+const val SETTINGS_TAB_MAP = 0
+const val SETTINGS_TAB_ROUTES = 1
+const val SETTINGS_TAB_SYSTEM = 2
+
+/** L'onglet ou sont les zones de l'itineraire hors ligne : sous le calcul d'itineraire, onglet Carte. */
+const val SETTINGS_TAB_ZONES = SETTINGS_TAB_MAP
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -243,16 +248,25 @@ fun SettingsScreen(
         )
     }
 
-    var tab by rememberSaveable { mutableIntStateOf(0) }
+    var tab by rememberSaveable { mutableIntStateOf(SETTINGS_TAB_MAP) }
     LaunchedEffect(requestedTab) {
         requestedTab?.let { tab = it; onRequestedTabShown() }
     }
-    val tabs = listOf(
-        stringResource(R.string.settings_tab_map) to Icons.Filled.Map,
-        stringResource(R.string.settings_tab_tiles) to Icons.Filled.Layers,
-        stringResource(R.string.settings_tab_routes) to Icons.Outlined.Directions,
-        stringResource(R.string.settings_tab_general) to Icons.Filled.Tune,
-    )
+    /*
+     * Trois onglets : Carte - qui porte desormais les fonds de plan, l'onglet Tuiles a disparu -, Parcours
+     * et Systeme. Parcours ne porte que des reglages experts : hors mode expert, il n'est pas montre, et
+     * qui s'y trouvait au moment d'eteindre le mode expert revient a la carte.
+     */
+    val tabs = buildList {
+        add(Triple(SETTINGS_TAB_MAP, stringResource(R.string.settings_tab_map), Icons.Filled.Map))
+        if (cur.expertMode) add(Triple(SETTINGS_TAB_ROUTES, stringResource(R.string.settings_tab_routes), Icons.Outlined.Directions))
+        add(Triple(SETTINGS_TAB_SYSTEM, stringResource(R.string.settings_tab_general), Icons.Filled.Tune))
+    }
+    LaunchedEffect(cur.expertMode, tab) {
+        if (!cur.expertMode && tab == SETTINGS_TAB_ROUTES) tab = SETTINGS_TAB_MAP
+    }
+    val basemaps = rememberBasemapSettings(vm, onPickMbtiles = { mbPicker.launch("*/*") }, onDownloadArea = onDownloadArea)
+    BasemapSettingsDialogs(basemaps, cur, providers, composites, vm)
 
     // Palette propre a cet ecran : cartes claires sur fond bleute, cf. SettingsPalette.
     ProvideSettingsPalette(dark = isDarkTheme(cur.theme)) {
@@ -337,7 +351,7 @@ fun SettingsScreen(
                 Modifier.fillMaxWidth().background(palette.header).padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                tabs.forEachIndexed { i, (label, icon) ->
+                tabs.forEach { (i, label, icon) ->
                     val selected = tab == i
                     Column(
                         Modifier.weight(1f).clip(MaterialTheme.shapes.medium)
@@ -387,7 +401,7 @@ fun SettingsScreen(
              */
             val hauteurBarre = with(LocalDensity.current) { GroupBarHeight.toPx() }
             val debuts = groupesParOnglet[tab]?.starts.orEmpty()
-            val groupeCourant = if (tab == 0) {
+            val groupeCourant = if (tab == SETTINGS_TAB_MAP) {
                 groupeEnTete(etatListe, debuts.map { (i, res) -> i to stringResource(res) }, hauteurBarre)
             } else {
                 barreGroupe.current
@@ -432,13 +446,12 @@ fun SettingsScreen(
                         contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 22.dp),
                     ) {
                         when (currentTab) {
-                            0 -> mapTab(cur, vm, groupesParOnglet.getOrPut(currentTab) { TabGroups() })
-                            // Les trois autres onglets restent d'une piece pour l'instant : un seul
+                            SETTINGS_TAB_MAP -> mapTab(
+                                cur, vm, groupesParOnglet.getOrPut(currentTab) { TabGroups() },
+                                providers, composites, basemaps,
+                            )
+                            // Les deux autres onglets restent d'une piece pour l'instant : un seul
                             // element de liste, donc composes en entier comme avant.
-                            1 -> item {
-                                TilesTab(cur, providers, composites, vm, onPickMbtiles = { mbPicker.launch("*/*") },
-                                    onDownloadArea = onDownloadArea)
-                            }
                             SETTINGS_TAB_ROUTES -> item { RoutesTab(cur, vm) }
                             else -> item {
                                 SystemTab(cur, vm,

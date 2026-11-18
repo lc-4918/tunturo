@@ -163,7 +163,7 @@ jamais sélectionnable comme fond visuel : un tap sur lui, dans le gestionnaire,
 ombrage au lieu de remplacer le fond courant.
 
 **Deux états, et non un.** Son `enabled` ne dit que sa présence dans le gestionnaire, exactement comme
-pour les autres fonds, et se règle au même endroit qu'eux (*Réglages / Tuiles / Fournisseurs*).
+pour les autres fonds, et se règle au même endroit qu'eux (*Réglages / Carte / Cartes en ligne*).
 L'ombrage lui-même vit dans `settings.hillshadeOn`, et c'est le tap qui le bascule.
 
 Pourquoi les séparer : confondus, un tap qui éteignait le relief le retirait du gestionnaire, sans plus

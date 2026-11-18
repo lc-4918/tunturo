@@ -825,5 +825,4 @@
     <string name="recording_finish_folder">Carpeta</string>
     <string name="recording_notice_paused">Enregistrament en pausa</string>
     <string name="settings_section_layer_manager">Gestor de capes</string>
-    <string name="location_channel_quiet_name">Seguiment de la posició (app oberta)</string>
 </resources>

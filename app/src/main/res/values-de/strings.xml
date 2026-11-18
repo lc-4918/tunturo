@@ -825,5 +825,4 @@
     <string name="recording_finish_folder">Ordner</string>
     <string name="recording_notice_paused">Aufzeichnung pausiert</string>
     <string name="settings_section_layer_manager">Ebenenverwaltung</string>
-    <string name="location_channel_quiet_name">Standortverfolgung (App geöffnet)</string>
 </resources>

@@ -827,5 +827,4 @@
     <string name="recording_finish_folder">Dossier</string>
     <string name="recording_notice_paused">Enregistrement en pause</string>
     <string name="settings_section_layer_manager">Gestionnaire de couches</string>
-    <string name="location_channel_quiet_name">Suivi de position (application ouverte)</string>
 </resources>

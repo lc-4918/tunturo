@@ -518,10 +518,11 @@ l'écran éteint, l'application en arrière-plan, le téléphone en poche - c'es
 s'arrêtait jusqu'ici à la première mise en veille. Une **notification permanente** l'annonce, dit l'écart à
 la trace suivie quand il y en a une, et porte un bouton d'arrêt ; le bouton de position de la carte reste le
 second. Android impose cette notification dès que le suivi tourne, application à l'écran comprise (sans
-l'autorisation de localisation "toujours", que Tunturo ne demande pas) : elle est donc **discrète tant que
-l'application est à l'écran** - canal d'importance minimale, sans icône dans la barre d'état, repliée au bas
-du volet - et redevient normale dès que l'écran s'éteint ou que l'application passe en arrière-plan. Une
-alerte de suivi interrompu passe avant tout (cf. `TrackingNotificationChannel`). Le suivi s'arrête aussi de lui-même si la localisation est éteinte dans le téléphone, ou si
+l'autorisation de localisation "toujours", que Tunturo ne demande pas, et qui ne dispenserait pas de la
+notification écran éteint). Elle est d'**importance basse** : un canal d'importance minimale, essayé en
+v0.36 tant que l'application était à l'écran, est refusé par Android pour un service au premier plan, qui
+le remonte en importance basse. Qui la veut plus discrète la minimise dans les réglages d'Android : un choix
+de l'utilisateur est respecté. Une alerte de suivi interrompu passe sur son propre canal, qui sonne. Le suivi s'arrête aussi de lui-même si la localisation est éteinte dans le téléphone, ou si
 l'application est balayée des tâches récentes : c'est une fonction de l'application, pas un agent qui lui
 survit. **Sauf pendant un enregistrement de trace** : balayée, l'application laisse le suivi tourner, et la
 notification dit "Enregistrement en cours".

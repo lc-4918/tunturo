@@ -825,5 +825,4 @@
     <string name="recording_finish_folder">Carpeta</string>
     <string name="recording_notice_paused">Grabación en pausa</string>
     <string name="settings_section_layer_manager">Gestor de capas</string>
-    <string name="location_channel_quiet_name">Seguimiento de posición (app abierta)</string>
 </resources>

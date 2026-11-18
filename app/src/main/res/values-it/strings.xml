@@ -825,5 +825,4 @@
     <string name="recording_finish_folder">Cartella</string>
     <string name="recording_notice_paused">Registrazione in pausa</string>
     <string name="settings_section_layer_manager">Gestore dei livelli</string>
-    <string name="location_channel_quiet_name">Rilevamento della posizione (app aperta)</string>
 </resources>

@@ -825,5 +825,4 @@
     <string name="recording_finish_folder">Pasta</string>
     <string name="recording_notice_paused">Gravação em pausa</string>
     <string name="settings_section_layer_manager">Gestor de camadas</string>
-    <string name="location_channel_quiet_name">Seguimento da posição (app aberta)</string>
 </resources>

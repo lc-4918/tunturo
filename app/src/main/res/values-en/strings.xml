@@ -825,5 +825,4 @@
     <string name="recording_finish_folder">Folder</string>
     <string name="recording_notice_paused">Recording paused</string>
     <string name="settings_section_layer_manager">Layer manager</string>
-    <string name="location_channel_quiet_name">Location tracking (app open)</string>
 </resources>

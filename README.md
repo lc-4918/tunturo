@@ -95,7 +95,7 @@ synchronised elevation profile, without depending on any online service.
 - **Off-track alert**: pick the track you follow and get a banner, and a sound if you want one, as soon as you stray from it.
 - **Dashboard while following**: speed, time and distance done and left, ascent and descent done and ahead.
 - **Track recording**: a single button, recording or not; its bubble pauses, resumes or finishes, and the track is saved in *My tracks*, named after its start and end towns.
-- **Tracking survives the screen going off**, with an ongoing notification - kept discreet while the app is on screen - and an option to keep the screen on.
+- **Tracking survives the screen going off**, with an ongoing notification (Android requires it; you can minimise it in Android's notification settings) and an option to keep the screen on.
 - **Heading arrow** that follows your direction of travel rather than the compass.
 - **Send to a Garmin watch**: the corridor of a track, as map tiles, through Garmin Connect.
 - **Built-in updates**, and an interface in French, English, German, Spanish, Catalan, Basque, Italian and Portuguese.

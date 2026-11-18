@@ -22,12 +22,16 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Les gestes de l'enregistrement - demarrer, mettre en pause, reprendre - et le rangement du parcours
- * dans la bibliotheque a chaque pause.
+ * Les gestes de l'enregistrement - demarrer, mettre en pause, reprendre, terminer - et le rangement du
+ * parcours dans la bibliotheque a sa fin.
+ *
+ * **La pause ne range plus rien** : le parcours attend sur le disque (cf. [RecordingStore]), qui survit a
+ * la mort du processus. C'est "Terminer" qui le range, apres une boite ou l'on choisit son nom, sa
+ * discipline, ses altitudes et son dossier.
  *
  * Dans l'application et non dans un ecran : la pause peut venir de la notification, l'application en
- * arriere-plan, et le parcours doit se ranger quand meme. Le capteur, lui, reste l'affaire de l'ecran
- * (autorisations) et du service (cf. [LocationService]).
+ * arriere-plan. Le capteur, lui, reste l'affaire de l'ecran (autorisations) et du service (cf.
+ * [LocationService]).
  *
  * [townAt] dit la commune d'un point (lon, lat), ou null : remplacable par les tests.
  */
@@ -40,15 +44,23 @@ class RecordingSession(
 
     /** Ce qu'a donne le rangement d'un parcours. */
     sealed interface SaveOutcome {
-        /** Range dans "Mes parcours" sous [name]. */
+        /** Range dans la bibliotheque sous [name]. */
         data class Saved(val name: String) : SaveOutcome
 
-        /** Rien a ranger : moins de deux points enregistres. */
+        /** Rien a ranger : moins de deux points enregistres. L'enregistrement est termine quand meme. */
         data object Empty : SaveOutcome
 
-        /** Le rangement a echoue (disque plein, base indisponible) : le parcours reste sur le disque. */
+        /** Le rangement a echoue (disque plein, base indisponible) : le parcours reste en pause, sur le disque. */
         data object Failed : SaveOutcome
     }
+
+    /** Ce que la boite de fin a choisi. */
+    data class FinishChoice(
+        val name: String,
+        val folder: TunturoRepository.RecordingFolder,
+        val routingProfile: String?,
+        val smoothElevation: Boolean,
+    )
 
     private val _saving = MutableStateFlow(false)
 
@@ -60,24 +72,43 @@ class RecordingSession(
     /** Le resultat de chaque rangement, pour le bandeau de la carte. */
     val outcomes: SharedFlow<SaveOutcome> = _outcomes.asSharedFlow()
 
-    /** Deux pauses rapprochees ne rangent pas le meme parcours en deux couches. */
+    /** Deux "Enregistrer" rapproches ne rangent pas le meme parcours en deux couches. */
     private val saveLock = Mutex()
 
     fun start() = TrackRecorder.start()
 
     fun resume(mode: ResumeMode) = TrackRecorder.resume(mode)
 
-    /** Met en pause et range le parcours. Sans effet hors enregistrement. */
-    fun pause(): Job? {
-        if (!TrackRecorder.pause()) return null
-        return scope.launch { save() }
+    /** Met en pause. Vrai si l'enregistrement etait en cours. */
+    fun pause(): Boolean = TrackRecorder.pause()
+
+    /**
+     * Le nom propose dans la boite de fin : "Depart-Arrivee_AAAAMMJJ" (cf. [RecordingName]), ou le nom par
+     * defaut et la date quand aucune commune ne se trouve.
+     */
+    suspend fun suggestedName(): String {
+        val recording = TrackRecorder.recording.value
+        val fallback = ctx.getString(R.string.recording_default_name)
+        val (first, last) = TrackRecording.ends(recording)
+            ?: return RecordingName.of(null, null, recording.startedAtMs ?: System.currentTimeMillis(), fallback)
+        val startTown = runCatching { townAt(first.lon, first.lat) }.getOrNull()
+        val endTown = runCatching { townAt(last.lon, last.lat) }.getOrNull()
+        return RecordingName.of(startTown, endTown, recording.startedAtMs ?: first.timeMs, fallback)
     }
 
-    /** Range dans la bibliotheque ce qui a ete enregistre jusqu'ici. */
-    suspend fun save() = saveLock.withLock {
+    /** Termine l'enregistrement : le range selon [choice], en arriere-plan. */
+    fun finish(choice: FinishChoice): Job = scope.launch { save(choice) }
+
+    /**
+     * Range le parcours selon [choice], et termine l'enregistrement s'il n'y avait rien a ranger ou que
+     * c'est fait. Un echec le laisse en pause : rien n'est perdu, "Terminer" se refait.
+     */
+    suspend fun save(choice: FinishChoice): SaveOutcome = saveLock.withLock {
         _saving.value = true
         try {
-            val outcome = runCatching { saveNow() }.getOrElse { SaveOutcome.Failed }
+            TrackRecorder.pause()
+            val outcome = runCatching { saveNow(choice) }.getOrElse { SaveOutcome.Failed }
+            if (outcome != SaveOutcome.Failed) TrackRecorder.finished()
             _outcomes.tryEmit(outcome)
             outcome
         } finally {
@@ -85,21 +116,20 @@ class RecordingSession(
         }
     }
 
-    private suspend fun saveNow(): SaveOutcome {
+    private suspend fun saveNow(choice: FinishChoice): SaveOutcome {
         val recording = TrackRecorder.recording.value
         val lines = TrackRecording.lines(recording)
-        val (first, last) = TrackRecording.ends(recording) ?: return SaveOutcome.Empty
-        val startTown = runCatching { townAt(first.lon, first.lat) }.getOrNull()
-        val endTown = runCatching { townAt(last.lon, last.lat) }.getOrNull()
-        val baseName = RecordingName.of(
-            startTown, endTown, recording.startedAtMs ?: first.timeMs,
-            fallback = ctx.getString(R.string.recording_default_name),
-        )
-        val saved = repository.saveRecording(lines, recording.layerId, recording.autoName, baseName)
-            ?: return SaveOutcome.Empty
-        TrackRecorder.savedAs(saved.layerId, saved.autoName)
-        val layer = repository.layers.byId(saved.layerId)
-        return SaveOutcome.Saved(layer?.name ?: saved.autoName)
+        if (lines.isEmpty()) return SaveOutcome.Empty
+        // Le choix des altitudes devient celui de la prochaine fois : c'est le reglage, pose a la fin.
+        repository.settings.get()?.let { s ->
+            if (s.recordingSmoothElevation != choice.smoothElevation) {
+                repository.settings.upsert(s.copy(recordingSmoothElevation = choice.smoothElevation))
+            }
+        }
+        val saved = repository.saveRecording(
+            lines, recording.layerId, choice.name, choice.folder, choice.routingProfile, choice.smoothElevation,
+        ) ?: return SaveOutcome.Empty
+        return SaveOutcome.Saved(saved.name)
     }
 
     companion object {

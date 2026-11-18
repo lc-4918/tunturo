@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import com.tunturo.app.BuildConfig
 import com.tunturo.app.R
@@ -185,27 +186,84 @@ class ExpertModeUiTest {
     }
 
     /**
-     * Trajets : l'altimetrie manquante et le complement OpenStreetMap. Systeme : dossiers, sauvegarde et
-     * avatar. Tous caches hors mode expert.
+     * Trajets : l'altimetrie manquante et la coloration par pente. Systeme : unites, dossiers, sauvegarde
+     * et personnalisation. Tous caches hors mode expert.
      */
     @Test fun `trajets et systeme cachent leurs reglages experts`() {
         reglagesEnMode(expert = false)
         onglet(R.string.settings_tab_routes)
         assertFalse("altimetrie manquante", present(R.string.settings_label_fill_elevation))
-        assertFalse("complement OpenStreetMap", present(R.string.settings_sw_poi_osm))
+        assertFalse("coloration par pente", present(R.string.settings_route_slope_line))
         onglet(R.string.settings_tab_general)
+        assertFalse("unites", present(R.string.settings_label_units))
         assertFalse("dossiers", present(R.string.settings_section_import_folder))
         assertFalse("sauvegarde", present(R.string.settings_backup_create))
+        assertFalse("personnalisation", present(R.string.settings_label_side_title))
     }
 
     @Test fun `trajets et systeme montrent leurs reglages experts en mode expert`() {
         reglagesEnMode(expert = true)
         onglet(R.string.settings_tab_routes)
         assertTrue("altimetrie manquante", present(R.string.settings_label_fill_elevation))
-        assertTrue("complement OpenStreetMap", present(R.string.settings_sw_poi_osm))
+        assertTrue("coloration par pente", present(R.string.settings_route_slope_line))
         onglet(R.string.settings_tab_general)
+        assertTrue("unites", present(R.string.settings_label_units))
         assertTrue("dossiers", present(R.string.settings_section_import_folder))
         assertTrue("sauvegarde", present(R.string.settings_backup_create))
+        assertTrue("personnalisation", present(R.string.settings_label_side_title))
+    }
+
+    /** Les points d'interet et l'enregistrement ont quitte l'onglet Trajets pour la carte et la boite de fin. */
+    @Test fun `l'onglet Trajets n'a plus ni points d'interet ni enregistrement`() {
+        reglagesEnMode(expert = true)
+        onglet(R.string.settings_tab_routes)
+        assertFalse("couloir des traces", present(R.string.settings_label_poi_corridor))
+        assertFalse("lissage des altitudes", present(R.string.settings_label_recording_smooth_elevation))
+    }
+
+    /** Le couloir des traces, et en mode expert le complement OpenStreetMap, sous l'interrupteur des points d'interet. */
+    @Test fun `les points d'interet deplient leurs reglages dans l'onglet Carte`() {
+        reglagesEnMode(expert = false)
+        defileVers(app.getString(R.string.settings_label_poi_corridor))
+        assertTrue("couloir", present(R.string.settings_label_poi_corridor))
+        assertFalse("complement OSM hors mode expert", present(R.string.settings_sw_poi_osm))
+    }
+
+    @Test fun `le complement OpenStreetMap se deplie sous les points d'interet en mode expert`() {
+        reglagesEnMode(expert = true)
+        defileVers(app.getString(R.string.settings_sw_poi_osm))
+        assertTrue(present(R.string.settings_sw_poi_osm))
+    }
+
+    /** L'ordre des boutons : itineraire, enregistrement, tableau de bord, points d'interet, recherche, mesure, retouche. */
+    @Test fun `les interrupteurs de la carte suivent l'ordre voulu`() {
+        reglagesEnMode(expert = false)
+        defileVers(app.getString(R.string.settings_sw_planner))
+        fun top(res: Int) = compose.onAllNodesWithText(app.getString(res), substring = true, useUnmergedTree = true)
+            .fetchSemanticsNodes().first().positionInRoot.y
+        val ordre = listOf(
+            R.string.settings_sw_planner, R.string.settings_sw_recording, R.string.settings_sw_track_follow,
+            R.string.settings_sw_poi, R.string.settings_sw_geocoding,
+        ).map { top(it) }
+        assertTrue("ordre $ordre", ordre.zipWithNext().all { (a, b) -> a < b })
+        defileVers(app.getString(R.string.settings_sw_track_edit))
+        assertTrue(top(R.string.settings_sw_measure) < top(R.string.settings_sw_track_edit))
+    }
+
+    /** Systeme : un groupe Enregistrement et son interrupteur de reprise, allume (meme segment) par defaut. */
+    @Test fun `le groupe Enregistrement regle la reprise apres une pause`() {
+        runBlocking {
+            app.repository.ensureSeed()
+            val s = app.repository.settings.get() ?: SettingsEntity()
+            app.repository.settings.upsert(s.copy(expertMode = false, recordingResumeMode = "same_segment"))
+        }
+        compose.setContent { MaterialTheme { SettingsScreen(onBack = {}) } }
+        compose.waitForIdle()
+        onglet(R.string.settings_tab_general)
+        assertTrue(present(R.string.settings_group_recording))
+        compose.onNodeWithText(app.getString(R.string.recording_resume_same_segment), substring = true)
+            .performScrollTo().performClick()
+        compose.waitUntil(5_000) { runBlocking { app.repository.settings.get()?.recordingResumeMode == "new_segment" } }
     }
 
     private fun presentTitle(res: Int) =

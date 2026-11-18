@@ -1,5 +1,10 @@
 package com.tunturo.app.ui.settings
 
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.AnimatedVisibility
 import com.tunturo.app.ui.theme.brandedText
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
@@ -994,5 +999,24 @@ fun ColumnScopeMarker.ChoiceBlock(label: String, hint: String, onClick: () -> Un
     Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick)) {
         SetRow(label) { RowIcon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) }
         Hint(hint)
+    }
+}
+
+/**
+ * Un accordeon dans une carte : ce que l'interrupteur au-dessus commande, deplie sous lui.
+ *
+ * **Il se deroule vers le bas, et seulement verticalement.** L'AnimatedVisibility generique - celle qu'on
+ * obtient hors d'une ColumnScope, et une carte n'en offre pas (cf. [ColumnScopeMarker]) - grandit depuis
+ * le coin bas-droit : le contenu semblait arriver en diagonale, du haut-gauche vers le bas-droit. Ici, le
+ * haut reste en place, comme un tiroir qu'on tire.
+ */
+@Composable
+fun ColumnScopeMarker.CardAccordion(visible: Boolean, content: @Composable ColumnScopeMarker.() -> Unit) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+        exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
+    ) {
+        Column { ColumnScopeMarker.content() }
     }
 }

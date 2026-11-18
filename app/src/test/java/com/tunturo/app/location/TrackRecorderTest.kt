@@ -64,14 +64,13 @@ class TrackRecorderTest {
         assertFalse(TrackRecorder.pause())
     }
 
-    /** Le processus meurt en pleine sortie : tout revient, la phase, la couche, et chaque segment. */
+    /** Le processus meurt en pleine sortie : tout revient, la phase et chaque segment. */
     @Test fun `l'enregistrement revient du disque apres la mort du processus`() {
         val dir = attached()
         TrackRecorder.start()
         TrackRecorder.add(fix(0.0, 2_000L))
         TrackRecorder.add(fix(50.0, 4_000L))
         TrackRecorder.pause()
-        TrackRecorder.savedAs(layerId = 12L, autoName = "Paris-Brest_20261117")
         TrackRecorder.resume(ResumeMode.NEW_SEGMENT)
         TrackRecorder.add(fix(500.0, 8_000L))
         TrackRecorder.add(fix(600.0, 10_000L))
@@ -82,27 +81,43 @@ class TrackRecorderTest {
         TrackRecorder.attach(dir)
         val after = TrackRecorder.recording.value
         assertEquals(RecordingPhase.RECORDING, after.phase)
-        assertEquals(12L, after.layerId)
-        assertEquals("Paris-Brest_20261117", after.autoName)
         // Les deux segments d'avant, et un troisieme ouvert par la reprise : rien ne relie la mort au retour.
         assertEquals(before.segments + listOf(emptyList<RecordedPoint>()), after.segments)
     }
 
-    @Test fun `un nouveau parcours efface les points du precedent sur le disque`() {
+    /** Termine, l'enregistrement quitte le disque : le prochain appui en demarre un neuf. */
+    @Test fun `un enregistrement termine ne revient pas du disque`() {
         val dir = attached()
         TrackRecorder.start()
         TrackRecorder.add(fix(0.0, 2_000L))
         TrackRecorder.add(fix(50.0, 4_000L))
         TrackRecorder.pause()
-        TrackRecorder.savedAs(3L, "A_20261117")
-        TrackRecorder.resume(ResumeMode.NEW_TRACK)
-        TrackRecorder.add(fix(900.0, 9_000L))
+        TrackRecorder.finished()
+        assertEquals(RecordingPhase.IDLE, TrackRecorder.recording.value.phase)
 
         TrackRecorder.resetForTest()
+        TrackRecorder.writer = { it.run() }
         TrackRecorder.attach(dir)
-        val after = TrackRecorder.recording.value
-        assertNull(after.layerId)
-        assertEquals(1, after.segments.first().size)
+        assertEquals(RecordingPhase.IDLE, TrackRecorder.recording.value.phase)
+        TrackRecorder.start()
+        TrackRecorder.add(fix(900.0, 9_000L))
+        assertEquals(1, TrackRecorder.recording.value.segments.single().size)
+    }
+
+    /** Un parcours en pause a la mise a jour, deja range par la v0.36, garde sa couche jusqu'a sa fin. */
+    @Test fun `la couche d'un parcours deja range revient du disque`() {
+        val dir = attached()
+        TrackRecorder.start()
+        TrackRecorder.add(fix(0.0, 2_000L))
+        TrackRecorder.add(fix(50.0, 4_000L))
+        TrackRecorder.pause()
+        java.io.File(dir, RecordingStore.META_FILE).writeText(
+            """{"phase":"PAUSED","layerId":12,"startedAtMs":1,"autoName":"Paris-Brest_20261117"}""",
+        )
+        TrackRecorder.resetForTest()
+        TrackRecorder.attach(dir)
+        assertEquals(12L, TrackRecorder.recording.value.layerId)
+        assertEquals(RecordingPhase.PAUSED, TrackRecorder.recording.value.phase)
     }
 
     @Test fun `sans enregistrement sur le disque, rien ne revient`() {

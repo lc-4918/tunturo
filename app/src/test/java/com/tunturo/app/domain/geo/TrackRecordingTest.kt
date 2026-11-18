@@ -75,7 +75,7 @@ class TrackRecordingTest {
 
     @Test fun `continuer le meme segment ajoute les points au segment de la pause`() {
         val paused = TrackRecording.pause(recordingWith(0.0, 50.0))
-        val resumed = TrackRecording.resume(paused, ResumeMode.SAME_SEGMENT, nowMs = 1L)
+        val resumed = TrackRecording.resume(paused, ResumeMode.SAME_SEGMENT)
         val point = accept(resumed, 500.0, 90_000L)!!
         val after = TrackRecording.append(resumed, point)
         assertEquals(1, after.segments.size)
@@ -85,27 +85,25 @@ class TrackRecordingTest {
     /** Le premier point du nouveau segment n'est pas compare au dernier de l'ancien : rien ne les relie. */
     @Test fun `continuer dans un nouveau segment ne relie pas la pause a la reprise`() {
         val paused = TrackRecording.pause(recordingWith(0.0, 50.0))
-        val resumed = TrackRecording.resume(paused, ResumeMode.NEW_SEGMENT, nowMs = 1L)
+        val resumed = TrackRecording.resume(paused, ResumeMode.NEW_SEGMENT)
         assertEquals(RecordingPhase.RECORDING, resumed.phase)
         val after = TrackRecording.append(resumed, accept(resumed, 52.0, 90_000L)!!)
         assertEquals(2, after.segments.size)
         assertEquals(1, after.segments[1].size)
     }
 
-    @Test fun `un nouveau parcours oublie le precedent et sa couche`() {
-        val paused = TrackRecording.pause(recordingWith(0.0, 50.0)).copy(layerId = 7L, autoName = "A-B_20261117")
-        val resumed = TrackRecording.resume(paused, ResumeMode.NEW_TRACK, nowMs = 123L)
-        assertEquals(RecordingPhase.RECORDING, resumed.phase)
-        assertEquals(listOf(emptyList<RecordedPoint>()), resumed.segments)
-        assertNull(resumed.layerId)
-        assertNull(resumed.autoName)
-        assertEquals(123L, resumed.startedAtMs)
+    /** Le reglage de reprise se lit par sa cle ; une cle inconnue revient au defaut, le meme segment. */
+    @Test fun `le mode de reprise se lit par sa cle`() {
+        assertEquals(ResumeMode.SAME_SEGMENT, ResumeMode.of("same_segment"))
+        assertEquals(ResumeMode.NEW_SEGMENT, ResumeMode.of("new_segment"))
+        assertEquals(ResumeMode.SAME_SEGMENT, ResumeMode.of("new_track"))
+        assertEquals(ResumeMode.SAME_SEGMENT, ResumeMode.of(null))
     }
 
     @Test fun `la pause et la reprise sont sans effet hors de leur phase`() {
         val idle = Recording()
         assertSame(idle, TrackRecording.pause(idle))
-        assertSame(idle, TrackRecording.resume(idle, ResumeMode.SAME_SEGMENT, 0L))
+        assertSame(idle, TrackRecording.resume(idle, ResumeMode.SAME_SEGMENT))
         val running = recordingWith(0.0)
         assertSame(running, TrackRecording.start(running, 0L))
     }
@@ -128,7 +126,7 @@ class TrackRecordingTest {
     }
 
     @Test fun `les bouts du parcours sont le premier et le dernier point gardes`() {
-        val first = TrackRecording.resume(TrackRecording.pause(recordingWith(0.0, 50.0)), ResumeMode.NEW_SEGMENT, 1L)
+        val first = TrackRecording.resume(TrackRecording.pause(recordingWith(0.0, 50.0)), ResumeMode.NEW_SEGMENT)
         var recording = TrackRecording.append(first, accept(first, 1_000.0, 90_000L)!!)
         recording = TrackRecording.append(recording, accept(recording, 1_100.0, 100_000L)!!)
         val (start, end) = TrackRecording.ends(recording)!!
@@ -136,13 +134,13 @@ class TrackRecordingTest {
         assertEquals(100_000L, end.timeMs)
     }
 
-    /** En pause, la couche rangee montre le parcours : le trait en direct le doublerait. */
-    @Test fun `le trait en direct ne se dessine que pendant l'enregistrement`() {
+    /** La pause ne range plus rien : le trait en direct est seul a montrer le parcours, jusqu'a sa fin. */
+    @Test fun `le trait en direct se dessine en enregistrement et en pause`() {
         val running = recordingWith(0.0, 50.0)
         assertEquals(running.segments, TrackRecording.drawn(running))
         val paused = TrackRecording.pause(running)
-        assertEquals(emptyList<List<RecordedPoint>>(), TrackRecording.drawn(paused))
-        val resumed = TrackRecording.resume(paused, ResumeMode.SAME_SEGMENT, 1L)
+        assertEquals(paused.segments, TrackRecording.drawn(paused))
+        val resumed = TrackRecording.resume(paused, ResumeMode.SAME_SEGMENT)
         assertEquals(resumed.segments, TrackRecording.drawn(resumed))
         assertEquals(emptyList<List<RecordedPoint>>(), TrackRecording.drawn(Recording()))
     }

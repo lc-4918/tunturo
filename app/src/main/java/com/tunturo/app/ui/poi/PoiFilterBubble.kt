@@ -1,13 +1,5 @@
 package com.tunturo.app.ui.poi
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.keyframes
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,9 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -63,6 +53,7 @@ import com.tunturo.app.domain.model.PoiCategory
 import com.tunturo.app.domain.model.PoiFilters
 import com.tunturo.app.domain.model.PoiGroup
 import androidx.core.graphics.toColorInt
+import com.tunturo.app.ui.components.AnchoredBubble
 import com.tunturo.app.ui.components.SheetCloseButton
 import com.tunturo.app.ui.components.SheetRoundButton
 import com.tunturo.app.ui.theme.Spacing
@@ -83,8 +74,6 @@ private val BubbleMaxWidth = 320.dp
 /** Hauteur maximale de la liste des categories. Neuf lignes tiennent dessous ; au-dela elle defile. */
 private val PanelMaxHeight = 260.dp
 
-/** Cote de la pointe, avant rotation : un carre tourne d'un quart de tour, dont la moitie depasse. */
-private val TailSize = 14.dp
 
 /**
  * La bulle des points d'interet : ce qu'on affiche sur la carte, choisi depuis la carte.
@@ -352,54 +341,7 @@ fun PoiFilterBubbleAnchored(
     masked: Boolean = false,
     onToggleMask: () -> Unit = {},
 ) {
-    AnimatedVisibility(
-        visible = open,
-        modifier = modifier,
-        // Le point fixe de la mise a l'echelle : le bord droit, a la hauteur de la pointe. C'est ce qui
-        // fait sortir la bulle DU BOUTON plutot que de la faire gonfler sur place.
-        enter = scaleIn(
-            animationSpec = keyframes {
-                durationMillis = 320
-                0.25f at 0
-                1.015f at 210 using CubicBezierEasing(0.2f, 0.9f, 0.3f, 1f)
-                1f at 320
-            },
-            initialScale = 0.25f,
-            transformOrigin = TransformOrigin(1f, 1f),
-        ) + fadeIn(tween(200)),
-        exit = scaleOut(
-            animationSpec = tween(260, easing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)),
-            targetScale = 0.2f,
-            transformOrigin = TransformOrigin(1f, 1f),
-        ) + fadeOut(tween(260)),
-    ) {
-        /*
-         * La bulle, et sa pointe posee A CHEVAL sur son bord droit.
-         *
-         * La boite fait la largeur de la bulle plus une demi-pointe : la carte occupe la gauche, la pointe
-         * s'aligne a droite, et son centre tombe donc exactement sur le bord de la carte. La rotation ne
-         * change pas les limites de mise en page - le losange deborde de lui-meme vers le bouton, ce qui
-         * est precisement ce qu'on veut d'une pointe.
-         *
-         * Dessinee APRES la carte, donc par-dessus : posee avant, le fond de la carte l'aurait recouverte.
-         */
-        Box(Modifier.widthIn(max = BubbleMaxWidth + TailSize / 2).padding(start = 8.dp)) {
-            PoiFilterBubble(
-                filters,
-                onFilters,
-                Modifier.widthIn(max = BubbleMaxWidth).padding(end = TailSize / 2),
-                onClose,
-                masked,
-                onToggleMask,
-            )
-            Box(
-                Modifier.align(Alignment.BottomEnd)
-                    .padding(bottom = (tailFromBottom - TailSize / 2).coerceAtLeast(0.dp))
-                    .size(TailSize)
-                    .rotate(45f)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(MaterialTheme.colorScheme.surface),
-            )
-        }
+    AnchoredBubble(open, BubbleMaxWidth, tailFromBottom, modifier) { bubbleModifier ->
+        PoiFilterBubble(filters, onFilters, bubbleModifier, onClose, masked, onToggleMask)
     }
 }

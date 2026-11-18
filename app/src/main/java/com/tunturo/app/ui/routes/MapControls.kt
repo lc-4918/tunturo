@@ -1,6 +1,9 @@
 package com.tunturo.app.ui.routes
 
+import com.tunturo.app.domain.geo.RecordingPhase
+import com.tunturo.app.domain.geo.ResumeMode
 import com.tunturo.app.ui.recording.RecordButtonIcon
+import com.tunturo.app.ui.recording.RecordingMenuBubble
 import com.tunturo.app.ui.recording.recordButtonShown
 import com.tunturo.app.ui.recording.RecordingControls
 import com.tunturo.app.ui.recording.recordingNoticeText
@@ -355,6 +358,9 @@ internal fun BoxScope.MapBottomRightControls(
      */
     var poiButtonLeftPx by remember { mutableIntStateOf(0) }
     var poiButtonBottomPx by remember { mutableIntStateOf(0) }
+    // Le bouton d'enregistrement, mesure de meme : sa bulle "Pause / Terminer" s'y appuie.
+    var recordButtonLeftPx by remember { mutableIntStateOf(0) }
+    var recordButtonBottomPx by remember { mutableIntStateOf(0) }
     // Position hors du centre de la carte : c'est ce qui distingue les deux etats ALLUMES du bouton
     // de suivi - la position est-elle deja revenue sous la croix, ou le silence d'apres-geste
     // court-il encore (cf. MapFollow.tapAction).
@@ -575,17 +581,21 @@ internal fun BoxScope.MapBottomRightControls(
          * alors de combien, mais le bouton l'annonce déjà à qui regarde la carte.
          */
         /*
-         * L'enregistrement de la trace : un seul bouton, deux etats. Rond rouge plein, fond allume : les
-         * positions s'enregistrent, et l'appui met en pause - le parcours se range alors dans "Mes
-         * parcours". Le symbole "enregistrer" sinon : l'appui demarre, ou demande comment reprendre.
+         * L'enregistrement de la trace : un seul bouton, deux etats. Fond allume : les positions
+         * s'enregistrent, et l'appui ouvre la bulle "Pause / Terminer". Fond eteint : l'appui demarre, ou
+         * en pause ouvre la bulle "Reprendre / Terminer" (cf. RecordingControls).
          *
          * Au-dessus du tableau de bord : les deux servent pendant la sortie.
          */
         if (recordButtonShown(settings.recordingButtonEnabled, recording.phase)) CoverableButton(coverTopPx) {
             IconButton(
                 onClick = { recording.onTap(location) },
-                modifier = chrome.buttonBackground(recording.recording),
-            ) { RecordButtonIcon(recording.recording) }
+                modifier = chrome.buttonBackground(recording.recording).onGloballyPositioned {
+                    val p = it.positionInRoot()
+                    recordButtonLeftPx = p.x.toInt()
+                    recordButtonBottomPx = p.y.toInt() + it.size.height
+                },
+            ) { RecordButtonIcon(recording.phase) }
         }
         if (dashboardEnabled && !dashboardPanelShown) CoverableButton(coverTopPx) {
             IconButton(onClick = { onDashboardTap() }, modifier = chrome.buttonBackground(dashboardOpen)) {
@@ -665,6 +675,28 @@ internal fun BoxScope.MapBottomRightControls(
                 onToggleMask = { onPoiMasked(poi.toggleMask()) },
                 // Le centre du bouton, mesure depuis son bas : la pointe le vise.
                 tailFromBottom = PoiBubbleAnchorWidth / 2,
+            )
+        }
+    }
+
+    // La bulle de l'enregistrement, posee comme celle des points d'interet : contre le bord gauche du
+    // bouton, son bas contre le sien. Elle se referme d'elle-meme si l'enregistrement s'arrete ailleurs
+    // (notification, arriere-plan), et a chaque changement de phase.
+    if (recordButtonBottomPx > 0) {
+        LaunchedEffect(recording.phase) { recording.closeMenu() }
+        Box(
+            Modifier.align(Alignment.BottomEnd).padding(
+                end = with(density) { (maxWidthPx - recordButtonLeftPx).toDp() },
+                bottom = with(density) { (maxHeightPx - recordButtonBottomPx).toDp() },
+            ),
+        ) {
+            RecordingMenuBubble(
+                open = recording.menuOpen && recording.phase != RecordingPhase.IDLE,
+                paused = recording.phase == RecordingPhase.PAUSED,
+                tailFromBottom = PoiBubbleAnchorWidth / 2,
+                onPause = { recording.onPause() },
+                onResume = { recording.onResume(location, ResumeMode.of(settings.recordingResumeMode)) },
+                onFinish = { recording.onFinish() },
             )
         }
     }

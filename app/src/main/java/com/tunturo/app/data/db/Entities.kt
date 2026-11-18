@@ -46,6 +46,9 @@ data class LayerEntity(
     val west: Double = 0.0, val south: Double = 0.0, val east: Double = 0.0, val north: Double = 0.0,
     // Trait colorie selon la pente plutot que de la couleur de la couche (menu de la couche).
     val slopeColored: Boolean = false,
+    // La discipline d'un parcours enregistre (cle de RoutingProfile), choisie a la fin de l'enregistrement ;
+    // null pour une couche importee, qui ne la dit pas.
+    val routingProfile: String? = null,
 )
 
 /** Dossier de l'arborescence du gestionnaire de fonds de plan (Basemap Control), distinct de `folders`. */
@@ -413,6 +416,9 @@ data class SettingsEntity(
     // Bouton d'enregistrement de trace sur la carte. Affiche par defaut, comme a son arrivee (v0.35.0) ; un
     // enregistrement en cours le garde a l'ecran meme masque (cf. recordButtonShown).
     val recordingButtonEnabled: Boolean = true,
+    // Ce que fait l'appui sur le bouton d'enregistrement en pause (cle de ResumeMode) : continuer le meme
+    // segment par defaut - un trait droit relie la pause a la reprise -, ou en ouvrir un nouveau.
+    val recordingResumeMode: String = "same_segment",
 )
 
 /** Les valeurs de [SettingsEntity.basemapControlMode]. */

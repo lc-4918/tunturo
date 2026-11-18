@@ -4,9 +4,11 @@ import androidx.test.core.app.ApplicationProvider
 import com.tunturo.app.R
 import com.tunturo.app.data.RecordingPrefs
 import com.tunturo.app.data.db.AppDatabase
+import com.tunturo.app.data.db.FolderEntity
 import com.tunturo.app.data.db.SettingsEntity
 import com.tunturo.app.data.repo.TunturoRepository
-import com.tunturo.app.domain.geo.ResumeMode
+import com.tunturo.app.data.repo.TunturoRepository.RecordingFolder
+import com.tunturo.app.domain.geo.RecordingPhase
 import com.tunturo.app.elevation.ElevationResponse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -14,6 +16,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -24,8 +28,8 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 /**
- * Le rangement d'un parcours enregistre dans "Mes parcours", a chaque pause : le dossier cree une fois,
- * la couche reecrite en place quand on continue, son nom qui suit l'arrivee tant qu'on ne l'a pas change.
+ * La fin d'un enregistrement : la pause ne range rien, "Terminer" range le parcours sous le nom, la
+ * discipline, les altitudes et dans le dossier choisis - "Mes parcours" par defaut, cree une fois.
  */
 @RunWith(RobolectricTestRunner::class)
 class RecordingSessionTest {
@@ -60,92 +64,124 @@ class RecordingSessionTest {
 
     private fun record(vararg northM: Double) = northM.forEach { TrackRecorder.add(fix(it)) }
 
-    private suspend fun pauseAndSave(): RecordingSession.SaveOutcome {
-        TrackRecorder.pause()
-        return session.save()
+    private suspend fun finish(
+        name: String = "Sortie",
+        folder: RecordingFolder = RecordingFolder.Recordings,
+        profile: String? = "gravel",
+        smooth: Boolean = false,
+    ): RecordingSession.SaveOutcome {
+        session.pause()
+        return session.save(RecordingSession.FinishChoice(name, folder, profile, smooth))
+    }
+
+    private suspend fun layerNamed(name: String) = db.layers().all().first().single { it.name == name }
+
+    @Test fun `la pause ne range rien`() = runBlocking {
+        TrackRecorder.start()
+        record(0.0, 50.0)
+        assertTrue(session.pause())
+        assertEquals(RecordingPhase.PAUSED, TrackRecorder.recording.value.phase)
+        assertTrue(db.layers().all().first().none { it.source == "record" })
+    }
+
+    @Test fun `terminer range le parcours et termine l'enregistrement`() = runBlocking {
+        TrackRecorder.start()
+        record(0.0, 50.0)
+        val outcome = finish("Col du matin") as RecordingSession.SaveOutcome.Saved
+        assertEquals("Col du matin", outcome.name)
+        assertEquals(RecordingPhase.IDLE, TrackRecorder.recording.value.phase)
+        val layer = layerNamed("Col du matin")
+        assertEquals("record", layer.source)
+        assertEquals("gravel", layer.routingProfile)
+        assertTrue(layer.hasTime)
     }
 
     @Test fun `le premier enregistrement cree Mes parcours, le suivant le reutilise`() = runBlocking {
         TrackRecorder.start()
         record(0.0, 50.0)
-        pauseAndSave()
+        finish("Premier")
+        TrackRecorder.start()
+        record(0.0, 60.0)
+        finish("Second")
         val folders = db.folders().all().first().filter { it.name == folderName && it.parentId == null }
         assertEquals(1, folders.size)
-        val firstLayer = db.layers().byId(TrackRecorder.recording.value.layerId!!)!!
-        assertEquals(folders.single().id, firstLayer.folderId)
-        assertEquals("record", firstLayer.source)
-        assertTrue(firstLayer.hasTime)
-
-        TrackRecorder.resume(ResumeMode.NEW_TRACK)
-        record(0.0, 60.0)
-        pauseAndSave()
-        val secondLayer = db.layers().byId(TrackRecorder.recording.value.layerId!!)!!
-        assertNotEquals(firstLayer.id, secondLayer.id)
-        assertEquals(firstLayer.folderId, secondLayer.folderId)
-        assertEquals(1, db.folders().all().first().count { it.name == folderName && it.parentId == null })
+        assertEquals(folders.single().id, layerNamed("Premier").folderId)
+        assertEquals(folders.single().id, layerNamed("Second").folderId)
     }
 
-    @Test fun `le parcours porte les communes de depart et d'arrivee et le jour`() = runBlocking {
+    @Test fun `le nom propose porte les communes de depart et d'arrivee et le jour`() = runBlocking {
         TrackRecorder.start()
         record(0.0, 50.0, 1_000.0)
-        val outcome = pauseAndSave() as RecordingSession.SaveOutcome.Saved
-        assertTrue(outcome.name, outcome.name.startsWith("Paris-Brest_$today"))
+        session.pause()
+        assertEquals("Paris-Brest_$today", session.suggestedName())
+    }
+
+    @Test fun `un nom deja pris dans le dossier recoit un suffixe`() = runBlocking {
+        TrackRecorder.start()
+        record(0.0, 50.0)
+        finish("Boucle")
+        TrackRecorder.start()
+        record(0.0, 50.0)
+        val second = finish("Boucle") as RecordingSession.SaveOutcome.Saved
+        assertEquals("Boucle_2", second.name)
+    }
+
+    @Test fun `le parcours se range dans le dossier choisi ou a la racine`() = runBlocking {
+        val folderId = db.folders().insert(FolderEntity(name = "Vacances"))
+        TrackRecorder.start()
+        record(0.0, 50.0)
+        finish("Plage", RecordingFolder.Existing(folderId))
+        assertEquals(folderId, layerNamed("Plage").folderId)
+        TrackRecorder.start()
+        record(0.0, 50.0)
+        finish("Racine", RecordingFolder.Root)
+        assertNull(layerNamed("Racine").folderId)
     }
 
     @Test fun `le dossier supprime est recree`() = runBlocking {
         TrackRecorder.start()
         record(0.0, 50.0)
-        pauseAndSave()
+        finish("Un")
         val folder = db.folders().all().first().first { it.id == RecordingPrefs.folderId(ctx) }
         db.folders().delete(folder)
-        TrackRecorder.resume(ResumeMode.NEW_TRACK)
+        TrackRecorder.start()
         record(0.0, 50.0)
-        pauseAndSave()
+        finish("Deux")
         val recreated = RecordingPrefs.folderId(ctx)!!
         assertNotEquals(folder.id, recreated)
         assertTrue(db.folders().all().first().any { it.id == recreated && it.name == folderName })
     }
 
-    /** Continuer puis remettre en pause : la meme couche, avec tout ce qui a ete enregistre depuis le depart. */
-    @Test fun `une pause apres Continuer reecrit la meme couche et suit l'arrivee`() = runBlocking {
+    /** Un parcours deja range par la v0.36 (a chaque pause) se termine dans sa couche, reecrite en place. */
+    @Test fun `un parcours deja range se termine dans sa couche`() = runBlocking {
+        val dir = java.io.File(ctx.cacheDir, "recording-legacy").apply { deleteRecursively(); mkdirs() }
+        TrackRecorder.attach(dir)
         TrackRecorder.start()
         record(0.0, 50.0)
-        val first = pauseAndSave() as RecordingSession.SaveOutcome.Saved
-        assertTrue(first.name, first.name.startsWith("Paris_$today"))
-        val layerId = TrackRecorder.recording.value.layerId!!
-        val distanceBefore = db.layers().byId(layerId)!!.distance
-
-        TrackRecorder.resume(ResumeMode.SAME_SEGMENT)
-        record(1_000.0)
-        val second = pauseAndSave() as RecordingSession.SaveOutcome.Saved
-        assertEquals(layerId, TrackRecorder.recording.value.layerId)
-        val layer = db.layers().byId(layerId)!!
-        assertTrue("la distance grandit", layer.distance > distanceBefore + 900)
-        assertTrue(second.name, layer.name.startsWith("Paris-Brest_$today"))
-    }
-
-    @Test fun `un parcours renomme a la main garde son nom`() = runBlocking {
+        val first = finish("Ancien") as RecordingSession.SaveOutcome.Saved
+        val layerId = layerNamed(first.name).id
         TrackRecorder.start()
-        record(0.0, 50.0)
-        pauseAndSave()
-        val layerId = TrackRecorder.recording.value.layerId!!
-        db.layers().rename(layerId, "Sortie du mardi")
-        TrackRecorder.resume(ResumeMode.NEW_SEGMENT)
-        record(1_000.0, 1_050.0)
-        pauseAndSave()
+        record(0.0, 50.0, 1_000.0)
+        session.pause()
+        java.io.File(dir, RecordingStore.META_FILE).writeText("""{"phase":"PAUSED","layerId":$layerId,"startedAtMs":1}""")
+        TrackRecorder.resetForTest()
+        TrackRecorder.writer = { it.run() }
+        TrackRecorder.attach(dir)
+        finish("Repris")
         val layer = db.layers().byId(layerId)!!
-        assertEquals("Sortie du mardi", layer.name)
-        assertEquals(2, repository.loadTrackLines(layer).size)
+        assertEquals("Repris", layer.name)
+        assertTrue("la distance grandit", layer.distance > 900)
+        assertFalse(db.layers().all().first().any { it.name == "Ancien" })
     }
 
-    @Test fun `moins de deux points ne rangent rien`() = runBlocking {
+    @Test fun `moins de deux points ne rangent rien et terminent quand meme`() = runBlocking {
         TrackRecorder.start()
         record(0.0)
-        assertEquals(RecordingSession.SaveOutcome.Empty, pauseAndSave())
+        assertEquals(RecordingSession.SaveOutcome.Empty, finish())
+        assertEquals(RecordingPhase.IDLE, TrackRecorder.recording.value.phase)
     }
 
-    @Test fun `le lissage prend les altitudes du modele de terrain`() = runBlocking {
-        db.settings().upsert(db.settings().get()!!.copy(recordingSmoothElevation = true))
+    @Test fun `le lissage prend les altitudes du modele de terrain et devient le reglage`() = runBlocking {
         repository.elevationFetcher = { url ->
             // Le service de l'IGN (la trace est en France), a autant d'altitudes que de points demandes.
             if ("geopf" in url || "elevation.json" in url) {
@@ -155,19 +191,24 @@ class RecordingSessionTest {
         }
         TrackRecorder.start()
         record(0.0, 50.0)
-        pauseAndSave()
-        val layer = db.layers().byId(TrackRecorder.recording.value.layerId!!)!!
-        assertTrue(repository.loadTrackLines(layer).single().all { it.ele == 321.0 })
+        finish("Lisse", smooth = true)
+        assertTrue(repository.loadTrackLines(layerNamed("Lisse")).single().all { it.ele == 321.0 })
+        assertTrue(db.settings().get()!!.recordingSmoothElevation)
     }
 
     /** Hors reseau, le parcours se range quand meme, avec l'altitude du GPS. */
     @Test fun `le lissage sans reseau garde l'altitude du GPS`() = runBlocking {
-        db.settings().upsert(db.settings().get()!!.copy(recordingSmoothElevation = true))
         repository.elevationFetcher = { ElevationResponse(500, null) }
         TrackRecorder.start()
         record(0.0, 50.0)
-        pauseAndSave()
-        val layer = db.layers().byId(TrackRecorder.recording.value.layerId!!)!!
-        assertTrue(repository.loadTrackLines(layer).single().all { it.ele == 100.0 })
+        finish("Sans reseau", smooth = true)
+        assertTrue(repository.loadTrackLines(layerNamed("Sans reseau")).single().all { it.ele == 100.0 })
+    }
+
+    @Test fun `sans lissage l'altitude du GPS reste`() = runBlocking {
+        TrackRecorder.start()
+        record(0.0, 50.0)
+        finish("Brut")
+        assertTrue(repository.loadTrackLines(layerNamed("Brut")).single().all { it.ele == 100.0 })
     }
 }

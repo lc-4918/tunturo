@@ -250,7 +250,8 @@ class LocationService : Service() {
         }
         if (event == Lifecycle.Event.ON_STOP && !inForeground) {
             FixLog.write(this) { "application en arriere-plan - suivi ecran seul arrete" }
-            // Un enregistrement en cours se met en pause, et se range : le capteur va s'arreter.
+            // Un enregistrement en cours se met en pause : le capteur va s'arreter. Il attend sur le disque
+            // qu'on le reprenne ou qu'on le termine.
             recordingSession().pause()
             LocationHub.stopRequestedByUser()
             stopReason = LocationHub.StopReason.USER
@@ -334,8 +335,8 @@ class LocationService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
             // Le bouton de la notification : il retire le suivi ECRAN ETEINT, pas le curseur. Un geste, donc
-            // rien a annoncer. Un enregistrement en cours se met en pause et se range dans la bibliotheque :
-            // sans suivi ecran eteint, il ne recevrait plus rien telephone en poche.
+            // rien a annoncer. Un enregistrement en cours se met en pause : sans suivi ecran eteint, il ne
+            // recevrait plus rien telephone en poche. Il se range a sa fin, par "Terminer".
             recordingSession().pause()
             LocationHub.stopBackgroundTracking()
             when (LocationHub.stopAction(appVisible())) {

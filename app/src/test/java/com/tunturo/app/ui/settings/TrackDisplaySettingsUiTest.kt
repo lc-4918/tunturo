@@ -92,7 +92,8 @@ class TrackDisplaySettingsUiTest {
 
     /** Une seule ligne pour la pente de l'itineraire, qui dit dans son "i" qu'elle vaut trace et profil. */
     @Test fun `l'onglet Trajets regle la coloration de l'itineraire d'une seule ligne`() {
-        ouvrir(expert = false)
+        // La coloration par pente est un reglage expert.
+        ouvrir(expert = true)
         compose.onNodeWithText(app.getString(R.string.settings_tab_routes)).performClick()
         compose.waitForIdle()
         defileVers(app.getString(R.string.settings_route_slope_line))
@@ -107,8 +108,8 @@ class TrackDisplaySettingsUiTest {
         assertTrue(present(info))
     }
 
-    /** L'onglet Trajets finit par l'altimetrie manquante, puis les points d'interet. */
-    @Test fun `les points d'interet ferment l'onglet Trajets, apres l'altimetrie manquante`() {
+    /** L'onglet Trajets finit par l'altimetrie manquante : les points d'interet sont passes dans l'onglet Carte. */
+    @Test fun `l'altimetrie manquante ferme l'onglet Trajets`() {
         ouvrir(expert = true)
         compose.onNodeWithText(app.getString(R.string.settings_tab_routes)).performClick()
         compose.waitForIdle()
@@ -118,8 +119,8 @@ class TrackDisplaySettingsUiTest {
             .fetchSemanticsNode().positionInRoot.y
         val services = haut(R.string.settings_section_services)
         val altimetrie = haut(R.string.settings_section_elevation_fill)
-        val poi = haut(R.string.settings_section_poi)
         assertTrue("altimetrie apres les services", altimetrie > services)
-        assertTrue("points d'interet en dernier", poi > altimetrie)
+        assertTrue("plus de points d'interet ici",
+            compose.onAllNodesWithText(app.getString(R.string.settings_section_poi).uppercase()).fetchSemanticsNodes().isEmpty())
     }
 }

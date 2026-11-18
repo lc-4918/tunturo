@@ -1034,6 +1034,21 @@ class MigrationsTest {
         db.close()
     }
 
+    /** La reprise apres une pause continue le meme segment ; les couches existantes n'ont pas de discipline. */
+    @Test fun `80 vers 81 ajoute la reprise par defaut et la discipline des couches`() {
+        val db = freshDb("m8081")
+        db.execSQL("CREATE TABLE settings (id INTEGER PRIMARY KEY NOT NULL)")
+        db.execSQL("INSERT INTO settings (id) VALUES (1)")
+        db.execSQL("CREATE TABLE layers (id INTEGER PRIMARY KEY NOT NULL)")
+        db.execSQL("INSERT INTO layers (id) VALUES (1)")
+        db.execSQL(MigrationSql.ADD_RECORDING_RESUME_MODE)
+        db.execSQL(MigrationSql.ADD_LAYER_ROUTING_PROFILE)
+        assertEquals("same_segment", scalar(db, "SELECT recordingResumeMode FROM settings") { it.getString(0) })
+        assertTrue(scalar(db, "SELECT routingProfile IS NULL FROM layers") { it.getInt(0) } == 1)
+        assertEquals("same_segment", SettingsEntity().recordingResumeMode)
+        db.close()
+    }
+
     // ---------- La base reelle s'ouvre et porte le schema courant ----------
 
     /**

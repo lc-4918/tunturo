@@ -1,7 +1,8 @@
 package com.tunturo.app.ui.routes
 
 import com.tunturo.app.ui.recording.RecordingLineEffect
-import com.tunturo.app.ui.recording.RecordingResumeDialog
+import com.tunturo.app.ui.recording.RecordingFinishDialog
+import com.tunturo.app.data.RecordingPrefs
 import com.tunturo.app.ui.recording.rememberRecordingControls
 import com.tunturo.app.ui.offline.basemapLabel
 import com.tunturo.app.ui.offline.offlineDownloadAvailable
@@ -1650,10 +1651,15 @@ fun MainScreen(
         onPickImage = { onImported -> dialogs.awaitImage(onImported); imagePicker.launch("image/*") },
         routeGpx = { name -> routeGpx(name) },
     )
-    if (recording.showResumeDialog) RecordingResumeDialog(
+    if (recording.finishDialogOpen) RecordingFinishDialog(
         dark = isDarkTheme(settings.theme),
-        onPick = { mode -> recording.onResume(mode, location) },
-        onDismiss = { recording.showResumeDialog = false },
+        folders = folders,
+        recordingsFolderId = RecordingPrefs.folderId(LocalContext.current),
+        defaultProfile = RoutingProfile.of(settings.routingProfile),
+        smoothByDefault = settings.recordingSmoothElevation,
+        suggestName = { recording.suggestedName() },
+        onSave = { choice -> recording.onFinishConfirmed(choice) },
+        onDismiss = { recording.onFinishDismissed() },
     )
 }
 

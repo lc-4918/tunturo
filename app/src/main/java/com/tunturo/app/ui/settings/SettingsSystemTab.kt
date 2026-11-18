@@ -1,6 +1,7 @@
 package com.tunturo.app.ui.settings
 
 import com.tunturo.app.data.db.BasemapControlMode
+import com.tunturo.app.domain.geo.ResumeMode
 import com.tunturo.app.map.offline.TileMath
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material.icons.filled.Save
@@ -105,7 +106,9 @@ import com.tunturo.app.ui.theme.TunturoIcons
         ) { vm.save(cur.copy(statusBarTransparent = it)) }
     }
 
-    SectionTitle(stringResource(R.string.settings_group_appearance))
+    // Le theme et la langue, sans rubrique a eux : une carte de plus dans le groupe Affichage. Les unites,
+    // en mode expert seulement - le systeme metrique convient a qui ne les cherche pas.
+    Spacer(Modifier.height(12.dp))
     var currentLang by remember { mutableStateOf(LocalePrefs.get(ctx)) }
     SettingsCard {
         PickRow(
@@ -128,11 +131,13 @@ import com.tunturo.app.ui.theme.TunturoIcons
             LocalePrefs.set(ctx, code)
             (ctx as? Activity)?.recreate()
         }
-        RowDivider()
-        PickRow(
-            stringResource(R.string.settings_label_units), cur.units, listOf("meters", "imperial"),
-            optionLabel = { stringResource(if (it == "imperial") R.string.unit_imperial else R.string.unit_metric) },
-        ) { vm.save(cur.copy(units = it)) }
+        if (cur.expertMode) {
+            RowDivider()
+            PickRow(
+                stringResource(R.string.settings_label_units), cur.units, listOf("meters", "imperial"),
+                optionLabel = { stringResource(if (it == "imperial") R.string.unit_imperial else R.string.unit_metric) },
+            ) { vm.save(cur.copy(units = it)) }
+        }
     }
 
     /*
@@ -208,6 +213,22 @@ import com.tunturo.app.ui.theme.TunturoIcons
             CardAction(stringResource(R.string.action_reset_defaults)) {
                 vm.save(cur.copy(tapToleranceDp = 10, lineTapToleranceDp = 16))
             }
+        }
+    }
+
+    /*
+     * L'enregistrement de trace : ce que fait l'appui sur le bouton en pause. Un reglage et non plus une
+     * question a chaque reprise - on reprend dix fois dans une sortie, et la reponse est toujours la meme.
+     */
+    GroupTitle(stringResource(R.string.settings_group_recording))
+    SettingsCard {
+        // Allume par defaut : la reprise continue le meme segment. Eteint, elle en ouvre un nouveau.
+        SwitchLine(
+            stringResource(R.string.recording_resume_same_segment),
+            ResumeMode.of(cur.recordingResumeMode) == ResumeMode.SAME_SEGMENT,
+            info = stringResource(R.string.settings_recording_resume_info),
+        ) { on ->
+            vm.save(cur.copy(recordingResumeMode = (if (on) ResumeMode.SAME_SEGMENT else ResumeMode.NEW_SEGMENT).key))
         }
     }
 
@@ -343,9 +364,10 @@ import com.tunturo.app.ui.theme.TunturoIcons
         ) { vm.save(cur.copy(simplifyRender = it)) }
     }
 
-    SectionTitle(stringResource(R.string.settings_section_personalisation))
+    // Le titre du menu lateral : mode expert seulement, celui par defaut convient a qui ne le cherche pas.
     var titleText by remember(cur.customTitle) { mutableStateOf(cur.customTitle) }
-    SettingsCard {
+    if (cur.expertMode) SectionTitle(stringResource(R.string.settings_section_personalisation))
+    if (cur.expertMode) SettingsCard {
         FieldRow(stringResource(R.string.settings_label_side_title)) {
             // La disquette n'apparait qu'apres une modification, DANS le champ : l'action d'enregistrer
             // appartient a ce qu'on vient de taper, et non au bas de la carte, ou elle se lisait comme

@@ -2,10 +2,7 @@ package com.tunturo.app.ui.recording
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FiberManualRecord
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -30,15 +27,11 @@ import com.tunturo.app.location.RecordingSession
 import com.tunturo.app.location.TrackRecorder
 import com.tunturo.app.ui.location.LocationControls
 import com.tunturo.app.ui.routes.OffTrackAlertColor
-import com.tunturo.app.ui.settings.ChoiceBlock
-import com.tunturo.app.ui.settings.ProvideSettingsPalette
-import com.tunturo.app.ui.settings.RowDivider
-import com.tunturo.app.ui.settings.SettingsCard
-import com.tunturo.app.ui.settings.settingsPalette
 
 /** Ce que dit le bandeau de l'enregistrement, en bas de la carte. */
 sealed interface RecordingNotice {
     data object Started : RecordingNotice
+    data object Paused : RecordingNotice
     data object Resumed : RecordingNotice
     data class Saved(val name: String) : RecordingNotice
     data object Empty : RecordingNotice
@@ -46,11 +39,14 @@ sealed interface RecordingNotice {
 }
 
 /**
- * Le bouton d'enregistrement de la carte et ce qui l'accompagne : la boite de reprise, le bandeau.
+ * Le bouton d'enregistrement de la carte et ce qui l'accompagne : sa bulle, la boite de fin, le bandeau.
  *
- * **Un bouton, deux etats** : il enregistre, ou il n'enregistre pas. En enregistrement, un appui met en
- * pause et range le parcours dans "Mes parcours". Hors enregistrement, un appui demarre - directement s'il
- * n'y a rien a reprendre, et sinon apres avoir demande comment continuer (cf. [ResumeMode]).
+ * **Un bouton, deux etats** : il enregistre (fond allume), ou il n'enregistre pas.
+ * - En enregistrement, l'appui ouvre une bulle a deux choix : "Pause" - le bouton s'eteint, le parcours
+ *   attend sur le disque - et "Terminer", qui ouvre la boite de fin (nom, discipline, altitudes, dossier).
+ * - En pause, la meme bulle propose "Reprendre" - selon le reglage, sans question (cf. [ResumeMode]) - et
+ *   "Terminer".
+ * - Sans enregistrement, l'appui en demarre un.
  *
  * Il ne tient pas l'enregistrement : c'est [TrackRecorder], hors de l'ecran, qui le tient, et
  * [RecordingSession] qui le range. S'obtient par [rememberRecordingControls].
@@ -65,11 +61,16 @@ class RecordingControls internal constructor(
     /** Le bouton est allume : les positions s'enregistrent. */
     val recording: Boolean get() = phase == RecordingPhase.RECORDING
 
-    /** Les segments a dessiner sur la carte : rien en pause (cf. TrackRecording.drawn). */
+    /** Les segments a dessiner sur la carte, pause comprise (cf. TrackRecording.drawn). */
     val drawnSegments get() = TrackRecording.drawn(recordingState.value)
 
-    /** La boite "Comment reprendre ?" est ouverte. */
-    var showResumeDialog by mutableStateOf(false)
+    /** La bulle "Pause / Terminer" est ouverte. */
+    var menuOpen by mutableStateOf(false)
+        private set
+
+    /** La boite de fin est ouverte. */
+    var finishDialogOpen by mutableStateOf(false)
+        private set
 
     var notice by mutableStateOf<RecordingNotice?>(null)
         private set
@@ -85,11 +86,10 @@ class RecordingControls internal constructor(
 
     fun dismissNotice() { notice = null }
 
-    /** L'appui sur le bouton. */
+    /** L'appui sur le bouton : la bulle en enregistrement comme en pause, le demarrage sinon. */
     fun onTap(location: LocationControls) {
         when (phase) {
-            RecordingPhase.RECORDING -> session.pause()
-            RecordingPhase.PAUSED -> showResumeDialog = true
+            RecordingPhase.RECORDING, RecordingPhase.PAUSED -> menuOpen = !menuOpen
             RecordingPhase.IDLE -> withSensor(location) {
                 session.start()
                 showNotice(RecordingNotice.Started)
@@ -97,14 +97,41 @@ class RecordingControls internal constructor(
         }
     }
 
-    /** Le choix de la boite de reprise. */
-    fun onResume(mode: ResumeMode, location: LocationControls) {
-        showResumeDialog = false
+    /** "Reprendre" dans la bulle de la pause. [mode] est celui du reglage. */
+    fun onResume(location: LocationControls, mode: ResumeMode) {
+        menuOpen = false
         withSensor(location) {
             session.resume(mode)
-            showNotice(if (mode == ResumeMode.NEW_TRACK) RecordingNotice.Started else RecordingNotice.Resumed)
+            showNotice(RecordingNotice.Resumed)
         }
     }
+
+    fun closeMenu() { menuOpen = false }
+
+    /** "Pause" dans la bulle. */
+    fun onPause() {
+        menuOpen = false
+        if (session.pause()) showNotice(RecordingNotice.Paused)
+    }
+
+    /** "Terminer" dans la bulle : plus rien ne s'enregistre, et la boite de fin s'ouvre. */
+    fun onFinish() {
+        menuOpen = false
+        session.pause()
+        finishDialogOpen = true
+    }
+
+    /** "Enregistrer" dans la boite de fin. */
+    fun onFinishConfirmed(choice: RecordingSession.FinishChoice) {
+        finishDialogOpen = false
+        session.finish(choice)
+    }
+
+    /** La boite de fin refermee sans rien ranger : le parcours reste en pause. */
+    fun onFinishDismissed() { finishDialogOpen = false }
+
+    /** Le nom propose par la boite de fin (cf. RecordingSession.suggestedName). */
+    suspend fun suggestedName(): String = session.suggestedName()
 
     internal fun onOutcome(outcome: RecordingSession.SaveOutcome) {
         showNotice(
@@ -145,7 +172,7 @@ fun rememberRecordingControls(location: LocationControls): RecordingControls {
 /**
  * Le parcours enregistre, dessine en direct sur la carte : rouge comme le bouton qui l'enregistre, borde
  * de blanc comme les traits mis en evidence. Rejoue a chaque style (cf. MapOverlayEffects) et a chaque
- * point garde. Efface des la pause : la couche rangee dans la bibliotheque prend le relais.
+ * point garde. Visible en pause aussi ; a la fin, la couche rangee dans la bibliotheque prend le relais.
  */
 @Composable
 fun RecordingLineEffect(controller: MapController, segments: List<List<RecordedPoint>>, styleTick: Int) {
@@ -166,10 +193,16 @@ private const val RecordingLineColor = "#B3261E"
  * au fond du bouton, allume pendant l'enregistrement comme celui des autres commandes actives.
  */
 @Composable
-fun RecordButtonIcon(recording: Boolean) {
+fun RecordButtonIcon(phase: RecordingPhase) {
     Icon(
         Icons.Filled.FiberManualRecord,
-        stringResource(if (recording) R.string.recording_action_pause else R.string.recording_action_record),
+        stringResource(
+            when (phase) {
+                RecordingPhase.RECORDING -> R.string.recording_action_pause
+                RecordingPhase.PAUSED -> R.string.recording_action_paused_menu
+                RecordingPhase.IDLE -> R.string.recording_action_record
+            },
+        ),
         tint = OffTrackAlertColor,
     )
 }
@@ -182,39 +215,9 @@ fun recordButtonShown(enabledInSettings: Boolean, phase: RecordingPhase): Boolea
 @Composable
 fun recordingNoticeText(notice: RecordingNotice): String = when (notice) {
     RecordingNotice.Started -> stringResource(R.string.recording_notice_started)
+    RecordingNotice.Paused -> stringResource(R.string.recording_notice_paused)
     RecordingNotice.Resumed -> stringResource(R.string.recording_notice_resumed)
     is RecordingNotice.Saved -> stringResource(R.string.recording_notice_saved, notice.name)
     RecordingNotice.Empty -> stringResource(R.string.recording_notice_empty)
     RecordingNotice.Failed -> stringResource(R.string.recording_notice_failed)
-}
-
-/**
- * Comment reprendre : dans le meme segment, dans un nouveau segment du meme parcours, ou dans un nouveau
- * parcours. Chaque choix dit ce qu'il fait - la difference entre les deux premiers ne se devine pas.
- */
-@Composable
-fun RecordingResumeDialog(dark: Boolean, onPick: (ResumeMode) -> Unit, onDismiss: () -> Unit) {
-    ProvideSettingsPalette(dark = dark) {
-        val palette = settingsPalette
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            containerColor = palette.screen,
-            title = { Text(stringResource(R.string.recording_resume_title), color = palette.label) },
-            text = {
-                SettingsCard {
-                    ChoiceBlock(stringResource(R.string.recording_resume_same_segment),
-                        stringResource(R.string.recording_resume_same_segment_hint)) { onPick(ResumeMode.SAME_SEGMENT) }
-                    RowDivider()
-                    ChoiceBlock(stringResource(R.string.recording_resume_new_segment),
-                        stringResource(R.string.recording_resume_new_segment_hint)) { onPick(ResumeMode.NEW_SEGMENT) }
-                    RowDivider()
-                    ChoiceBlock(stringResource(R.string.recording_resume_new_track),
-                        stringResource(R.string.recording_resume_new_track_hint)) { onPick(ResumeMode.NEW_TRACK) }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel), color = palette.accent) }
-            },
-        )
-    }
 }

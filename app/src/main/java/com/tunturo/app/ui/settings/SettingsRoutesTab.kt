@@ -151,12 +151,15 @@ import kotlinx.coroutines.launch
      * des traces se regle trace par trace, dans le menu de chaque couche, et vaut de meme pour les deux.
      * (La colonne routeSlopeProfile, qui separait le profil, n'est plus lue.)
      */
-    SectionTitle(stringResource(R.string.settings_section_route_slope))
-    SettingsCard {
-        SwitchLine(
-            stringResource(R.string.settings_route_slope_line), cur.routeSlopeLine,
-            info = stringResource(R.string.settings_route_slope_info),
-        ) { vm.save(cur.copy(routeSlopeLine = it)) }
+    // Mode expert seulement : l'itineraire se colore par defaut, et qui ne cherche pas ce reglage n'y perd rien.
+    if (cur.expertMode) {
+        SectionTitle(stringResource(R.string.settings_section_route_slope))
+        SettingsCard {
+            SwitchLine(
+                stringResource(R.string.settings_route_slope_line), cur.routeSlopeLine,
+                info = stringResource(R.string.settings_route_slope_info),
+            ) { vm.save(cur.copy(routeSlopeLine = it)) }
+        }
     }
 
     // Le lissage et l'echelle verticale ont quitte l'onglet "Carte" pour celui-ci : ils ne decrivent pas
@@ -298,16 +301,6 @@ import kotlinx.coroutines.launch
     // Dans cet onglet et non dans "Carte" : c'est de la matiere du profil qu'il s'agit, comme le lissage
     // au-dessus, et non de ce qui s'affiche. Les deux services ne s'ouvrent qu'une fois le completement
     // demande - trois champs d'URL sous un interrupteur eteint n'auraient rien a regler.
-    // L'enregistrement de trace : ses altitudes au GPS ou au modele de terrain. Hors du mode expert - c'est
-    // un choix de qualite du parcours, que l'on fait sans connaitre les services qui le servent.
-    SectionTitle(stringResource(R.string.settings_section_recording))
-    SettingsCard {
-        SwitchLine(
-            stringResource(R.string.settings_label_recording_smooth_elevation), cur.recordingSmoothElevation,
-            info = stringResource(R.string.settings_recording_smooth_elevation_hint),
-        ) { vm.save(cur.copy(recordingSmoothElevation = it)) }
-    }
-
     // Mode expert seulement : le completement suit son reglage par defaut pour qui ne l'a jamais regarde.
     if (cur.expertMode) {
     SectionTitle(stringResource(R.string.settings_section_elevation_fill))
@@ -340,85 +333,6 @@ import kotlinx.coroutines.launch
             Hint(stringResource(R.string.settings_services_hint))
         }
     }
-    }
-
-    /*
-     * Les CATEGORIES de points d'interet ne sont plus ici : elles se choisissent dans une bulle ouverte
-     * depuis la carte (cf. PoiFilterBubble).
-     *
-     * Quatre sections depliables de cases a cocher vivaient a cet endroit, c'est-a-dire a quatre gestes de
-     * la carte, dans un ecran qui recouvre justement ce qu'on essaie de regarder. Or choisir ses points
-     * d'interet est un geste de TERRAIN : on cherche un camping en fin d'apres-midi, un point d'eau a la
-     * montee. L'attribution de la source reste, elle : elle est due des lors qu'on affiche ces lieux, et
-     * n'a pas sa place sur une bulle qu'on ouvre et referme en roulant.
-     *
-     * Vider le cache et effacer l'historique des lieux ont suivi vers l'onglet Systeme, rubrique CACHE :
-     * ce sont des gestes d'entretien, et le seul lien qu'ils avaient avec cet onglet-ci etait la rubrique
-     * qui vient d'en partir.
-     */
-    SectionTitle(stringResource(R.string.settings_section_poi))
-    SettingsCard {
-        /*
-         * Completer DATAtourisme par OpenStreetMap : venu de l'onglet Carte, ou il suivait l'interrupteur
-         * qui POSE le bouton des points d'interet.
-         *
-         * Ce n'est ni un bouton ni un geste : c'est le choix des SOURCES qu'on interroge, au meme titre
-         * que le geocodeur et le moteur d'itineraire regles en tete de cet onglet. Une requete Overpass de
-         * plus par chargement, et elle est longue - d'ou l'interrupteur.
-         *
-         * Seulement quand la couche est allumee : un reglage qui ne peut rien faire n'a rien a montrer.
-         */
-        if (cur.poiEnabled) {
-            // Le choix des sources : mode expert seulement, le complement garde sinon son reglage.
-            if (cur.expertMode) {
-                SwitchLine(
-                    stringResource(R.string.settings_sw_poi_osm), cur.poiOsmComplement,
-                    info = stringResource(R.string.settings_sw_poi_osm_sub),
-                ) {
-                    // Le cache n'a pas a etre vide : chaque cellule retient la source qui l'a servie
-                    // (cf. PoiCellEntity), et basculer le complement ne fait que demander les autres.
-                    vm.save(cur.copy(poiOsmComplement = it))
-                }
-                RowDivider()
-            }
-            /*
-             * Le couloir des traces : au-dela de cette distance d'une trace AFFICHEE, un lieu n'est plus
-             * montre (cf. ui/poi/PoiCorridor).
-             *
-             * Ce qu'il repare : le zoom de chargement etait haut - une ville et ses abords - parce qu'a
-             * l'echelle d'une region la vue porte des milliers de lieux dont le service ne rend que les
-             * premiers. On zoomait donc beaucoup pour voir quoi que ce soit. Le couloir retire ce qui ne
-             * borde aucun trajet, et c'est lui qui rend le zoom plus bas supportable (cf.
-             * PoiLoading.MIN_ZOOM).
-             *
-             * Une poignee de distances plutot qu'un curseur : le choix se fait entre "le long du chemin" et
-             * "dans le coin", pas au decametre pres.
-             *
-             * Eteint par defaut, ici comme en base : c'est un filtre qui RETIRE de la carte, et une couche
-             * qui montre moins qu'on ne lui a demande sans l'avoir dit se lit comme une panne.
-             */
-            // Le curseur parcourt les crans, et non les metres : "Sans limite" vaut zero en base, mais se
-            // tient tout a DROITE, au-dela de la plus grande distance - c'est la plus large de toutes.
-            val crans = PoiCorridorSteps
-            val cran = crans.indexOf(cur.poiTrackCorridorM).takeIf { it >= 0 }
-                ?: crans.indices.minBy { kotlin.math.abs(crans[it] - cur.poiTrackCorridorM) }
-            SliderRow(
-                label = stringResource(R.string.settings_label_poi_corridor),
-                value = poiCorridorLabel(cur.poiTrackCorridorM),
-                fraction = fractionOf(cran, 0, crans.lastIndex),
-                steps = crans.size - 2,
-                onFraction = {
-                    vm.save(cur.copy(poiTrackCorridorM = crans[valueOf(it, 0, crans.lastIndex)]))
-                },
-                info = stringResource(R.string.settings_poi_corridor_hint),
-                // L'attribution suit immediatement : elle appartient a ce qui est au-dessus, et l'ecart
-                // normal l'en aurait detachee.
-                bottomPadding = 6.dp,
-            )
-        }
-        // Sans filet au-dessus : un filet separe deux reglages, et l'attribution n'en est pas un - c'est
-        // la mention que les donnees imposent, au bas de ce qui les affiche.
-        Hint(stringResource(R.string.settings_poi_attribution))
     }
 }
 
@@ -641,40 +555,6 @@ internal fun routingProfileIcon(p: RoutingProfile): ImageVector = when (p) {
     RoutingProfile.HYBRID_BIKE -> Icons.Filled.PedalBike
     RoutingProfile.MOUNTAIN_BIKE -> Icons.Filled.Terrain
     RoutingProfile.FOOT -> Icons.AutoMirrored.Filled.DirectionsWalk
-}
-
-/**
- * Bornes du couloir des traces, en metres : de zero - sans limite - a vingt kilometres.
- *
- * **Un curseur et non une liste de valeurs**, et le pas de cinq cents metres en est la raison : entre "le
- * long du chemin" et "dans le coin" il y a un continuum, et l'endroit ou l'on veut s'arreter depend du
- * pays qu'on traverse - deux kilometres en ville, dix dans une vallee vide. Une poignee de valeurs
- * imposees obligeait a choisir la moins fausse.
- *
- * **Zero retire la limite**, et se tient tout a DROITE du curseur, au-dela de vingt kilometres : c'est la
- * plus large des distances, et on la cherchait a l'oppose, apres le plus grand chiffre. On explore une
- * region ou l'on n'a aucune trace ouverte, et l'on veut voir ce qu'elle porte ; sans cette position, il
- * fallait laisser une distance qui ne voulait rien dire - et le couloir empeche desormais la requete
- * elle-meme (cf. PoiCorridor.crosses), ce qui viderait la carte pour de bon.
- */
-private const val MaxPoiCorridorM = 20_000
-
-/** Le pas du curseur : cinq cents metres. Au-dessous, on reglerait la precision d'un trace, pas la
- *  distance a laquelle on accepte de faire un detour. */
-private const val PoiCorridorStepM = 500
-
-/** Les crans du curseur, de gauche a droite : 500 m a 20 km, puis zero - sans limite. */
-private val PoiCorridorSteps: List<Int> =
-    (1..MaxPoiCorridorM / PoiCorridorStepM).map { it * PoiCorridorStepM } + 0
-
-/** "Sans limite", "500 m", "5 km" : le metre sous le kilometre, le kilometre au-dela, avec sa decimale
- *  quand elle compte - "2,5 km" est une distance qu'on se represente, "2500 m" beaucoup moins. */
-@Composable
-private fun poiCorridorLabel(m: Int): String = when {
-    m <= 0 -> stringResource(R.string.settings_poi_corridor_off)
-    m < 1_000 -> "$m m"
-    m % 1_000 == 0 -> "${m / 1_000} km"
-    else -> "${m / 1_000},${(m % 1_000) / 100} km"
 }
 
 /** Metres d'altitude par centimetre proposes : de la trace de vallee au massif entier. */

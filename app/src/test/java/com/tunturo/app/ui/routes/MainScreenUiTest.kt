@@ -29,6 +29,7 @@ import com.tunturo.app.data.db.BasemapControlMode
 import com.tunturo.app.data.db.LayerEntity
 import com.tunturo.app.data.db.SettingsEntity
 import com.tunturo.app.location.LocationHub
+import com.tunturo.app.domain.geo.RecordingPhase
 import com.tunturo.app.location.TrackRecorder
 import com.tunturo.app.location.TrackWatch
 import com.tunturo.app.ui.planner.StepTarget
@@ -439,14 +440,14 @@ class MainScreenUiTest {
     // ---------- L'enregistrement de trace : un seul bouton, deux etats ----------
 
     /**
-     * **Un seul bouton, deux etats.** En enregistrement, il dit "mettre en pause" ; l'appui met en pause,
-     * range le parcours - ici rien a ranger, aucun point n'ayant ete recu - et le bouton revient a
-     * "enregistrer". Un appui de plus ouvre la boite de reprise et ses trois choix.
+     * **Un seul bouton, deux etats.** En enregistrement, l'appui ouvre la bulle "Pause / Terminer" ;
+     * "Pause" la referme et eteint le bouton - rien n'est range, le parcours attend. En pause, l'appui
+     * ouvre la bulle "Reprendre / Terminer".
      *
      * L'enregistrement est demarre directement sur [TrackRecorder] : le demarrage par le bouton demande
      * l'autorisation de localisation, que le test ne peut pas accorder a l'ecran.
      */
-    @Test fun `le bouton d'enregistrement met en pause, puis propose comment reprendre`() {
+    @Test fun `le bouton d'enregistrement ouvre la bulle, Pause l'eteint, puis Reprendre est propose`() {
         reglages()
         TrackRecorder.resetForTest()
         compose.runOnUiThread { TrackRecorder.start() }
@@ -455,14 +456,45 @@ class MainScreenUiTest {
         assertFalse("un seul bouton", affiche(R.string.recording_action_record))
 
         compose.onNodeWithContentDescription(libelle(R.string.recording_action_pause)).performClick()
-        attend { affiche(R.string.recording_action_record) }
-        attend { texte(R.string.recording_notice_empty) }
+        attend { texte(R.string.recording_action_pause_short) }
+        assertTrue(texte(R.string.recording_action_finish))
+        // La bulle grandit depuis le bouton : on la touche une fois posee.
+        compose.waitForIdle()
 
-        compose.onNodeWithContentDescription(libelle(R.string.recording_action_record)).performClick()
-        attend { texte(R.string.recording_resume_title) }
-        assertTrue(texte(R.string.recording_resume_same_segment))
-        assertTrue(texte(R.string.recording_resume_new_segment))
-        assertTrue(texte(R.string.recording_resume_new_track))
+        compose.onNodeWithText(libelle(R.string.recording_action_pause_short)).performClick()
+        attend { affiche(R.string.recording_action_paused_menu) }
+        attend { texte(R.string.recording_notice_paused) }
+        assertEquals(RecordingPhase.PAUSED, TrackRecorder.recording.value.phase)
+
+        compose.onNodeWithContentDescription(libelle(R.string.recording_action_paused_menu)).performClick()
+        attend { texte(R.string.recording_action_resume_short) }
+        assertTrue(texte(R.string.recording_action_finish))
+        assertFalse(texte(R.string.recording_action_pause_short))
+        TrackRecorder.resetForTest()
+    }
+
+    /** "Terminer" ouvre la boite de fin ; ses details se deplient ; l'annuler laisse le parcours en pause. */
+    @Test fun `Terminer ouvre la boite de fin, et l'annuler laisse en pause`() {
+        reglages()
+        TrackRecorder.resetForTest()
+        compose.runOnUiThread { TrackRecorder.start() }
+        ecran()
+        attend { affiche(R.string.recording_action_pause) }
+        compose.onNodeWithContentDescription(libelle(R.string.recording_action_pause)).performClick()
+        attend { texte(R.string.recording_action_finish) }
+        compose.waitForIdle()
+        compose.onNodeWithText(libelle(R.string.recording_action_finish)).performClick()
+        attend { texte(R.string.recording_finish_title) }
+        assertEquals(RecordingPhase.PAUSED, TrackRecorder.recording.value.phase)
+        assertFalse(texte(R.string.recording_finish_discipline))
+
+        compose.onNodeWithText(libelle(R.string.recording_finish_details)).performClick()
+        attend { texte(R.string.recording_finish_folder) }
+        assertTrue(texte(R.string.recording_finish_discipline))
+
+        compose.onNodeWithText(libelle(R.string.action_cancel)).performClick()
+        attend { !texte(R.string.recording_finish_title) }
+        assertEquals(RecordingPhase.PAUSED, TrackRecorder.recording.value.phase)
         TrackRecorder.resetForTest()
     }
 

@@ -11,20 +11,28 @@ enum class RecordingPhase {
     /** Les positions s'ajoutent au parcours. */
     RECORDING,
 
-    /** En pause : le parcours est range dans la bibliotheque, et la reprise demandera comment continuer. */
+    /**
+     * En pause : plus rien ne s'ajoute, le parcours attend sur le disque. L'appui suivant reprend (selon
+     * le reglage, cf. [ResumeMode]) ; "Terminer" le range dans la bibliotheque.
+     */
     PAUSED,
 }
 
-/** Comment reprendre un enregistrement mis en pause. */
-enum class ResumeMode {
+/**
+ * Comment reprendre un enregistrement mis en pause : un reglage (Systeme > Enregistrement), et non plus
+ * une question posee a chaque reprise. Un nouveau parcours ne se choisit plus ici : on termine celui-ci.
+ */
+enum class ResumeMode(val key: String) {
     /** Le meme segment continue : un trait droit relie le point de la pause a celui de la reprise. */
-    SAME_SEGMENT,
+    SAME_SEGMENT("same_segment"),
 
     /** Le meme parcours, dans un nouveau segment : rien ne relie la pause a la reprise. */
-    NEW_SEGMENT,
+    NEW_SEGMENT("new_segment");
 
-    /** Un nouveau parcours : le precedent reste tel qu'il a ete range. */
-    NEW_TRACK,
+    companion object {
+        /** Le mode d'une cle de reglage ; le meme segment pour une cle inconnue, comme par defaut. */
+        fun of(key: String?): ResumeMode = entries.firstOrNull { it.key == key } ?: SAME_SEGMENT
+    }
 }
 
 /** Un point enregistre. [timeMs] est l'heure murale de la mesure : c'est elle que le parcours garde. */
@@ -37,16 +45,14 @@ data class RecordedPoint(val lat: Double, val lon: Double, val ele: Double? = nu
  * L'enregistrement en cours ou en pause.
  *
  * [segments] n'est jamais vide hors de [RecordingPhase.IDLE] : le dernier segment est celui qui recoit les
- * points. [layerId] est la couche de la bibliotheque ou le parcours a ete range a la derniere pause, null
- * tant qu'il ne l'a jamais ete. [autoName] est le nom que l'application lui a donne : s'il porte encore ce
- * nom a la pause suivante, il prend le nom recalcule ; renomme a la main, il garde le sien.
+ * points. [layerId] est la couche de la bibliotheque ou le parcours a deja ete range, null d'ordinaire :
+ * jusqu'a la v0.36, chaque pause le rangeait, et un parcours alors en pause se termine dans sa couche.
  */
 data class Recording(
     val phase: RecordingPhase = RecordingPhase.IDLE,
     val segments: List<List<RecordedPoint>> = emptyList(),
     val layerId: Long? = null,
     val startedAtMs: Long? = null,
-    val autoName: String? = null,
 )
 
 /**
@@ -72,12 +78,11 @@ object TrackRecording {
         else recording.copy(phase = RecordingPhase.PAUSED)
 
     /** Reprend un enregistrement en pause, selon [mode]. */
-    fun resume(recording: Recording, mode: ResumeMode, nowMs: Long): Recording {
+    fun resume(recording: Recording, mode: ResumeMode): Recording {
         if (recording.phase != RecordingPhase.PAUSED) return recording
         return when (mode) {
             ResumeMode.SAME_SEGMENT -> recording.copy(phase = RecordingPhase.RECORDING)
             ResumeMode.NEW_SEGMENT -> recording.copy(phase = RecordingPhase.RECORDING, segments = withNewSegment(recording.segments))
-            ResumeMode.NEW_TRACK -> start(Recording(), nowMs)
         }
     }
 
@@ -133,12 +138,12 @@ object TrackRecording {
     }
 
     /**
-     * Ce que la carte dessine en direct : les segments, pendant l'enregistrement seulement. En pause, le
-     * parcours est range dans la bibliotheque et sa couche le montre deja ; le trait en direct le
-     * doublerait.
+     * Ce que la carte dessine en direct : les segments, en enregistrement comme en pause - la pause ne
+     * range plus rien dans la bibliotheque, le trait en direct est donc le seul a montrer le parcours.
+     * Une fois termine, c'est la couche rangee qui prend le relais.
      */
     fun drawn(recording: Recording): List<List<RecordedPoint>> =
-        if (recording.phase == RecordingPhase.RECORDING) recording.segments else emptyList()
+        if (recording.phase == RecordingPhase.IDLE) emptyList() else recording.segments
 
     /** Les lignes a ranger dans la bibliotheque : un segment d'un seul point n'en est pas une. */
     fun lines(recording: Recording): List<List<TrackPoint>> =

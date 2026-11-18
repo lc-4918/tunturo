@@ -26,7 +26,7 @@ Ce qu'elle fait :
 - télécharger une zone pour l'emporter sans réseau ;
 - décrire un point : adresse, distances, mesures le long d'une trace ;
 - préparer un itinéraire par étapes ;
-- enregistrer la trace parcourue, avec des pauses, rangée dans le dossier *Mes parcours* ;
+- enregistrer la trace parcourue, avec des pauses, et la ranger à sa fin dans le dossier *Mes parcours* ;
 - afficher les points d'intérêt du parcours (hébergement, restauration, loisirs, services).
 
 Ce qu'elle n'est pas : un éditeur de tracé à la main, ni un service en ligne - aucun compte, aucune
@@ -557,37 +557,44 @@ temps, et c'est la question qu'on se pose devant une trace inconnue.
 ### Enregistrement de trace
 
 **Un seul bouton, deux états**, dans la colonne du pouce, au-dessus du tableau de bord : il enregistre (rond
-rouge plein, fond allumé), ou il n'enregistre pas (symbole "enregistrer").
+rouge plein, fond allumé), ou il n'enregistre pas (même rond, fond éteint).
 
-- **En enregistrement**, un appui met en pause, et la pause **range le parcours** dans le dossier *Mes
-  parcours*, créé à la racine au premier enregistrement (retrouvé par son identifiant, recréé s'il a été
-  supprimé). Il n'y a pas de bouton Stop : un parcours en pause est déjà rangé.
-- **Hors enregistrement**, un appui démarre - directement s'il n'y a rien à reprendre. Après une pause, une
-  boîte demande comment reprendre : **continuer le même segment** (un trait droit relie la pause à la
-  reprise, et sa longueur compte), **continuer dans un nouveau segment** (le même parcours, sans trait), ou
-  **nouveau parcours** (le précédent reste tel qu'il a été rangé).
-- Après "Continuer", la pause suivante **réécrit la même couche** avec tout ce qui a été enregistré depuis le
-  départ : elle garde sa couleur, sa place, sa visibilité et ses marqueurs. Une retouche faite entre-temps
-  (couper, inverser) est remplacée.
-- **Nom** : `Départ-Arrivée_AAAAMMJJ` (par exemple `Paris-Brest_20261117`), d'après la commune du premier et
-  du dernier point et le jour du départ. Une boucle ne nomme sa commune qu'une fois ; sans commune, le nom
-  est `Parcours_AAAAMMJJ` ; un nom déjà pris reçoit `_2`, `_3`. La commune vient du géocodeur si la
-  recherche de lieux est activée (il passe de lui-même à l'index hors ligne sans réseau), sinon du seul
-  index hors ligne. Après "Continuer", le nom suit la nouvelle arrivée, **sauf si le parcours a été renommé
-  à la main**.
+- **En enregistrement**, un appui ouvre une **bulle** à deux boutons côte à côte, icône et libellé :
+  **Pause** et **Terminer**. C'est la bulle des points d'intérêt en deux fois plus petite : elle sort du
+  bouton, sa pointe le vise.
+  - **Pause** referme la bulle et éteint le bouton. Rien n'est rangé : le parcours attend sur le disque, et
+    reste dessiné sur la carte.
+  - **Terminer** referme la bulle et ouvre la **boîte de fin** : le nom du parcours, pré-rempli, puis
+    **Détails**, un accordéon qui déplie la discipline, le lissage des altitudes et le dossier de la
+    bibliothèque (*Mes parcours* par défaut, créé à la racine au premier enregistrement, retrouvé par son
+    identifiant, recréé s'il a été supprimé ; ou la racine, ou un autre dossier). "Enregistrer" range le
+    parcours et termine l'enregistrement ; "Annuler" le laisse en pause.
+- **En pause**, un appui ouvre la même bulle avec **Reprendre** et **Terminer**. Reprendre suit
+  l'interrupteur *Système > Enregistrement > Continuer le même segment* : allumé (par défaut), un trait
+  droit relie la pause à la reprise, et sa longueur compte ; éteint, la reprise ouvre un nouveau segment du
+  même parcours, sans trait. Un nouveau parcours se commence en terminant celui-ci.
+- **Sans enregistrement**, un appui démarre.
+- **Nom proposé** : `Départ-Arrivée_AAAAMMJJ` (par exemple `Paris-Brest_20261117`), d'après la commune du
+  premier et du dernier point et le jour du départ. Une boucle ne nomme sa commune qu'une fois ; sans
+  commune, le nom est `Parcours_AAAAMMJJ`. Un nom déjà pris dans le dossier reçoit `_2`, `_3`. La commune
+  vient du géocodeur si la recherche de lieux est activée (il passe de lui-même à l'index hors ligne sans
+  réseau), sinon du seul index hors ligne. Le nom arrive un instant après l'ouverture de la boîte, et ne
+  remplace pas ce qu'on aurait commencé à taper.
+- **Discipline** : celle choisie dans la boîte (la discipline par défaut au départ), gardée sur la couche.
 - **Points gardés** : précision de 30 m au plus, cinq mètres (ou la précision) depuis le point précédent du
   segment, temps croissant. Une position **mesurée** avant le démarrage ou la reprise est écartée - c'est la
   dernière position connue rendue à l'abonnement. Ce n'est pas l'âge à la réception qui compte : une salve
   livrée au réveil, quand l'économie d'énergie a coupé le GPS écran éteint, est du parcours.
-- **Altitude** : celle du GPS. Le réglage *Lisser les altitudes sur le modèle de terrain* (onglet Trajets,
-  éteint par défaut) la remplace à chaque pause par celle de l'IGN en France, d'OpenTopography ailleurs ;
-  là où le service ne répond pas, l'altitude du GPS reste.
-- **Sur la carte**, le parcours en cours se dessine en direct, en rouge bordé de blanc. Il s'efface dès la
-  pause : la couche rangée dans *Mes parcours* prend le relais.
+- **Altitude** : celle du GPS. L'interrupteur *Lisser les altitudes sur le modèle numérique de terrain*, dans
+  la boîte de fin, la remplace par celle de l'IGN en France, d'OpenTopography ailleurs ; là où le service ne
+  répond pas, l'altitude du GPS reste. Le choix fait devient celui proposé la fois suivante.
+- **Sur la carte**, le parcours se dessine en direct, en rouge bordé de blanc, en enregistrement comme en
+  pause. Une fois terminé, la couche rangée prend le relais.
 - **Robustesse** : l'enregistrement s'écrit sur le disque au fil de l'eau (un point par ligne, en ajout
   seul). Repris après la mort du processus, il continue dans un nouveau segment : un trait droit
-  remplacerait par sa corde ce qui a été parcouru entre-temps. "Arrêter" dans la notification met en pause
-  et range le parcours.
+  remplacerait par sa corde ce qui a été parcouru entre-temps. "Arrêter" dans la notification met en pause,
+  sans rien ranger. Un échec du rangement laisse le parcours en pause : "Terminer" se refait. Un parcours en
+  pause rangé par la v0.36 (qui rangeait à chaque pause) se termine dans sa couche, réécrite en place.
 
 ### Alerte d'éloignement
 
@@ -781,27 +788,30 @@ sans se transformer en erreur.
 
 Quatre onglets :
 
-- **Carte** : hors mode expert, ni groupe ni rubrique - une carte par bouton de la carte (tableau de bord,
-  géocodage, planificateur, points d'intérêt, mesure, retouche, enregistrement), puis le repère de position.
-  Sous l'interrupteur du tableau de bord se déplient, allumé seulement, l'alerte d'éloignement (l'écart qui
-  la déclenche, son son, la vibration) et, en mode expert, les champs affichés. Le mode expert garde ses
-  groupes : échelle, rotation, suivi de la position et écran maintenu allumé, trace, marqueurs et
-  infobulles, apparence du profil. Quatre boutons sont posés sur la carte **par défaut** : le burger, le
-  GPS, le gestionnaire de fonds et le planificateur - plus le fond blanc translucide qui les porte. La
-  recherche de lieu, la mesure sur trace, la retouche des traces et l'alerte d'éloignement, elles, ne le
-  sont pas : ce sont celles qui s'ajoutent volontairement.
+- **Carte** : hors mode expert, ni groupe ni rubrique - une carte par bouton de la carte, dans l'ordre :
+  calcul d'itinéraire, enregistrement, tableau de bord, points d'intérêt, recherche de lieu, mesure sur
+  trace, retouche des traces ; puis le repère de position. Sous l'interrupteur du tableau de bord se
+  déplient, allumé seulement, l'alerte d'éloignement (l'écart qui la déclenche, son son, la vibration) et,
+  en mode expert, les champs affichés. Sous celui des points d'intérêt se déplient le couloir des traces,
+  l'attribution des données et, en mode expert, le complément OpenStreetMap. Les accordéons se déroulent
+  vers le bas. Le mode expert garde ses groupes : échelle, rotation, suivi de la position, trace,
+  marqueurs et infobulles, apparence du profil. Quatre boutons sont posés sur la carte **par défaut** : le
+  burger, le GPS, le gestionnaire de fonds et le planificateur - plus le fond blanc translucide qui les
+  porte. La recherche de lieu, la mesure sur trace, la retouche des traces et l'alerte d'éloignement, elles,
+  ne le sont pas : ce sont celles qui s'ajoutent volontairement.
 - **Tuiles** : fonds de plan en ligne (catalogue des fournisseurs), fonds de plan hors ligne (la liste des
   MBTiles et des composites, puis Importer, Télécharger et Composite), import/export (cf.
   [`BASEMAPS.md`](BASEMAPS.md)) ; en mode expert, le gestionnaire de couches (largeur et opacité du
   panneau). Il n'y a plus de fond par défaut à choisir : le fond affiché au démarrage est le dernier
   consulté, que le panneau de la carte enregistre à chaque choix.
-- **Trajets** : URL du géocodeur, URL du moteur d'itinéraire, discipline par défaut, catégories de points
-  d'intérêt et vidage de leur cache, calcul du profil, et
-  le complètement de l'altimétrie manquante avec ses deux services (cf. section 6), le lissage des
-  altitudes des parcours enregistrés (cf. section 14 bis).
-- **Système** : dossiers d'import et des MBTiles, **sauvegarde et restauration**, menu latéral, tolérances
-  de tap, simplification du rendu,
-  unités, mises à jour, langue, thème, avatar, remise à zéro.
+- **Trajets** : discipline par défaut, itinéraire hors ligne ; en mode expert, préférences de tracé,
+  coloration de l'itinéraire suivant la pente, calcul du profil, moteur et services (géocodeur, Overpass,
+  moteur d'itinéraire), complètement de l'altimétrie manquante avec ses deux services (cf. section 6).
+- **Système** : Affichage (écran allumé, barre d'état ; thème, langue, et les unités en mode expert),
+  Interaction (menu latéral, gestionnaire de fonds, tolérances de tap en mode expert), **Enregistrement**
+  (interrupteur de reprise dans le même segment, cf. section 14 bis), Stockage (caches ; dossiers et **sauvegarde et
+  restauration** en mode expert), Application (simplification du rendu et personnalisation en mode expert,
+  mises à jour, remise à zéro).
 
 Tout tient dans une seule ligne de base, écrite à chaque changement.
 

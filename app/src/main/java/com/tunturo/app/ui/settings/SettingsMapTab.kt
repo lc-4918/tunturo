@@ -12,7 +12,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -128,25 +127,10 @@ internal fun LazyListScope.mapTab(cur: SettingsEntity, vm: SettingsViewModel, gr
     bloc(R.string.settings_section_map_controls) {
         GroupTitle(stringResource(R.string.settings_section_map_controls), first = true)
         SettingsCard {
-            DashboardSwitch(cur, vm)
-            RowDivider()
-            SwitchLine(stringResource(R.string.settings_sw_geocoding), cur.geocodingEnabled) { vm.save(cur.copy(geocodingEnabled = it)) }
-            RowDivider()
-            SwitchLine(stringResource(R.string.settings_sw_planner), cur.routePlannerEnabled) { vm.save(cur.copy(routePlannerEnabled = it)) }
-            RowDivider()
-            SwitchLine(
-                stringResource(R.string.settings_sw_poi), cur.poiEnabled,
-                info = stringResource(R.string.settings_sw_poi_sub),
-            ) { vm.save(cur.copy(poiEnabled = it)) }
-            RowDivider()
-            SwitchLine(stringResource(R.string.settings_sw_measure), cur.trackMeasureEnabled) { vm.save(cur.copy(trackMeasureEnabled = it)) }
-            RowDivider()
-            SwitchLine(
-                stringResource(R.string.settings_sw_track_edit), cur.trackEditEnabled,
-                info = stringResource(R.string.settings_sw_track_edit_sub),
-            ) { vm.save(cur.copy(trackEditEnabled = it)) }
-            RowDivider()
-            RecordingSwitch(cur, vm)
+            mapButtonRows(cur, vm).forEachIndexed { index, row ->
+                if (index > 0) RowDivider()
+                row()
+            }
         }
     }
 
@@ -265,31 +249,35 @@ private val CardGap = 12.dp
  */
 @Composable private fun MapButtonCards(cur: SettingsEntity, vm: SettingsViewModel) {
     Column(verticalArrangement = Arrangement.spacedBy(CardGap)) {
-        SettingsCard { DashboardSwitch(cur, vm) }
-        SettingsCard {
-            SwitchLine(stringResource(R.string.settings_sw_geocoding), cur.geocodingEnabled) { vm.save(cur.copy(geocodingEnabled = it)) }
-        }
-        SettingsCard {
-            SwitchLine(stringResource(R.string.settings_sw_planner), cur.routePlannerEnabled) { vm.save(cur.copy(routePlannerEnabled = it)) }
-        }
-        SettingsCard {
-            SwitchLine(
-                stringResource(R.string.settings_sw_poi), cur.poiEnabled,
-                info = stringResource(R.string.settings_sw_poi_sub),
-            ) { vm.save(cur.copy(poiEnabled = it)) }
-        }
-        SettingsCard {
-            SwitchLine(stringResource(R.string.settings_sw_measure), cur.trackMeasureEnabled) { vm.save(cur.copy(trackMeasureEnabled = it)) }
-        }
-        SettingsCard {
-            SwitchLine(
-                stringResource(R.string.settings_sw_track_edit), cur.trackEditEnabled,
-                info = stringResource(R.string.settings_sw_track_edit_sub),
-            ) { vm.save(cur.copy(trackEditEnabled = it)) }
-        }
-        SettingsCard { RecordingSwitch(cur, vm) }
+        mapButtonRows(cur, vm).forEach { row -> SettingsCard { row() } }
     }
 }
+
+/**
+ * Les interrupteurs des boutons de la carte, dans l'ordre ou on les lit - une carte chacun hors mode
+ * expert, une seule carte en mode expert. Le calcul d'itineraire d'abord, puis ce qui sert pendant la
+ * sortie (enregistrement, tableau de bord, points d'interet), puis les outils.
+ */
+private fun mapButtonRows(cur: SettingsEntity, vm: SettingsViewModel): List<@Composable ColumnScopeMarker.() -> Unit> = listOf(
+    {
+        SwitchLine(stringResource(R.string.settings_sw_planner), cur.routePlannerEnabled) { vm.save(cur.copy(routePlannerEnabled = it)) }
+    },
+    { RecordingSwitch(cur, vm) },
+    { DashboardSwitch(cur, vm) },
+    { PoiSwitch(cur, vm) },
+    {
+        SwitchLine(stringResource(R.string.settings_sw_geocoding), cur.geocodingEnabled) { vm.save(cur.copy(geocodingEnabled = it)) }
+    },
+    {
+        SwitchLine(stringResource(R.string.settings_sw_measure), cur.trackMeasureEnabled) { vm.save(cur.copy(trackMeasureEnabled = it)) }
+    },
+    {
+        SwitchLine(
+            stringResource(R.string.settings_sw_track_edit), cur.trackEditEnabled,
+            info = stringResource(R.string.settings_sw_track_edit_sub),
+        ) { vm.save(cur.copy(trackEditEnabled = it)) }
+    },
+)
 
 /** Le bouton d'enregistrement de trace sur la carte (cf. recordButtonShown). */
 @Composable private fun ColumnScopeMarker.RecordingSwitch(cur: SettingsEntity, vm: SettingsViewModel) {
@@ -315,15 +303,31 @@ private val CardGap = 12.dp
     SwitchLine(stringResource(R.string.settings_sw_track_follow), cur.offTrackAlertEnabled) {
         vm.save(cur.copy(offTrackAlertEnabled = it))
     }
-    AnimatedVisibility(visible = cur.offTrackAlertEnabled) {
-        Column {
+    CardAccordion(visible = cur.offTrackAlertEnabled) {
+        RowDivider()
+        OffTrackAlertRows(cur, vm)
+        if (cur.expertMode) {
             RowDivider()
-            OffTrackAlertRows(cur, vm)
-            if (cur.expertMode) {
-                RowDivider()
-                DashboardFieldRows(cur, vm)
-            }
+            DashboardFieldRows(cur, vm)
         }
+    }
+}
+
+/**
+ * L'interrupteur des points d'interet, et ce qu'il commande en accordeon dessous : le couloir des traces,
+ * le complement OpenStreetMap en mode expert, et l'attribution des donnees.
+ *
+ * Ces reglages vivaient dans l'onglet Trajets, loin du bouton qu'ils accompagnent. Les categories, elles,
+ * se choisissent depuis la carte (cf. PoiFilterBubble).
+ */
+@Composable private fun ColumnScopeMarker.PoiSwitch(cur: SettingsEntity, vm: SettingsViewModel) {
+    SwitchLine(
+        stringResource(R.string.settings_sw_poi), cur.poiEnabled,
+        info = stringResource(R.string.settings_sw_poi_sub),
+    ) { vm.save(cur.copy(poiEnabled = it)) }
+    CardAccordion(visible = cur.poiEnabled) {
+        RowDivider()
+        PoiRows(cur, vm)
     }
 }
 
@@ -640,3 +644,94 @@ private fun ringtonePickerIntent(ctx: android.content.Context, current: String):
         }
     }
 }
+
+/**
+ * Les reglages des points d'interet, sous leur interrupteur (cf. [PoiSwitch]) : le complement
+ * OpenStreetMap (mode expert), le couloir des traces, et l'attribution des donnees.
+ */
+@Composable private fun ColumnScopeMarker.PoiRows(cur: SettingsEntity, vm: SettingsViewModel) {
+    // Le choix des sources : mode expert seulement, le complement garde sinon son reglage.
+    if (cur.expertMode) {
+        SwitchLine(
+            stringResource(R.string.settings_sw_poi_osm), cur.poiOsmComplement,
+            info = stringResource(R.string.settings_sw_poi_osm_sub),
+        ) {
+            // Le cache n'a pas a etre vide : chaque cellule retient la source qui l'a servie
+            // (cf. PoiCellEntity), et basculer le complement ne fait que demander les autres.
+            vm.save(cur.copy(poiOsmComplement = it))
+        }
+        RowDivider()
+    }
+    /*
+     * Le couloir des traces : au-dela de cette distance d'une trace AFFICHEE, un lieu n'est plus
+     * montre (cf. ui/poi/PoiCorridor).
+     *
+     * Ce qu'il repare : le zoom de chargement etait haut - une ville et ses abords - parce qu'a
+     * l'echelle d'une region la vue porte des milliers de lieux dont le service ne rend que les
+     * premiers. On zoomait donc beaucoup pour voir quoi que ce soit. Le couloir retire ce qui ne
+     * borde aucun trajet, et c'est lui qui rend le zoom plus bas supportable (cf.
+     * PoiLoading.MIN_ZOOM).
+     *
+     * Une poignee de distances plutot qu'un curseur : le choix se fait entre "le long du chemin" et
+     * "dans le coin", pas au decametre pres.
+     *
+     * Eteint par defaut, ici comme en base : c'est un filtre qui RETIRE de la carte, et une couche
+     * qui montre moins qu'on ne lui a demande sans l'avoir dit se lit comme une panne.
+     */
+    // Le curseur parcourt les crans, et non les metres : "Sans limite" vaut zero en base, mais se
+    // tient tout a DROITE, au-dela de la plus grande distance - c'est la plus large de toutes.
+    val crans = PoiCorridorSteps
+    val cran = crans.indexOf(cur.poiTrackCorridorM).takeIf { it >= 0 }
+        ?: crans.indices.minBy { kotlin.math.abs(crans[it] - cur.poiTrackCorridorM) }
+    SliderRow(
+        label = stringResource(R.string.settings_label_poi_corridor),
+        value = poiCorridorLabel(cur.poiTrackCorridorM),
+        fraction = fractionOf(cran, 0, crans.lastIndex),
+        steps = crans.size - 2,
+        onFraction = {
+            vm.save(cur.copy(poiTrackCorridorM = crans[valueOf(it, 0, crans.lastIndex)]))
+        },
+        info = stringResource(R.string.settings_poi_corridor_hint),
+        // L'attribution suit immediatement : elle appartient a ce qui est au-dessus, et l'ecart
+        // normal l'en aurait detachee.
+        bottomPadding = 6.dp,
+    )
+    // Sans filet au-dessus : un filet separe deux reglages, et l'attribution n'en est pas un - c'est
+    // la mention que les donnees imposent, au bas de ce qui les affiche.
+    Hint(stringResource(R.string.settings_poi_attribution))
+}
+
+/**
+ * Bornes du couloir des traces, en metres : de zero - sans limite - a vingt kilometres.
+ *
+ * **Un curseur et non une liste de valeurs**, et le pas de cinq cents metres en est la raison : entre "le
+ * long du chemin" et "dans le coin" il y a un continuum, et l'endroit ou l'on veut s'arreter depend du
+ * pays qu'on traverse - deux kilometres en ville, dix dans une vallee vide. Une poignee de valeurs
+ * imposees obligeait a choisir la moins fausse.
+ *
+ * **Zero retire la limite**, et se tient tout a DROITE du curseur, au-dela de vingt kilometres : c'est la
+ * plus large des distances, et on la cherchait a l'oppose, apres le plus grand chiffre. On explore une
+ * region ou l'on n'a aucune trace ouverte, et l'on veut voir ce qu'elle porte ; sans cette position, il
+ * fallait laisser une distance qui ne voulait rien dire - et le couloir empeche desormais la requete
+ * elle-meme (cf. PoiCorridor.crosses), ce qui viderait la carte pour de bon.
+ */
+private const val MaxPoiCorridorM = 20_000
+
+/** Le pas du curseur : cinq cents metres. Au-dessous, on reglerait la precision d'un trace, pas la
+ *  distance a laquelle on accepte de faire un detour. */
+private const val PoiCorridorStepM = 500
+
+/** Les crans du curseur, de gauche a droite : 500 m a 20 km, puis zero - sans limite. */
+private val PoiCorridorSteps: List<Int> =
+    (1..MaxPoiCorridorM / PoiCorridorStepM).map { it * PoiCorridorStepM } + 0
+
+/** "Sans limite", "500 m", "5 km" : le metre sous le kilometre, le kilometre au-dela, avec sa decimale
+ *  quand elle compte - "2,5 km" est une distance qu'on se represente, "2500 m" beaucoup moins. */
+@Composable
+private fun poiCorridorLabel(m: Int): String = when {
+    m <= 0 -> stringResource(R.string.settings_poi_corridor_off)
+    m < 1_000 -> "$m m"
+    m % 1_000 == 0 -> "${m / 1_000} km"
+    else -> "${m / 1_000},${(m % 1_000) / 100} km"
+}
+

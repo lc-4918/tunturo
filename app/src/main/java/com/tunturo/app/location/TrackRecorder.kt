@@ -85,14 +85,13 @@ object TrackRecorder {
     }
 
     /** Reprend selon [mode]. */
-    fun resume(mode: ResumeMode, nowMs: Long = System.currentTimeMillis()) = synchronized(lock) {
+    fun resume(mode: ResumeMode) = synchronized(lock) {
         val before = _recording.value
-        val after = TrackRecording.resume(before, mode, nowMs)
+        val after = TrackRecording.resume(before, mode)
         if (after === before) return@synchronized
         notBeforeMs = elapsedClock()
         _recording.value = after
         when (mode) {
-            ResumeMode.NEW_TRACK -> write { RecordingStore.rewrite(it, after) }
             ResumeMode.NEW_SEGMENT -> write {
                 RecordingStore.writeMeta(it, after)
                 if (after.segments.size != before.segments.size) RecordingStore.appendSegmentBreak(it)
@@ -101,11 +100,14 @@ object TrackRecorder {
         }
     }
 
-    /** Le parcours vient d'etre range dans la bibliotheque, dans la couche [layerId], sous [autoName]. */
-    fun savedAs(layerId: Long, autoName: String) = synchronized(lock) {
-        val after = _recording.value.copy(layerId = layerId, autoName = autoName)
+    /**
+     * Le parcours est range dans la bibliotheque : l'enregistrement est termine, le disque se vide, et le
+     * prochain appui en demarrera un neuf.
+     */
+    fun finished() = synchronized(lock) {
+        val after = Recording()
         _recording.value = after
-        write { RecordingStore.writeMeta(it, after) }
+        write { RecordingStore.rewrite(it, after) }
     }
 
     /** Une position de plus. Vrai quand elle a ete gardee. */
@@ -136,7 +138,7 @@ object TrackRecorder {
 /**
  * L'enregistrement sur le disque, en deux fichiers.
  *
- * - [META_FILE] : la phase, la couche ou le parcours est range, son debut et son nom - quelques octets,
+ * - [META_FILE] : la phase, la couche ou le parcours est deja range, et son debut - quelques octets,
  *   reecrits a chaque changement.
  * - [POINTS_FILE] : un point par ligne, "lat;lon;ele;temps", et une ligne [SEGMENT_BREAK] a chaque nouveau
  *   segment. On n'y fait qu'AJOUTER : une sortie de dix heures compte des milliers de points, et les
@@ -154,11 +156,10 @@ object RecordingStore {
         val phase: RecordingPhase = RecordingPhase.IDLE,
         val layerId: Long? = null,
         val startedAtMs: Long? = null,
-        val autoName: String? = null,
     )
 
     fun writeMeta(dir: File, recording: Recording) {
-        val meta = Meta(recording.phase, recording.layerId, recording.startedAtMs, recording.autoName)
+        val meta = Meta(recording.phase, recording.layerId, recording.startedAtMs)
         File(dir, META_FILE).writeText(json.encodeToString(Meta.serializer(), meta))
     }
 
@@ -184,7 +185,7 @@ object RecordingStore {
         if (meta.phase == RecordingPhase.IDLE) return null
         val pointsFile = File(dir, POINTS_FILE)
         val segments = if (pointsFile.exists()) decodeSegments(pointsFile.readText()) else listOf(emptyList())
-        return Recording(meta.phase, segments, meta.layerId, meta.startedAtMs, meta.autoName)
+        return Recording(meta.phase, segments, meta.layerId, meta.startedAtMs)
     }
 
     internal fun encodePoint(point: RecordedPoint): String =

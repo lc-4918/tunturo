@@ -398,59 +398,84 @@ class TunturoRepository(private val ctx: Context) {
             written.computed.bounds
         }
 
-    /** Un parcours enregistre, range dans la bibliotheque : sa couche, et le nom que l'application lui a donne. */
-    data class SavedRecording(val layerId: Long, val autoName: String)
+    /** Un parcours enregistre, range dans la bibliotheque : sa couche, et le nom qu'elle porte. */
+    data class SavedRecording(val layerId: Long, val name: String)
+
+    /** Ou ranger un parcours enregistre. */
+    sealed interface RecordingFolder {
+        /** "Mes parcours", cree au premier enregistrement (cf. [ensureRecordingsFolder]). */
+        data object Recordings : RecordingFolder
+
+        /** La racine de la bibliotheque. */
+        data object Root : RecordingFolder
+
+        /** Un dossier existant. */
+        data class Existing(val id: Long) : RecordingFolder
+    }
 
     /**
-     * Range un parcours enregistre dans "Mes parcours" (cf. location/TrackRecorder), a chaque pause.
+     * Range un parcours enregistre dans la bibliotheque (cf. location/TrackRecorder), a sa fin.
      *
-     * La premiere pause cree la couche ; les suivantes - apres "Continuer" - la reecrivent EN PLACE, avec
-     * tout ce qui a ete enregistre depuis le depart : elle garde sa couleur, sa place et sa visibilite, et
-     * les marqueurs qu'on y aurait poses entre-temps. Si elle a ete supprimee entre-temps, le parcours en
-     * cree une nouvelle plutot que de se perdre.
+     * [name] est celui de la boite de fin, rendu unique dans le dossier [folder] par un suffixe (cf.
+     * [RecordingName.unique]). [routingProfile] est la discipline choisie, gardee sur la couche ;
+     * [smoothElevation] pose les altitudes du modele de terrain a la place de celles du GPS.
      *
-     * [baseName] est le nom calcule pour cette pause (cf. [RecordingName]). Une couche qui porte encore le
-     * nom automatique [previousAutoName] prend le nouveau - l'arrivee a change ; renommee a la main, elle
-     * garde le sien.
+     * Un parcours deja range - en pause a la mise a jour depuis la v0.36, qui rangeait a chaque pause -
+     * reecrit sa couche EN PLACE ([previousLayerId]) : elle garde sa couleur, sa place et les marqueurs
+     * qu'on y aurait poses. Supprimee entre-temps, une nouvelle la remplace plutot que de perdre le parcours.
      *
      * Null quand il n'y a rien a ranger : aucun segment d'au moins deux points.
      */
     suspend fun saveRecording(
-        lines: List<List<TrackPoint>>, previousLayerId: Long?, previousAutoName: String?, baseName: String,
+        lines: List<List<TrackPoint>>,
+        previousLayerId: Long?,
+        name: String,
+        folder: RecordingFolder,
+        routingProfile: String?,
+        smoothElevation: Boolean,
     ): SavedRecording? = withContext(Dispatchers.IO) {
         if (lines.isEmpty()) return@withContext null
-        val stored = smoothRecordedElevation(lines)
-        val existing = previousLayerId?.let { db.layers().byId(it) }
-        if (existing != null) {
-            val siblings = db.layers().all().first()
-                .filter { it.folderId == existing.folderId && it.id != existing.id }.map { it.name }
-            val keepsAutoName = existing.name == previousAutoName
-            val name = if (keepsAutoName) RecordingName.unique(baseName, siblings) else existing.name
-            rewriteLayer(existing.copy(name = name), geometryOf(existing).points, stored)
-            return@withContext SavedRecording(existing.id, if (keepsAutoName) name else previousAutoName ?: name)
+        val stored = if (smoothElevation) smoothRecordedElevation(lines) else lines
+        val folderId = when (folder) {
+            RecordingFolder.Recordings -> ensureRecordingsFolder()
+            RecordingFolder.Root -> null
+            is RecordingFolder.Existing -> folder.id.takeIf { id -> db.folders().all().first().any { it.id == id } }
+                ?: ensureRecordingsFolder()
         }
-        val folderId = ensureRecordingsFolder()
-        val siblings = db.layers().all().first().filter { it.folderId == folderId }.map { it.name }
-        val name = RecordingName.unique(baseName, siblings)
+        val existing = previousLayerId?.let { db.layers().byId(it) }
+        val siblings = db.layers().all().first()
+            .filter { it.folderId == folderId && it.id != existing?.id }.map { it.name }
+        val unique = RecordingName.unique(name.trim().ifBlank { ctx.getString(R.string.recording_default_name) }, siblings)
+        if (existing != null) {
+            val moved = existing.folderId != folderId
+            rewriteLayer(
+                existing.copy(
+                    name = unique, folderId = folderId, routingProfile = routingProfile,
+                    sortOrder = if (moved) db.layers().maxSort(folderId) + 1 else existing.sortOrder,
+                ),
+                geometryOf(existing).points, stored,
+            )
+            return@withContext SavedRecording(existing.id, unique)
+        }
         val written = writeGeometry(emptyList(), stored)
         val layerId = db.layers().insert(
             LayerEntity(
-                name = name, folderId = folderId, source = RECORDING_SOURCE,
+                name = unique, folderId = folderId, source = RECORDING_SOURCE,
                 color = Palette.pick(db.layers().colorsInFolder(folderId)),
                 sortOrder = db.layers().maxSort(folderId) + 1,
                 geometryFile = written.fileName,
+                routingProfile = routingProfile,
             ).describedBy(written)
         )
-        SavedRecording(layerId, name)
+        SavedRecording(layerId, unique)
     }
 
     /**
-     * Les altitudes du modele de terrain a la place de celles du GPS, si le reglage le demande. La ou le
+     * Les altitudes du modele de terrain a la place de celles du GPS. La ou le
      * service ne repond pas - hors reseau -, l'altitude du GPS reste : un parcours se range toujours.
      */
     private suspend fun smoothRecordedElevation(lines: List<List<TrackPoint>>): List<List<TrackPoint>> {
-        val s = db.settings().get() ?: return lines
-        if (!s.recordingSmoothElevation) return lines
+        val s = db.settings().get() ?: SettingsEntity()
         val holes = lines.map { line -> line.map { it.copy(ele = null) } }
         val filled = runCatching {
             ElevationFiller.fill(

@@ -59,7 +59,7 @@ visualiser sur une carte avec un profil altimétrique synchronisé, sans dépend
 - Télécharger le fond de carte avant la sortie, sur toute la zone ou le long du parcours, pour l'utiliser sans réseau.
 - Suivre le parcours sur le terrain, avec une alerte dès que vous vous en éloignez.
 - Randonnée, vélo, VTT : consulter un itinéraire préparé à l'avance, hors-ligne.
-- Enregistrer sa sortie, avec des pauses, et la retrouver dans le dossier *Mes parcours*.
+- Enregistrer sa sortie, avec des pauses, et la ranger à la fin dans le dossier *Mes parcours*.
 - Archiver des traces personnelles, classées en dossiers.
 - Explorer des fonds de carte spécialisés (IGN, relief, pistes cyclables...).
 
@@ -90,7 +90,7 @@ visualiser sur une carte avec un profil altimétrique synchronisé, sans dépend
 - **Appui long sur la carte** : l'adresse du lieu, et la distance et la durée pour l'atteindre depuis votre position ou un autre point.
 - **Mesure sur une trace** : la distance entre deux points d'une trace affichée, le long du parcours, sans réseau.
 - **Alerte d'éloignement** : choisissez la trace suivie, et un bandeau, et un son si vous le voulez, vous prévient dès que vous vous en écartez.
-- **Enregistrement de trace** : un seul bouton, qui enregistre ou non ; chaque pause range le parcours dans *Mes parcours*, nommé d'après ses communes de départ et d'arrivée.
+- **Enregistrement de trace** : un seul bouton, qui enregistre ou non ; sa bulle met en pause, reprend ou termine, et le parcours se range dans *Mes parcours*, nommé d'après ses communes de départ et d'arrivée.
 - **Tableau de bord pendant le suivi** : vitesse, temps et distance faits et restants, dénivelés positif et négatif faits et à venir.
 - **Le suivi continue écran éteint**, avec une notification permanente - discrète tant que l'application est à l'écran - et une option pour garder l'écran allumé.
 - **Flèche de cap** qui suit votre direction de déplacement plutôt que la boussole.
@@ -143,9 +143,9 @@ lui-même s'il existe une version plus récente et vous propose de l'installer.
 - **Distance et durée jusqu'au point** : celles de l'itinéraire recommandé pour la discipline réglée dans *Réglages / Trajets* (Photon et Valhalla, ou vos instances).
 - **Déplacer une étape** : un tap sur une pastille numérotée propose *Définir comme arrivée* ou *Supprimer* ; un appui bref la saisit pour la déposer ailleurs.
 - **Prolonger un trajet** : un nouveau départ ou une nouvelle arrivée posés depuis la carte gardent l'ancien bout comme étape.
-- **Enregistrer un parcours** : le bouton au-dessus du tableau de bord lance l'enregistrement ; un nouvel appui le met en pause et range le parcours dans *Mes parcours*, un dossier créé au premier enregistrement. Un appui de plus demande comment reprendre : continuer le même segment (un trait droit relie la pause à la reprise), continuer dans un nouveau segment, ou commencer un nouveau parcours. Le parcours se nomme `Départ-Arrivée_AAAAMMJJ`, par exemple `Paris-Brest_20261117` ; renommé, il garde votre nom. Les altitudes sont celles du GPS ; *Réglages / Trajets* permet de les lisser sur le modèle de terrain.
+- **Enregistrer un parcours** : le bouton au-dessus du tableau de bord lance l'enregistrement. Pendant l'enregistrement, un appui ouvre une bulle : *Pause* éteint le bouton ; en pause, la bulle propose *Reprendre* (dans le même segment par défaut, ou un nouveau segment si l'on éteint l'interrupteur de *Réglages / Système / Enregistrement*) ; *Terminer* ouvre une boîte où l'on nomme le parcours, proposé sous la forme `Départ-Arrivée_AAAAMMJJ` (par exemple `Paris-Brest_20261117`). Ses *Détails* règlent la discipline, le lissage des altitudes sur le modèle numérique de terrain et le dossier : *Mes parcours* par défaut, créé au premier enregistrement. Les altitudes sont celles du GPS tant qu'on ne les lisse pas.
 - **Mesurer une portion de trace** : activez le bouton règle dans **Réglages / Carte**, puis tapez deux points sur une trace.
-- **Colorer suivant la pente** : désactivé par défaut, dans *Réglages / Trajets*, pour l'itinéraire sur la carte et son profil.
+- **Colorer suivant la pente** : désactivé par défaut, dans *Réglages / Trajets* (mode expert), pour l'itinéraire sur la carte et son profil.
 - **Relief** : activez l'ombrage de relief dans les réglages carte.
 - **Profil altimétrique** : zoom sur une portion (trois niveaux), lissage et échelle verticale, par exemple 1 cm = 100 m.
 - **Envoi à une montre Garmin** : réglez la largeur du couloir, puis lancez la synchronisation depuis la montre.
@@ -177,7 +177,7 @@ lui-même s'il existe une version plus récente et vous propose de l'installer.
 - Un **parcours enregistré** reste sur le téléphone, comme une trace importée. Pour le nommer, Tunturo
   cherche la commune de son premier et de son dernier point : dans l'index de lieux hors ligne, ou auprès
   du géocodeur si la recherche de lieux est activée, qui reçoit alors ces deux points. Le **lissage des
-  altitudes** sur le modèle de terrain, éteint par défaut, envoie à chaque pause les points du parcours
+  altitudes** sur le modèle de terrain, éteint par défaut, envoie à la fin de l'enregistrement les points du parcours
   aux services d'altimétrie (IGN, OpenTopography).
 - La **mesure sur une trace**, elle, ne sort pas du téléphone : elle se lit sur la trace que vous avez
   importée, et n'interroge aucun service.

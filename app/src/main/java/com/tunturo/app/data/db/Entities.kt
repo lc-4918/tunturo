@@ -418,6 +418,10 @@ data class SettingsEntity(
     // Ce que fait l'appui sur le bouton d'enregistrement en pause (cle de ResumeMode) : continuer le meme
     // segment par defaut - un trait droit relie la pause a la reprise -, ou en ouvrir un nouveau.
     val recordingResumeMode: String = "same_segment",
+    // L'alerte d'eloignement, de sa propre ligne des reglages (onglet Carte, sous le tableau de bord).
+    // Allumee par defaut : c'etait son etat avant d'avoir une ligne a elle, et la cloche du tableau de bord
+    // reste le geste qui l'arme trace par trace. Eteinte, la cloche disparait et rien ne sonne.
+    val offTrackAlertActive: Boolean = true,
 )
 
 /** Les valeurs de [SettingsEntity.basemapControlMode]. */
@@ -528,6 +532,16 @@ fun SettingsEntity.withRouteUrl(engine: RouteEngine, url: String): SettingsEntit
 }
 
 /** La meme chose en ecriture : rend la copie des reglages ou seule la discipline [profile] a change. */
+/** Les preferences de trace des cinq disciplines, rendues a leur valeur d'origine. */
+fun SettingsEntity.withDefaultRoutePrefs(): SettingsEntity {
+    val defaults = SettingsEntity()
+    return copy(
+        routePrefsRoad = defaults.routePrefsRoad, routePrefsGravel = defaults.routePrefsGravel,
+        routePrefsHybrid = defaults.routePrefsHybrid, routePrefsMtb = defaults.routePrefsMtb,
+        routePrefsFoot = defaults.routePrefsFoot,
+    )
+}
+
 fun SettingsEntity.withRoutePrefs(profile: RoutingProfile, prefs: RoutingPrefs): SettingsEntity {
     val csv = prefs.asCsv()
     return when (profile) {

@@ -133,4 +133,12 @@ class OffTrackTest {
         assertEquals(0.0, OffTrack.sureAwayM(20.0, 300.0), 0.0)
         assertEquals(10.0, OffTrack.sureAwayM(20.0, 10.0), 0.0)
     }
+
+    /** L'alerte eteinte dans les reglages desarme la cloche, quel que soit son etat. */
+    @Test fun `l'alerte eteinte desarme la cloche`() {
+        assertTrue(OffTrack.armedWhenActive(alertActive = true, armed = true))
+        assertFalse(OffTrack.armedWhenActive(alertActive = false, armed = true))
+        assertFalse(OffTrack.armedWhenActive(alertActive = true, armed = false))
+        assertFalse(OffTrack.announcing(OffTrack.armedWhenActive(false, true), alerting = true, silenced = false))
+    }
 }

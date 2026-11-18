@@ -786,49 +786,65 @@ sans se transformer en erreur.
 
 ## 15. Réglages
 
-Trois onglets : **Carte**, **Parcours** (mode expert seulement : il ne porte que des réglages experts) et
-**Système**. L'onglet Tuiles a disparu, son contenu est passé en tête de l'onglet Carte.
+Trois onglets : **Carte**, **Parcours** (mode expert du compte administrateur seulement : il ne porte que
+des réglages experts ; faute de comptes, le téléphone est administrateur) et **Système**.
+
+Un seul niveau de titre : groupes et rubriques ont fusionné, tous les titres ont le style des groupes. Le
+titre qui s'ancre sous les onglets en défilant a la police et la taille du titre dans le corps de l'onglet.
 
 Dans toutes les cartes, **le contenu d'un accordéon est en retrait** sous la ligne qui l'ouvre, filets
 compris, et il se déroule vers le bas. Une ligne d'accordéon porte un chevron ; un appui l'ouvre, un autre
-la referme.
+la referme. Le **calcul d'itinéraire**, l'**alerte d'éloignement**, les **points d'intérêt** et, en mode
+expert, le **tableau de bord** portent un interrupteur au bout de la ligne et, à sa gauche, un chevron qui n'apparaît qu'allumé : éteinte, un appui sur la ligne l'allume (et l'ouvre) ;
+allumée, il ouvre ou ferme l'accordéon.
 
 - **Carte** :
-  - En tête, sans titre, **Cartes en ligne** (le catalogue des fournisseurs, sans leur type XYZ ou VECTOR :
-    activation, édition, clé d'API, plage de zoom) et **Cartes hors ligne** (les MBTiles et les
-    composites). Chacune est une ligne en accordéon dont l'en-tête **reste collé** en haut de la liste tant
-    que ses lignes défilent dessous : Importer et Exporter pour les cartes en ligne, Importer, Télécharger
-    et Composite pour les cartes hors ligne, calés à droite, au dessin des gestes du calcul d'itinéraire.
-  - Hors mode expert, ni groupe ni rubrique : une carte par bouton de la carte, dans l'ordre calcul
-    d'itinéraire, enregistrement, tableau de bord, points d'intérêt, recherche de lieu, mesure sur trace,
-    retouche des traces ; puis le repère de position.
+  - En tête, sans titre, **Cartes en ligne** (le catalogue des fournisseurs) et **Cartes hors ligne** (les
+    MBTiles et les composites), chacune une ligne en accordéon. Ouverte, la ligne des cartes en ligne porte
+    elle-même ses gestes Importer et Exporter, à la hauteur d'une ligne ordinaire ; celle des cartes hors
+    ligne garde son en-tête collant (Importer, Télécharger, Composite), répartis à égale distance.
+  - Un appui sur un fond (hors interrupteur) ouvre sa **bulle**, au dessin de celle des points d'intérêt,
+    sous la ligne ou au-dessus selon la place : une miniature (une tuile prise à un endroit représentatif,
+    Grenoble ou un massif du pays d'un fond national) et le nom, une description (nature, couverture,
+    niveaux de zoom), puis **Éditer** et **Activer**. Éditer remplace le contenu par un en-tête (retour et
+    nom de la carte) et les détails : URL, clé d'API, zoom. Un appui à côté ferme la bulle.
+  - Les lignes des **cartes hors ligne** n'ont plus de crayon ni de corbeille : un appui ouvre la même
+    bulle. Pour une carte téléchargée, la miniature est l'aperçu précis de son éditeur et la description
+    dit les zooms téléchargés ; pour un composite, la miniature superpose ses deux couches et la
+    description dit leurs noms et l'opacité du premier plan. Les deux
+    portent trois boutons : Éditer, Supprimer et (Dés)activer.
+  - Hors mode expert, ni groupe ni titre : une carte par bouton de la carte, dans l'ordre calcul
+    d'itinéraire, enregistrement, tableau de bord, alerte d'éloignement, points d'intérêt, recherche de
+    lieu, mesure sur trace, retouche des traces ; puis le repère de position.
   - Sous le **calcul d'itinéraire** se déplient la discipline par défaut, les numéros des étapes (mode
-    expert) et l'**itinéraire hors ligne** (les zones téléchargées, une par ligne, et le catalogue). La
-    notification d'une zone à mettre à jour ouvre cet onglet.
-  - Sous le **tableau de bord** : l'alerte d'éloignement et, en mode expert, les champs affichés. Sous les
-    **points d'intérêt** : le couloir des traces, l'attribution et, en mode expert, le complément
-    OpenStreetMap.
+    expert), l'**itinéraire hors ligne** et, tout en bas, la coloration suivant la pente. La notification
+    d'une zone à mettre à jour ouvre cet onglet, accordéon ouvert.
+  - Sous le **tableau de bord**, en mode expert : les champs affichés. Juste après lui, une carte à part
+    pour l'**alerte d'éloignement** (son interrupteur, allumé par défaut ; éteinte, la cloche disparaît du
+    tableau de bord et rien ne sonne ; ses réglages en accordéon). Sous les **points d'intérêt** : la distance maximale à une trace (sa valeur, dont
+    le curseur s'ouvre en bulle), le complément OpenStreetMap dessous (mode expert), puis l'attribution.
   - Le **repère de position** tient en une ligne, *Symbole* : son dessin, sa couleur et sa taille ; un appui
     sur la taille (« 20 dp ») ouvre une bulle avec son curseur.
-  - En mode expert, dans le groupe Boutons et gestes, après l'échelle et la rotation : la rubrique **GPS**
-    (deux lignes : recentrer sur la position à l'allumage, et le symbole du repère), puis les rubriques
-    **Trace** (une ligne en accordéon : largeur du trait, sens de
-    parcours), **Points d'intérêt** (taille des marqueurs, et Infobulles en accordéon) et **Profil
-    altimétrique** (la grille, puis en accordéon les infos de la ligne de titre, le point courant, les
-    styles, le calcul du profil et l'altimétrie manquante avec ses services, cf. section 6) ; tout en bas,
-    le **gestionnaire de couches** (largeur et opacité du panneau).
+  - En mode expert : **Affichage des boutons** (les interrupteurs ci-dessus), **Présentation**
+    (le **gestionnaire de couches** en tête, une ligne en accordéon : largeur et opacité du panneau, dont
+    le curseur s'ouvre en bulle ; puis échelle, rotation, et la ligne *Traces* en accordéon : largeur du trait, sens de parcours,
+    simplification des traces), **GPS** (recentrer à l'allumage, symbole), **Points d'intérêt** (taille
+    des marqueurs, et Infobulles en accordéon), **Profil altimétrique** (cf. section 6).
   - Quatre boutons sont posés sur la carte **par défaut** : le burger, le GPS, le gestionnaire de fonds et
     le planificateur - plus le fond blanc translucide qui les porte. La recherche de lieu, la mesure sur
     trace, la retouche des traces et l'alerte d'éloignement ne le sont pas : ce sont celles qui s'ajoutent
     volontairement. Il n'y a plus de fond par défaut à choisir : le fond affiché au démarrage est le dernier
     consulté, que le panneau de la carte enregistre à chaque choix.
-- **Parcours** (mode expert) : préférences de tracé, coloration de l'itinéraire suivant la pente, moteur et
-  services (géocodeur, Overpass, moteur d'itinéraire).
-- **Système** : Affichage (écran allumé, barre d'état ; thème, langue, et les unités en mode expert),
-  Interaction (menu latéral, gestionnaire de fonds, tolérances de tap en mode expert), **Enregistrement**
-  (interrupteur de reprise dans le même segment, cf. section 14 bis), Stockage (caches ; dossiers et
-  **sauvegarde et restauration** en mode expert), Application (simplification du rendu et personnalisation
-  en mode expert, mises à jour, remise à zéro).
+- **Parcours** : **Préférences du calcul** en accordéon (discipline, voies, relief, revêtement, et en bas
+  « Réinitialiser les valeurs par défaut », pour les cinq disciplines), moteur et services (géocodeur,
+  Overpass, moteur d'itinéraire).
+- **Système** : **Affichage** (une carte : écran allumé, barre d'état, thème, langue ; en mode expert les
+  unités et *Boutons de la carte*, une ligne dont la taille et l'opacité ouvrent chacune une bulle),
+  **Interaction** (*Accès au menu latéral* et *Accès aux cartes*, une ligne à choix chacune ; *Tolérance de
+  tap* en accordéon, mode expert), **Enregistrement** (interrupteur de reprise dans le même segment, cf.
+  section 14 bis, mode expert), **Stockage** (*Cache* en accordéon ; *Dossiers* et *Sauvegarde* en accordéon, mode
+  expert), **Mises à jour** (Auto ou Manuel, une ligne à choix), puis une carte seule, hors groupe, pour la remise à zéro. Le titre du menu
+  latéral n'est plus réglable : il vaut toujours Tunturo.
 
 Tout tient dans une seule ligne de base, écrite à chaque changement.
 

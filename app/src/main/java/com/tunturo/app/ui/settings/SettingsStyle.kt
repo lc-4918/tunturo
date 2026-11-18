@@ -18,6 +18,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -212,46 +213,50 @@ private val SwitchWidth = 38.dp
 
 /* ---------------- Titres ---------------- */
 
-/** Titre de groupe : le premier niveau, en gras, sans capitales. */
+/**
+ * Le style des titres de l'ecran : celui des groupes, qui vaut aussi pour la barre du groupe courant posee
+ * sous les onglets (cf. SettingsScreen) - le titre qui s'ancre en defilant doit etre celui qu'on vient de
+ * lire, et non un titre plus petit qui le remplacerait.
+ */
+val settingsTitleStyle: TextStyle
+    @Composable get() = MaterialTheme.typography.titleMedium
+
+/**
+ * Titre de groupe : le seul niveau de titre de l'ecran.
+ *
+ * Groupes et rubriques ne font plus qu'un (2026-11-18) : deux niveaux de titres, l'un en gras et l'autre
+ * en petites capitales, se lisaient comme deux hierarchies la ou il n'y en avait qu'une a suivre.
+ */
 @Composable
-fun GroupTitle(text: String, first: Boolean = false) {
+fun GroupTitle(
+    text: String, first: Boolean = false,
+    /** Une explication de tout le groupe, derriere un "i" a cote du titre (cf. [InfoTip]). */
+    info: String? = null,
+) {
     // Chaque titre dit ou il se trouve : c'est ce qui permet de reafficher le groupe courant sous les
     // onglets quand son titre est deja passe en haut (cf. GroupBarState). Le nettoyage au depart compte
     // autant : le mode expert fait disparaitre des groupes entiers.
     val barre = LocalGroupBar.current
     DisposableEffect(barre, text) { onDispose { barre?.forget(text) } }
-    Text(
-        text, style = MaterialTheme.typography.titleMedium, color = settingsPalette.label,
-        modifier = Modifier.padding(start = 2.dp, end = 2.dp, top = if (first) 14.dp else 26.dp, bottom = 2.dp)
-            .onGloballyPositioned { barre?.report(text, it.positionInWindow().y + it.size.height) },
-    )
+    val margins = Modifier.padding(start = 2.dp, end = 2.dp, top = if (first) 14.dp else 26.dp, bottom = 2.dp)
+        .onGloballyPositioned { barre?.report(text, it.positionInWindow().y + it.size.height) }
+    if (info == null) {
+        Text(text, style = settingsTitleStyle, color = settingsPalette.label, modifier = margins)
+    } else {
+        Row(margins, verticalAlignment = Alignment.CenterVertically) {
+            Text(text, style = settingsTitleStyle, color = settingsPalette.label)
+            InfoTip(info)
+        }
+    }
 }
 
-/** Titre de rubrique : petites capitales espacees, la ou un groupe est en gras - deux niveaux, deux
- *  traitements franchement differents, sans quoi la hierarchie ne se lit pas en defilant. */
+/**
+ * Ancien titre de rubrique : desormais un titre de groupe (cf. [GroupTitle]). [tight] le pose en tete
+ * d'onglet, avec l'air d'un premier titre.
+ */
 @Composable
-fun SectionTitle(
-    text: String, tight: Boolean = false,
-    /** Une explication de toute la rubrique, derriere un "i" a cote du titre (cf. [InfoTip]). */
-    info: String? = null,
-) {
-    val titre = @Composable { m: Modifier ->
-        Text(
-            text.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, letterSpacing = 0.1.em,
-            color = settingsPalette.section, modifier = m,
-        )
-    }
-    val marges = Modifier.padding(start = 2.dp, end = 2.dp, top = if (tight) 10.dp else 18.dp, bottom = 7.dp)
-    if (info == null) titre(marges)
-    else Row(
-        // Le "i" a sa propre hauteur : on reprend sur les marges ce qu'il ajoute, pour que le titre reste
-        // a la meme distance de sa carte que les autres.
-        Modifier.padding(start = 2.dp, end = 2.dp, top = if (tight) 4.dp else 12.dp, bottom = 1.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        titre(Modifier)
-        InfoTip(info)
-    }
+fun SectionTitle(text: String, tight: Boolean = false, info: String? = null) {
+    GroupTitle(text, first = tight, info = info)
 }
 
 /* ---------------- Carte et lignes ---------------- */
@@ -1050,6 +1055,44 @@ fun ColumnScopeMarker.AccordionLine(
     var open by rememberSaveable(label) { mutableStateOf(false) }
     SetRow(label, onClick = { open = !open }, role = Role.Button, info = info) { AccordionChevron(open) }
     CardAccordion(open) {
+        RowDivider()
+        content()
+    }
+}
+
+/**
+ * Une ligne a interrupteur qui s'ouvre en accordeon : le calcul d'itineraire, l'alerte d'eloignement.
+ *
+ * Le chevron se pose a gauche de l'interrupteur et ne parait qu'allume ; un tap sur la ligne allume quand
+ * c'est eteint, et ouvre ou ferme quand c'est allume (cf. [ToggleAccordion]). Fermee a l'arrivee, comme
+ * toute ligne a accordeon.
+ */
+@Composable
+fun ColumnScopeMarker.ToggleAccordionLine(
+    label: String, enabled: Boolean, onEnabledChange: (Boolean) -> Unit,
+    info: String? = null,
+    /** Ouvrir l'accordeon d'office : on est venu ici pour ce qu'il contient (cf. SettingsScreen.requestedTab). */
+    reveal: Boolean = false,
+    content: @Composable ColumnScopeMarker.() -> Unit,
+) {
+    var open by rememberSaveable(label) { mutableStateOf(false) }
+    LaunchedEffect(reveal) { if (reveal) open = true }
+    val state = ToggleAccordion.State(enabled, open)
+    fun apply(next: ToggleAccordion.State) {
+        if (next.enabled != enabled) onEnabledChange(next.enabled)
+        open = next.open
+    }
+    SetRow(
+        label, info = info,
+        onClick = { apply(ToggleAccordion.onRowTap(state)) },
+        role = if (enabled) Role.Button else Role.Switch,
+    ) {
+        // Le chevron a GAUCHE de l'interrupteur : celui-ci garde sa place au bout de la ligne, aligne sur les
+        // interrupteurs des lignes voisines, que le chevron paraisse ou non.
+        if (state.caretVisible) Box(Modifier.testTag("accordion_chevron_$label")) { AccordionChevron(open) }
+        Box(Modifier.testTag("settings_switch_$label")) { SettingsSwitch(enabled) { apply(ToggleAccordion.onToggle(state)) } }
+    }
+    CardAccordion(state.expanded) {
         RowDivider()
         content()
     }

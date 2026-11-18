@@ -1,6 +1,5 @@
 package com.tunturo.app.ui.theme
 
-import com.tunturo.app.ui.routes.DrawerTitle
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -25,17 +24,5 @@ class BrandNameTest {
     @Test fun `le nom seul est entierement dans sa police`() {
         val text = brandedText(BrandName)
         assertEquals(listOf(0 to BrandName.length), text.spanStyles.map { it.start to it.end })
-    }
-
-    @Test fun `le titre du menu lateral vaut Tunturo par defaut`() {
-        assertEquals("Tunturo", DrawerTitle.resolve("", "Tunturo"))
-        assertEquals("Tunturo", DrawerTitle.resolve("   ", "Tunturo"))
-    }
-
-    @Test fun `les anciens titres par defaut cedent la place, un titre choisi reste`() {
-        listOf("Bibliothèque", "Library", "Biblioteca", "Bibliothek", "Liburutegia").forEach { legacy ->
-            assertEquals(legacy, "Tunturo", DrawerTitle.resolve(legacy, "Tunturo"))
-        }
-        assertEquals("Mes sorties", DrawerTitle.resolve("Mes sorties", "Tunturo"))
     }
 }

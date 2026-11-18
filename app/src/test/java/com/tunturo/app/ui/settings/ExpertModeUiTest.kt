@@ -12,6 +12,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.click
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import com.tunturo.app.BuildConfig
@@ -131,10 +134,14 @@ class ExpertModeUiTest {
 
     @Test fun `la carte montre ses groupes experts en mode expert`() {
         carteAvecTableauDeBord(expert = true)
+        // Les champs se deplient sous le tableau de bord, ligne a chevron en mode expert.
+        defileVers(app.getString(R.string.settings_sw_track_follow))
+        compose.onNodeWithText(app.getString(R.string.settings_sw_track_follow)).performScrollTo().performClick()
+        compose.waitForIdle()
         defileVers(app.getString(R.string.settings_section_dashboard_fields).uppercase())
-        defileVers(app.getString(R.string.settings_group_pois).uppercase())
-        defileVers(app.getString(R.string.settings_group_elevation_profile).uppercase())
-        assertTrue("profil altimetrique", presentTitle(R.string.settings_group_elevation_profile))
+        defileVers(app.getString(R.string.settings_group_pois))
+        defileVers(app.getString(R.string.settings_group_elevation_profile))
+        assertTrue("profil altimetrique", present(R.string.settings_group_elevation_profile))
     }
 
     /**
@@ -149,12 +156,15 @@ class ExpertModeUiTest {
         compose.waitUntil(5_000) { runBlocking { app.repository.settings.get()?.recordingButtonEnabled == false } }
         defileVers(app.getString(R.string.settings_label_gps_marker_style))
         assertFalse("pas de rubrique du repere",
-            compose.onAllNodesWithText(app.getString(R.string.settings_group_gps).uppercase())
+            compose.onAllNodesWithText(app.getString(R.string.settings_group_gps))
                 .fetchSemanticsNodes().isNotEmpty())
     }
 
-    /** L'alerte d'eloignement se deplie sous l'interrupteur du tableau de bord, et seulement allume. */
-    @Test fun `l'interrupteur du tableau de bord deplie ses reglages`() {
+    /**
+     * L'alerte d'eloignement est une carte a elle, apres celle du tableau de bord : elle se voit tableau de
+     * bord eteint, et son accordeon s'ouvre d'un tap.
+     */
+    @Test fun `l'alerte d'eloignement a sa carte, apres le tableau de bord`() {
         runBlocking {
             app.repository.ensureSeed()
             val s = app.repository.settings.get() ?: SettingsEntity()
@@ -162,10 +172,19 @@ class ExpertModeUiTest {
         }
         compose.setContent { MaterialTheme { SettingsScreen(onBack = {}) } }
         compose.waitForIdle()
-        defileVers(app.getString(R.string.settings_sw_track_follow))
-        assertFalse("replie, eteint", present(R.string.settings_sw_off_track_vibrate))
-        compose.onNodeWithText(app.getString(R.string.settings_sw_track_follow)).performClick()
+        defileVers(app.getString(R.string.settings_section_off_track))
+        assertFalse("replie", present(R.string.settings_sw_off_track_vibrate))
+        compose.onNodeWithText(app.getString(R.string.settings_section_off_track)).performScrollTo().performClick()
         compose.waitUntil(5_000) { present(R.string.settings_sw_off_track_vibrate) }
+        assertFalse("le tableau de bord reste eteint", runBlocking { app.repository.settings.get()!!.offTrackAlertEnabled })
+    }
+
+    /** Les points d'interet allumes : leur ligne a chevron, fermee a l'arrivee, s'ouvre d'un tap. */
+    private fun ouvrirPointsInteret() {
+        defileVers(app.getString(R.string.settings_sw_poi))
+        compose.onNodeWithText(app.getString(R.string.settings_sw_poi), substring = true)
+            .performScrollTo().performTouchInput { click(Offset(4f, centerY)) }
+        compose.waitForIdle()
     }
 
     /** Ouvre l'onglet portant ce libelle, une fois l'ecran compose. */
@@ -198,28 +217,28 @@ class ExpertModeUiTest {
         assertFalse("unites", present(R.string.settings_label_units))
         assertFalse("dossiers", present(R.string.settings_section_import_folder))
         assertFalse("sauvegarde", present(R.string.settings_backup_create))
-        assertFalse("personnalisation", present(R.string.settings_label_side_title))
     }
 
     /** GPS, en mode expert : une rubrique de deux lignes, le recentrage et le symbole, et rien d'autre. */
     @Test fun `la rubrique GPS porte le recentrage et le symbole`() {
         reglagesEnMode(expert = true)
         defileVers(app.getString(R.string.settings_sw_gps_recenter))
-        assertTrue(presentTitle(R.string.settings_group_gps))
+        assertTrue(present(R.string.settings_group_gps))
         assertTrue(present(R.string.settings_label_gps_marker_style))
     }
 
     @Test fun `parcours et systeme montrent leurs reglages experts en mode expert`() {
         reglagesEnMode(expert = true)
         onglet(R.string.settings_tab_routes)
-        assertTrue("coloration par pente", present(R.string.settings_route_slope_line))
+        assertTrue("preferences du calcul", present(R.string.settings_line_route_prefs))
+        assertFalse("coloration par pente, passee au calcul d'itineraire", present(R.string.settings_route_slope_line))
         assertFalse("altimetrie manquante, passee au profil", present(R.string.settings_label_fill_elevation))
         assertFalse("calcul du profil, passe au profil", present(R.string.settings_label_smoothing))
         onglet(R.string.settings_tab_general)
         assertTrue("unites", present(R.string.settings_label_units))
-        assertTrue("dossiers", present(R.string.settings_section_import_folder))
-        assertTrue("sauvegarde", present(R.string.settings_backup_create))
-        assertTrue("personnalisation", present(R.string.settings_label_side_title))
+        assertTrue("dossiers", present(R.string.settings_section_folders))
+        assertTrue("sauvegarde", present(R.string.settings_section_backup))
+        assertFalse("titre du menu lateral, supprime", present(R.string.settings_label_side_title))
     }
 
     /** Le profil altimetrique, en mode expert : la grille, puis des lignes qui se deplient. */
@@ -244,6 +263,7 @@ class ExpertModeUiTest {
     /** Le couloir des traces, et en mode expert le complement OpenStreetMap, sous l'interrupteur des points d'interet. */
     @Test fun `les points d'interet deplient leurs reglages dans l'onglet Carte`() {
         reglagesEnMode(expert = false)
+        ouvrirPointsInteret()
         defileVers(app.getString(R.string.settings_label_poi_corridor))
         assertTrue("couloir", present(R.string.settings_label_poi_corridor))
         assertFalse("complement OSM hors mode expert", present(R.string.settings_sw_poi_osm))
@@ -251,6 +271,7 @@ class ExpertModeUiTest {
 
     @Test fun `le complement OpenStreetMap se deplie sous les points d'interet en mode expert`() {
         reglagesEnMode(expert = true)
+        ouvrirPointsInteret()
         defileVers(app.getString(R.string.settings_sw_poi_osm))
         assertTrue(present(R.string.settings_sw_poi_osm))
     }
@@ -263,19 +284,26 @@ class ExpertModeUiTest {
             .fetchSemanticsNodes().first().positionInRoot.y
         val ordre = listOf(
             R.string.settings_sw_planner, R.string.settings_sw_recording, R.string.settings_sw_track_follow,
-            R.string.settings_sw_poi, R.string.settings_sw_geocoding,
+            R.string.settings_section_off_track, R.string.settings_sw_poi, R.string.settings_sw_geocoding,
         ).map { top(it) }
         assertTrue("ordre $ordre", ordre.zipWithNext().all { (a, b) -> a < b })
         defileVers(app.getString(R.string.settings_sw_track_edit))
         assertTrue(top(R.string.settings_sw_measure) < top(R.string.settings_sw_track_edit))
     }
 
-    /** Systeme : un groupe Enregistrement et son interrupteur de reprise, allume (meme segment) par defaut. */
+    /** Systeme, hors mode expert : pas de groupe Enregistrement. */
+    @Test fun `le groupe Enregistrement est cache hors mode expert`() {
+        reglagesEnMode(expert = false)
+        onglet(R.string.settings_tab_general)
+        assertFalse(present(R.string.settings_group_recording))
+    }
+
+    /** Systeme, en mode expert : un groupe Enregistrement et son interrupteur de reprise, allume (meme segment) par defaut. */
     @Test fun `le groupe Enregistrement regle la reprise apres une pause`() {
         runBlocking {
             app.repository.ensureSeed()
             val s = app.repository.settings.get() ?: SettingsEntity()
-            app.repository.settings.upsert(s.copy(expertMode = false, recordingResumeMode = "same_segment"))
+            app.repository.settings.upsert(s.copy(expertMode = true, recordingResumeMode = "same_segment"))
         }
         compose.setContent { MaterialTheme { SettingsScreen(onBack = {}) } }
         compose.waitForIdle()
@@ -305,7 +333,9 @@ class ExpertModeUiTest {
         assertTrue("exporter", present(R.string.action_export))
         assertFalse("le type ne s'ecrit plus", compose.onAllNodesWithText(online.type).fetchSemanticsNodes().isNotEmpty())
         // Un appui sur la ligne referme l'accordeon.
-        compose.onNodeWithText(app.getString(R.string.settings_line_online_maps), substring = true).performClick()
+        // Dans la marge de gauche de la ligne : le milieu porte ses gestes, et le libelle son "i".
+        compose.onNodeWithText(app.getString(R.string.settings_line_online_maps), substring = true)
+            .performTouchInput { click(Offset(4f, centerY)) }
         compose.waitUntil(5_000) { !shown() }
     }
 
@@ -325,20 +355,23 @@ class ExpertModeUiTest {
         compose.waitUntil(5_000) { present(R.string.settings_line_online_maps) }
         assertFalse("onglet Parcours", present(R.string.settings_tab_routes))
         defileVers(app.getString(R.string.settings_label_gps_marker_style))
-        assertFalse("largeur du panneau", present(R.string.settings_label_panel_width))
+        assertFalse("gestionnaire de couches", present(R.string.settings_section_layer_manager))
     }
 
-    @Test fun `en mode expert, le gestionnaire de couches ferme l'onglet Carte`() {
+    @Test fun `en mode expert, le gestionnaire de couches ouvre le groupe Presentation`() {
         reglagesEnMode(expert = true)
         compose.waitUntil(5_000) { present(R.string.settings_tab_routes) }
-        defileVers(app.getString(R.string.settings_label_panel_width))
-        assertTrue(present(R.string.settings_label_panel_width))
+        defileVers(app.getString(R.string.settings_section_layer_manager))
+        assertTrue(present(R.string.settings_section_layer_manager))
     }
 
     /** La discipline par defaut et l'itineraire hors ligne se deplient sous le calcul d'itineraire. */
     @Test fun `le calcul d'itineraire deplie la discipline et les zones hors ligne`() {
         reglagesEnMode(expert = false)
         defileVers(app.getString(R.string.settings_sw_planner))
+        assertFalse("replie a l'arrivee", present(R.string.routing_zones_add))
+        compose.onNodeWithText(app.getString(R.string.settings_sw_planner)).performScrollTo().performClick()
+        compose.waitUntil(5_000) { presentTitle(R.string.settings_section_default_discipline) }
         defileVers(app.getString(R.string.routing_zones_add))
         assertTrue(presentTitle(R.string.settings_section_default_discipline))
         assertTrue(presentTitle(R.string.settings_section_offline_routing))

@@ -273,7 +273,7 @@
     <string name="settings_section_route_slope">Slope coloring</string>
     <string name="settings_route_slope_info">The planned route line and the area of its elevation profile will be colored by slope.</string>
     <string name="settings_route_slope_line">Color by slope</string>
-    <string name="settings_group_track">Track</string>
+    <string name="settings_group_track">Tracks</string>
     <string name="settings_track_line_width">Line width</string>
     <string name="settings_track_line_width_info">Thickness of tracks and of the planned route on the map.</string>
     <string name="settings_track_direction">Direction of travel</string>
@@ -451,7 +451,7 @@
 
     <string name="profile_no_elevation">Route without elevation data</string>
 
-    <string name="settings_section_map_controls">Buttons and gestures</string>
+    <string name="settings_section_map_controls">Button display</string>
     <string name="settings_sw_track_follow">Dashboard</string>
     <string name="settings_group_storage">Storage</string>
     <string name="settings_group_interaction">Interaction</string>
@@ -825,4 +825,20 @@
     <string name="recording_finish_folder">Folder</string>
     <string name="recording_notice_paused">Recording paused</string>
     <string name="settings_section_layer_manager">Layer manager</string>
+    <string name="settings_section_map_dressing">Presentation</string>
+    <string name="settings_label_side_menu_access">Side menu access</string>
+    <string name="settings_label_basemap_access">Map access</string>
+    <string name="settings_line_route_prefs">Routing preferences</string>
+    <string name="action_activate">Enable</string>
+    <string name="action_deactivate">Disable</string>
+    <string name="basemap_kind_raster">Online map, image tiles</string>
+    <string name="basemap_kind_vector">Online vector map</string>
+    <string name="basemap_kind_overlay">Transparent overlay, to lay over a base map</string>
+    <string name="basemap_kind_relief">Hillshade computed from a terrain model</string>
+    <string name="basemap_kind_offline">Offline map, stored on the phone</string>
+    <string name="basemap_coverage_world">Worldwide coverage</string>
+    <string name="basemap_coverage_country">Coverage: %1$s</string>
+    <string name="basemap_zoom_range">Zoom %1$d to %2$d</string>
+    <string name="basemap_composite_desc">Foreground: %1$s. Background: %2$s. Foreground opacity: %3$d %%.</string>
+    <string name="basemap_zoom_downloaded">Downloaded zooms: %1$d - %2$d</string>
 </resources>

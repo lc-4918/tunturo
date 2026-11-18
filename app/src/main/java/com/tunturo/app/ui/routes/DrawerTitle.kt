@@ -1,7 +1,8 @@
 package com.tunturo.app.ui.routes
 
 /**
- * Le titre du menu lateral : celui que l'utilisateur a choisi, sinon le titre par defaut, "Tunturo".
+ * Le titre du menu lateral, autrefois reglable : il vaut desormais toujours "Tunturo" (le reglage a quitte
+ * l'onglet Systeme le 2026-11-18). Ne reste ici que ce dont la mise a niveau de la base a encore besoin.
  *
  * Le titre par defaut etait "Bibliotheque", et le premier lancement l'ecrivait EN BASE dans la langue du
  * moment (cf. TunturoRepository.ensureSeed) : ceux qui ne l'ont jamais change le portent donc enregistre
@@ -13,7 +14,4 @@ object DrawerTitle {
     /** Les anciens titres par defaut, tels que les ressources des huit langues les donnaient. */
     val LegacyDefaults = setOf("Bibliothèque", "Library", "Biblioteca", "Bibliothek", "Liburutegia")
 
-    /** Le titre a afficher : [custom], sauf s'il est vide ou un ancien titre par defaut. */
-    fun resolve(custom: String, default: String): String =
-        custom.takeUnless { it.isBlank() || it.trim() in LegacyDefaults } ?: default
 }

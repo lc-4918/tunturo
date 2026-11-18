@@ -273,7 +273,7 @@
     <string name="settings_section_route_slope">Colorazione per pendenza</string>
     <string name="settings_route_slope_info">La traccia del percorso calcolato e l\'area del suo profilo altimetrico saranno colorate in base alla pendenza.</string>
     <string name="settings_route_slope_line">Colora in base alla pendenza</string>
-    <string name="settings_group_track">Traccia</string>
+    <string name="settings_group_track">Tracce</string>
     <string name="settings_track_line_width">Spessore della linea</string>
     <string name="settings_track_line_width_info">Spessore delle tracce e del percorso calcolato sulla mappa.</string>
     <string name="settings_track_direction">Senso di percorrenza</string>
@@ -451,7 +451,7 @@
 
     <string name="profile_no_elevation">Percorso senza altimetria</string>
 
-    <string name="settings_section_map_controls">Pulsanti e gesti</string>
+    <string name="settings_section_map_controls">Visualizzazione dei pulsanti</string>
     <string name="settings_sw_track_follow">Cruscotto</string>
     <string name="settings_group_storage">Archiviazione</string>
     <string name="settings_group_interaction">Interazione</string>
@@ -825,4 +825,20 @@
     <string name="recording_finish_folder">Cartella</string>
     <string name="recording_notice_paused">Registrazione in pausa</string>
     <string name="settings_section_layer_manager">Gestore dei livelli</string>
+    <string name="settings_section_map_dressing">Presentazione</string>
+    <string name="settings_label_side_menu_access">Accesso al menu laterale</string>
+    <string name="settings_label_basemap_access">Accesso alle mappe</string>
+    <string name="settings_line_route_prefs">Preferenze del calcolo</string>
+    <string name="action_activate">Attiva</string>
+    <string name="action_deactivate">Disattiva</string>
+    <string name="basemap_kind_raster">Mappa online, a tasselli di immagine</string>
+    <string name="basemap_kind_vector">Mappa vettoriale online</string>
+    <string name="basemap_kind_overlay">Sovrapposizione trasparente, da posare su una mappa di base</string>
+    <string name="basemap_kind_relief">Ombreggiatura del rilievo, calcolata da un modello del terreno</string>
+    <string name="basemap_kind_offline">Mappa offline, salvata sul telefono</string>
+    <string name="basemap_coverage_world">Copertura mondiale</string>
+    <string name="basemap_coverage_country">Copertura: %1$s</string>
+    <string name="basemap_zoom_range">Zoom da %1$d a %2$d</string>
+    <string name="basemap_composite_desc">Primo piano: %1$s. Sfondo: %2$s. Opacità del primo piano: %3$d %%.</string>
+    <string name="basemap_zoom_downloaded">Zoom scaricati: %1$d - %2$d</string>
 </resources>

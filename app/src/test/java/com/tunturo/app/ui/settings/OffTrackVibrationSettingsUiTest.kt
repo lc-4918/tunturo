@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.core.app.ApplicationProvider
 import com.tunturo.app.R
@@ -46,6 +47,11 @@ class OffTrackVibrationSettingsUiTest {
         compose.waitUntil(5_000) {
             compose.onAllNodesWithText(app.getString(R.string.settings_tab_map)).fetchSemanticsNodes().isNotEmpty()
         }
+        // L'alerte a sa ligne, repliee : on l'ouvre d'un tap avant d'y chercher la vibration.
+        val alerte = app.getString(R.string.settings_section_off_track)
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasText(alerte, substring = true))
+        compose.onNodeWithText(alerte).performScrollTo().performClick()
+        compose.waitForIdle()
         val libelle = app.getString(R.string.settings_sw_off_track_vibrate)
         compose.onNodeWithTag("settings_list").performScrollToNode(hasText(libelle, substring = true))
         compose.onNodeWithText(libelle, substring = true).performClick()

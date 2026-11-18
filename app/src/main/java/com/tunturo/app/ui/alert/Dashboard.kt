@@ -243,6 +243,8 @@ fun Dashboard(
     armed: Boolean,
     alerting: Boolean,
     hidden: Set<DashboardField>,
+    /** L'alerte d'eloignement est allumee dans les reglages : sans elle, la cloche n'a rien a armer. */
+    bellShown: Boolean = true,
     fontSizes: Map<DashboardField, Int> = emptyMap(),
     imperial: Boolean,
     onBell: () -> Unit,
@@ -281,7 +283,7 @@ fun Dashboard(
             if (following) {
                 HorizontalDivider(Modifier.padding(start = Spacing.xs, end = Spacing.xs, top = 6.dp),
                     color = scheme.outlineVariant)
-                TrackHeader(trackName.orEmpty(), progress!!, armed, alerting, onBell)
+                TrackHeader(trackName.orEmpty(), progress!!, armed, alerting, bellShown, onBell)
                 FieldRow(DashboardField.shown(hidden, onTrack = true), trip, speedMps, progress, imperial, fontSizes)
             }
         }
@@ -323,12 +325,14 @@ private fun ResetButton(onClick: () -> Unit) {
  * rond rouge pale, et la barre avec elle : c'est le seul endroit du panneau qui dise qu'on s'est ecarte.
  */
 @Composable
-private fun TrackHeader(name: String, progress: FollowProgress, armed: Boolean, alerting: Boolean, onBell: () -> Unit) {
+private fun TrackHeader(
+    name: String, progress: FollowProgress, armed: Boolean, alerting: Boolean, bellShown: Boolean, onBell: () -> Unit,
+) {
     val scheme = MaterialTheme.colorScheme
     val fraction = progressFraction(progress)
     Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        IconButton(
+        if (bellShown) IconButton(
             onClick = onBell,
             modifier = Modifier.size(40.dp).clip(CircleShape)
                 .background(if (alerting) scheme.errorContainer else Color.Transparent)

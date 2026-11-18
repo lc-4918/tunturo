@@ -89,4 +89,10 @@ object OffTrack {
      */
     fun ringing(soundOn: Boolean, armed: Boolean, alerting: Boolean, silenced: Boolean): Boolean =
         soundOn && announcing(armed, alerting, silenced)
+
+    /**
+     * La cloche compte-t-elle ? Seulement si l'alerte d'eloignement est allumee dans les reglages : eteinte,
+     * une cloche restee armee ne doit ni s'afficher armee, ni annoncer, ni sonner.
+     */
+    fun armedWhenActive(alertActive: Boolean, armed: Boolean): Boolean = alertActive && armed
 }

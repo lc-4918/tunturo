@@ -273,7 +273,7 @@
     <string name="settings_section_route_slope">Maldaren araberako kolorea</string>
     <string name="settings_route_slope_info">Kalkulatutako ibilbidearen marra eta haren altitude-profilaren area maldaren arabera koloreztatuko dira.</string>
     <string name="settings_route_slope_line">Koloreztatu maldaren arabera</string>
-    <string name="settings_group_track">Tracka</string>
+    <string name="settings_group_track">Trackak</string>
     <string name="settings_track_line_width">Marraren lodiera</string>
     <string name="settings_track_line_width_info">Tracken eta kalkulatutako ibilbidearen lodiera mapan.</string>
     <string name="settings_track_direction">Ibilbidearen noranzkoa</string>
@@ -451,7 +451,7 @@
 
     <string name="profile_no_elevation">Ibilbidea altimetriarik gabe</string>
 
-    <string name="settings_section_map_controls">Botoiak eta keinuak</string>
+    <string name="settings_section_map_controls">Botoien bistaratzea</string>
     <string name="settings_sw_track_follow">Aginte-panela</string>
     <string name="settings_group_storage">Biltegiratzea</string>
     <string name="settings_group_interaction">Interakzioa</string>
@@ -825,4 +825,20 @@
     <string name="recording_finish_folder">Karpeta</string>
     <string name="recording_notice_paused">Grabaketa etenda</string>
     <string name="settings_section_layer_manager">Geruza-kudeatzailea</string>
+    <string name="settings_section_map_dressing">Aurkezpena</string>
+    <string name="settings_label_side_menu_access">Alboko menurako sarbidea</string>
+    <string name="settings_label_basemap_access">Mapetarako sarbidea</string>
+    <string name="settings_line_route_prefs">Kalkuluaren hobespenak</string>
+    <string name="action_activate">Aktibatu</string>
+    <string name="action_deactivate">Desaktibatu</string>
+    <string name="basemap_kind_raster">Lineako mapa, irudi-lauzetan</string>
+    <string name="basemap_kind_vector">Lineako mapa bektoriala</string>
+    <string name="basemap_kind_overlay">Geruza gardena, oinarrizko mapa baten gainean jartzeko</string>
+    <string name="basemap_kind_relief">Erliebearen itzalak, lurrazal-eredu batetik kalkulatuak</string>
+    <string name="basemap_kind_offline">Lineaz kanpoko mapa, telefonoan gordea</string>
+    <string name="basemap_coverage_world">Mundu osoko estaldura</string>
+    <string name="basemap_coverage_country">Estaldura: %1$s</string>
+    <string name="basemap_zoom_range">Zooma: %1$d - %2$d</string>
+    <string name="basemap_composite_desc">Aurreko planoa: %1$s. Atzeko planoa: %2$s. Aurreko planoaren opakutasuna: %%%3$d.</string>
+    <string name="basemap_zoom_downloaded">Deskargatutako zoomak: %1$d - %2$d</string>
 </resources>

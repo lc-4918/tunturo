@@ -1049,6 +1049,19 @@ class MigrationsTest {
         db.close()
     }
 
+    // ---------- 81 -> 82 : l'alerte d'eloignement a son interrupteur ----------
+
+    /** Allumee sur une base deja en place : c'etait son etat avant d'avoir une ligne a elle. */
+    @Test fun `81 vers 82 ajoute l'interrupteur de l'alerte d'eloignement, allume`() {
+        val db = freshDb("m8182")
+        db.execSQL("CREATE TABLE settings (id INTEGER PRIMARY KEY NOT NULL)")
+        db.execSQL("INSERT INTO settings (id) VALUES (1)")
+        db.execSQL(MigrationSql.ADD_OFF_TRACK_ALERT_ACTIVE)
+        assertEquals(1, scalar(db, "SELECT offTrackAlertActive FROM settings") { it.getInt(0) })
+        assertTrue(SettingsEntity().offTrackAlertActive)
+        db.close()
+    }
+
     // ---------- La base reelle s'ouvre et porte le schema courant ----------
 
     /**
@@ -1261,7 +1274,7 @@ class MigrationsTest {
             "routePrefsRoad", "routePrefsGravel", "routePrefsHybrid", "routePrefsMtb", "routePrefsFoot",
             "mapFollowPosition", "routeEngine", "routingUrlBrouter", "poiEnabled", "plannerHistory",
             "keepScreenOn", "poiTrackCorridorM", "poiOsmUrl", "gpsRecenterOnStart", "poiMasked",
-            "dashboardHidden", "expertMode", "profileVerticalScale")
+            "dashboardHidden", "expertMode", "profileVerticalScale", "offTrackAlertActive")
             .forEach { assertTrue("colonne $it absente", it in cols) }
         // La bande du planificateur ayant perdu son theme propre, sa colonne ne doit plus etre la : c'est
         // ce que verifie aussi, cote SQL, la migration 38 -> 39.

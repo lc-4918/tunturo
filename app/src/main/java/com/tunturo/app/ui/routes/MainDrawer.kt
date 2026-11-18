@@ -1289,8 +1289,10 @@ internal fun DrawerContent(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.m),
         ) {
-            // Titre d'ecran : "Tunturo" par defaut, dans la police du nom s'il le contient (cf. brandedText).
-            val title = DrawerTitle.resolve(settings.customTitle, stringResource(R.string.drawer_default_title))
+            // Titre d'ecran : "Tunturo", dans la police du nom (cf. brandedText). Le titre personnalise a quitte
+            // les reglages (2026-11-18) : un titre choisi autrefois ne pourrait plus se changer, il ne s'affiche
+            // donc plus.
+            val title = stringResource(R.string.drawer_default_title)
             // Le logo B1, volontairement grand : c'est l'enseigne de l'application (esquisse, TM-3).
             Icon(painterResource(R.drawable.ic_tunturo_logo), null, Modifier.size(40.dp),
                 tint = MaterialTheme.colorScheme.primary)

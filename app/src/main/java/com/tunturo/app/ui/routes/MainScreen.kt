@@ -71,6 +71,7 @@ import com.tunturo.app.R
 import com.tunturo.app.data.db.DefaultGpsMarkerSizeDp
 import com.tunturo.app.data.db.DefaultOffTrackAlertM
 import com.tunturo.app.data.db.offTrackAlertVisible
+import com.tunturo.app.domain.geo.OffTrack
 import com.tunturo.app.data.db.routePrefs
 import com.tunturo.app.data.db.routeUrl
 import com.tunturo.app.domain.model.ComputedTrack
@@ -335,7 +336,8 @@ fun MainScreen(
         if (!dashboardOpen) return@remember null
         FollowProgressMath.of(f.samples, along, null, 0L, 0L, direction)
     }
-    val alertBanner = alerting && !silenced
+    // L'alerte eteinte dans les reglages ne montre rien, meme si la cloche est restee armee.
+    val alertBanner = alerting && !silenced && settings.offTrackAlertActive
 
     // ---------- recherche de lieu / adresse (géocodage) ----------
     val geo = screen.geo
@@ -1152,7 +1154,7 @@ fun MainScreen(
                     dashboardEnabled = alertEnabled,
                     dashboardPanelShown = dashboardPanelShown,
                     dashboardOpen = dashboardOpen,
-                    alerting = alerting,
+                    alerting = alerting && settings.offTrackAlertActive,
                     dashboardPx = insets.dashboardPx,
                     poiFilters = poiFilters,
                     onPoiFilters = { vm.savePoiFilters(it) },
@@ -1394,8 +1396,9 @@ fun MainScreen(
                         speedMps = dashboardSpeed,
                         progress = followProgress,
                         trackName = nomSuivi,
-                        armed = armed,
-                        alerting = alerting,
+                        armed = OffTrack.armedWhenActive(settings.offTrackAlertActive, armed),
+                        alerting = alerting && settings.offTrackAlertActive,
+                        bellShown = settings.offTrackAlertActive,
                         hidden = remember(settings.dashboardHidden) { DashboardField.hidden(settings.dashboardHidden) },
                         fontSizes = remember(settings.dashboardFontSizes) {
                             DashboardField.fontSizes(settings.dashboardFontSizes)

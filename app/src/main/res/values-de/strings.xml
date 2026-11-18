@@ -273,7 +273,7 @@
     <string name="settings_section_route_slope">Färbung nach Steigung</string>
     <string name="settings_route_slope_info">Die Linie der geplanten Route und die Fläche ihres Höhenprofils werden nach Steigung eingefärbt.</string>
     <string name="settings_route_slope_line">Nach Steigung einfärben</string>
-    <string name="settings_group_track">Track</string>
+    <string name="settings_group_track">Tracks</string>
     <string name="settings_track_line_width">Linienbreite</string>
     <string name="settings_track_line_width_info">Stärke der Tracks und der geplanten Route auf der Karte.</string>
     <string name="settings_track_direction">Fahrtrichtung</string>
@@ -451,7 +451,7 @@
 
     <string name="profile_no_elevation">Strecke ohne Höhendaten</string>
 
-    <string name="settings_section_map_controls">Schaltflächen und Gesten</string>
+    <string name="settings_section_map_controls">Anzeige der Schaltflächen</string>
     <string name="settings_sw_track_follow">Dashboard</string>
     <string name="settings_group_storage">Speicher</string>
     <string name="settings_group_interaction">Interaktion</string>
@@ -825,4 +825,20 @@
     <string name="recording_finish_folder">Ordner</string>
     <string name="recording_notice_paused">Aufzeichnung pausiert</string>
     <string name="settings_section_layer_manager">Ebenenverwaltung</string>
+    <string name="settings_section_map_dressing">Darstellung</string>
+    <string name="settings_label_side_menu_access">Zugang zum Seitenmenü</string>
+    <string name="settings_label_basemap_access">Zugang zu den Karten</string>
+    <string name="settings_line_route_prefs">Routing-Präferenzen</string>
+    <string name="action_activate">Aktivieren</string>
+    <string name="action_deactivate">Deaktivieren</string>
+    <string name="basemap_kind_raster">Online-Karte aus Bildkacheln</string>
+    <string name="basemap_kind_vector">Online-Vektorkarte</string>
+    <string name="basemap_kind_overlay">Transparente Überlagerung für eine Grundkarte</string>
+    <string name="basemap_kind_relief">Reliefschattierung aus einem Geländemodell</string>
+    <string name="basemap_kind_offline">Offline-Karte, auf dem Telefon gespeichert</string>
+    <string name="basemap_coverage_world">Weltweite Abdeckung</string>
+    <string name="basemap_coverage_country">Abdeckung: %1$s</string>
+    <string name="basemap_zoom_range">Zoom %1$d bis %2$d</string>
+    <string name="basemap_composite_desc">Vordergrund: %1$s. Hintergrund: %2$s. Deckkraft des Vordergrunds: %3$d %%.</string>
+    <string name="basemap_zoom_downloaded">Heruntergeladene Zoomstufen: %1$d - %2$d</string>
 </resources>

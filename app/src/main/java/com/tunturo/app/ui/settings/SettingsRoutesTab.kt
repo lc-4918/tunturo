@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -49,6 +51,7 @@ import com.tunturo.app.data.db.SettingsEntity
 import com.tunturo.app.data.db.routePrefs
 import com.tunturo.app.data.db.routeUrl
 import com.tunturo.app.data.db.withRoutePrefs
+import com.tunturo.app.data.db.withDefaultRoutePrefs
 import com.tunturo.app.data.db.withRouteUrl
 import com.tunturo.app.domain.model.GroupCheck
 import com.tunturo.app.domain.model.HillPref
@@ -107,48 +110,39 @@ import kotlinx.coroutines.launch
      * celle-ci désigne le jeu de préférences qu'on modifie. On peut donc régler le VTT sans rouler en VTT.
      * Elle s'ouvre néanmoins sur la discipline par défaut, la plus probable, et la suit si on la change.
      */
-    // Mode expert seulement, comme le moteur et les services plus bas (cf. SettingsEntity.expertMode).
+    // Une ligne a accordeon et non plus une rubrique : on la deplie pour une discipline, on la replie.
     if (cur.expertMode) {
-        SectionTitle(stringResource(R.string.settings_section_route_prefs), tight = true)
+        Spacer(Modifier.height(14.dp))
         var tuned by remember(cur.routingProfile) { mutableStateOf(RoutingProfile.of(cur.routingProfile)) }
         SettingsCard {
-            RoutingProfilePicker(tuned) { tuned = it }
-            RowDivider()
-            val prefs = cur.routePrefs(tuned)
-            PickRow(stringResource(R.string.settings_label_route_ways), prefs.ways,
-                WayPref.entries, optionLabel = { wayPrefLabel(it) }) {
-                vm.save(cur.withRoutePrefs(tuned, prefs.copy(ways = it)))
-            }
-            RowDivider()
-            PickRow(stringResource(R.string.settings_label_route_hills), prefs.hills,
-                HillPref.entries, optionLabel = { hillPrefLabel(it) }) {
-                vm.save(cur.withRoutePrefs(tuned, prefs.copy(hills = it)))
-            }
-            RowDivider()
-            PickRow(stringResource(R.string.settings_label_route_surface), prefs.surface,
-                SurfacePref.entries, optionLabel = { surfacePrefLabel(it) }) {
-                vm.save(cur.withRoutePrefs(tuned, prefs.copy(surface = it)))
+            AccordionLine(stringResource(R.string.settings_line_route_prefs)) {
+                RoutingProfilePicker(tuned) { tuned = it }
+                RowDivider()
+                val prefs = cur.routePrefs(tuned)
+                PickRow(stringResource(R.string.settings_label_route_ways), prefs.ways,
+                    WayPref.entries, optionLabel = { wayPrefLabel(it) }) {
+                    vm.save(cur.withRoutePrefs(tuned, prefs.copy(ways = it)))
+                }
+                RowDivider()
+                PickRow(stringResource(R.string.settings_label_route_hills), prefs.hills,
+                    HillPref.entries, optionLabel = { hillPrefLabel(it) }) {
+                    vm.save(cur.withRoutePrefs(tuned, prefs.copy(hills = it)))
+                }
+                RowDivider()
+                PickRow(stringResource(R.string.settings_label_route_surface), prefs.surface,
+                    SurfacePref.entries, optionLabel = { surfacePrefLabel(it) }) {
+                    vm.save(cur.withRoutePrefs(tuned, prefs.copy(surface = it)))
+                }
+                // Les cinq disciplines ensemble : une preference retouchee pour l'une se retrouve
+                // rarement seule, et l'on revient au point de depart d'un seul geste.
+                CardAction(stringResource(R.string.action_reset_defaults)) {
+                    vm.save(cur.withDefaultRoutePrefs())
+                }
             }
         }
     }
 
-
-    /*
-     * La coloration par pente de l'itineraire CALCULE : un seul interrupteur, pour son trace sur la carte
-     * ET l'aire de son profil - la couleur du trait se lit sur le profil, les deux vont ensemble. Celle
-     * des traces se regle trace par trace, dans le menu de chaque couche, et vaut de meme pour les deux.
-     * (La colonne routeSlopeProfile, qui separait le profil, n'est plus lue.)
-     */
-    // Mode expert seulement : l'itineraire se colore par defaut, et qui ne cherche pas ce reglage n'y perd rien.
-    if (cur.expertMode) {
-        SectionTitle(stringResource(R.string.settings_section_route_slope))
-        SettingsCard {
-            SwitchLine(
-                stringResource(R.string.settings_route_slope_line), cur.routeSlopeLine,
-                info = stringResource(R.string.settings_route_slope_info),
-            ) { vm.save(cur.copy(routeSlopeLine = it)) }
-        }
-    }
+    // La coloration par pente de l'itineraire est passee sous le calcul d'itineraire, onglet Carte.
 
     /*
      * Moteur d'itineraire et services techniques, en fin de liste : ce sont des reglages qu'on pose une
@@ -393,14 +387,13 @@ import kotlinx.coroutines.launch
     val upToDate = stringResource(R.string.update_none_available)
     val failed = stringResource(R.string.update_check_failed)
 
-    SetRow(stringResource(R.string.settings_label_updates), info = stringResource(R.string.settings_updates_info)) {
-        SettingsChip(stringResource(R.string.update_mode_auto), cur.updateCheckMode != "manual") {
-            vm.save(cur.copy(updateCheckMode = "auto"))
-        }
-        SettingsChip(stringResource(R.string.update_mode_manual), cur.updateCheckMode == "manual") {
-            vm.save(cur.copy(updateCheckMode = "manual"))
-        }
-    }
+    // Un select plutot que deux puces : deux choix exclusifs, dont on ne lit que celui en cours.
+    PickRow(
+        stringResource(R.string.settings_label_updates),
+        if (cur.updateCheckMode == "manual") "manual" else "auto", listOf("auto", "manual"),
+        optionLabel = { stringResource(if (it == "manual") R.string.update_mode_manual else R.string.update_mode_auto) },
+        info = stringResource(R.string.settings_updates_info),
+    ) { vm.save(cur.copy(updateCheckMode = it)) }
     if (UpdateManager.isSupported && cur.updateCheckMode == "manual") {
         RowTrailingBelow {
             if (checking) {

@@ -249,21 +249,30 @@ fun SettingsScreen(
     }
 
     var tab by rememberSaveable { mutableIntStateOf(SETTINGS_TAB_MAP) }
+    // Les zones de l'itineraire hors ligne sont repliees sous le calcul d'itineraire : qui vient pour elles
+    // (la notification des zones) le trouve ouvert.
+    var revealRoutingZones by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(requestedTab) {
-        requestedTab?.let { tab = it; onRequestedTabShown() }
+        requestedTab?.let {
+            tab = it
+            if (it == SETTINGS_TAB_ZONES) revealRoutingZones = true
+            onRequestedTabShown()
+        }
     }
     /*
      * Trois onglets : Carte - qui porte desormais les fonds de plan, l'onglet Tuiles a disparu -, Parcours
      * et Systeme. Parcours ne porte que des reglages experts : hors mode expert, il n'est pas montre, et
      * qui s'y trouvait au moment d'eteindre le mode expert revient a la carte.
      */
+    // L'onglet Parcours : mode expert du compte administrateur (cf. SettingsAccess).
+    val routesVisible = SettingsAccess.routesTabVisible(cur)
     val tabs = buildList {
         add(Triple(SETTINGS_TAB_MAP, stringResource(R.string.settings_tab_map), Icons.Filled.Map))
-        if (cur.expertMode) add(Triple(SETTINGS_TAB_ROUTES, stringResource(R.string.settings_tab_routes), Icons.Outlined.Directions))
+        if (routesVisible) add(Triple(SETTINGS_TAB_ROUTES, stringResource(R.string.settings_tab_routes), Icons.Outlined.Directions))
         add(Triple(SETTINGS_TAB_SYSTEM, stringResource(R.string.settings_tab_general), Icons.Filled.Tune))
     }
-    LaunchedEffect(cur.expertMode, tab) {
-        if (!cur.expertMode && tab == SETTINGS_TAB_ROUTES) tab = SETTINGS_TAB_MAP
+    LaunchedEffect(routesVisible, tab) {
+        if (!routesVisible && tab == SETTINGS_TAB_ROUTES) tab = SETTINGS_TAB_MAP
     }
     val basemaps = rememberBasemapSettings(vm, onPickMbtiles = { mbPicker.launch("*/*") }, onDownloadArea = onDownloadArea)
     BasemapSettingsDialogs(basemaps, cur, providers, composites, vm)
@@ -448,7 +457,7 @@ fun SettingsScreen(
                         when (currentTab) {
                             SETTINGS_TAB_MAP -> mapTab(
                                 cur, vm, groupesParOnglet.getOrPut(currentTab) { TabGroups() },
-                                providers, composites, basemaps,
+                                providers, composites, basemaps, revealRoutingZones,
                             )
                             // Les deux autres onglets restent d'une piece pour l'instant : un seul
                             // element de liste, donc composes en entier comme avant.
@@ -472,14 +481,16 @@ fun SettingsScreen(
             val groupeAffiche = remember { mutableStateOf("") }
             if (groupeCourant != null) groupeAffiche.value = groupeCourant
             if (opacite > 0f) {
+                // Le style du titre dans le corps de l'onglet (cf. settingsTitleStyle), a la meme abscisse :
+                // le titre qui s'ancre est celui qu'on vient de lire, et non une version reduite.
                 Text(
                     groupeAffiche.value,
-                    style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = palette.label,
+                    style = settingsTitleStyle, color = palette.label,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().alpha(opacite)
                         .background(palette.card)
                         .heightIn(min = GroupBarHeight)
-                        .padding(start = 16.dp, end = 16.dp, top = 5.dp, bottom = 6.dp)
+                        .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 6.dp)
                         .testTag("settings_group_bar"),
                 )
             }
@@ -496,4 +507,4 @@ fun SettingsScreen(
 private const val ExpertAlertMs = 3_000L
 
 /** Hauteur de la barre du groupe courant : le titre lui passe dessous, elle prend alors le relais. */
-private val GroupBarHeight = 26.dp
+private val GroupBarHeight = 36.dp

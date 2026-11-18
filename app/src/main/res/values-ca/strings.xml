@@ -273,7 +273,7 @@
     <string name="settings_section_route_slope">Coloració per pendent</string>
     <string name="settings_route_slope_info">El traçat de la ruta calculada i l\'àrea del seu perfil d\'altitud s\'acoloriran segons el pendent.</string>
     <string name="settings_route_slope_line">Acoloreix segons el pendent</string>
-    <string name="settings_group_track">Track</string>
+    <string name="settings_group_track">Tracks</string>
     <string name="settings_track_line_width">Gruix de la línia</string>
     <string name="settings_track_line_width_info">Gruix dels tracks i de la ruta calculada al mapa.</string>
     <string name="settings_track_direction">Sentit de la marxa</string>
@@ -451,7 +451,7 @@
 
     <string name="profile_no_elevation">Recorregut sense altimetria</string>
 
-    <string name="settings_section_map_controls">Botons i gestos</string>
+    <string name="settings_section_map_controls">Visualització dels botons</string>
     <string name="settings_sw_track_follow">Tauler</string>
     <string name="settings_group_storage">Emmagatzematge</string>
     <string name="settings_group_interaction">Interacció</string>
@@ -825,4 +825,20 @@
     <string name="recording_finish_folder">Carpeta</string>
     <string name="recording_notice_paused">Enregistrament en pausa</string>
     <string name="settings_section_layer_manager">Gestor de capes</string>
+    <string name="settings_section_map_dressing">Presentació</string>
+    <string name="settings_label_side_menu_access">Accés al menú lateral</string>
+    <string name="settings_label_basemap_access">Accés als mapes</string>
+    <string name="settings_line_route_prefs">Preferències del càlcul</string>
+    <string name="action_activate">Activa</string>
+    <string name="action_deactivate">Desactiva</string>
+    <string name="basemap_kind_raster">Mapa en línia, en tessel·les d\'imatge</string>
+    <string name="basemap_kind_vector">Mapa vectorial en línia</string>
+    <string name="basemap_kind_overlay">Capa transparent, per posar sobre un mapa de fons</string>
+    <string name="basemap_kind_relief">Ombrejat del relleu, calculat a partir d\'un model del terreny</string>
+    <string name="basemap_kind_offline">Mapa fora de línia, desat al telèfon</string>
+    <string name="basemap_coverage_world">Cobertura mundial</string>
+    <string name="basemap_coverage_country">Cobertura: %1$s</string>
+    <string name="basemap_zoom_range">Zoom %1$d a %2$d</string>
+    <string name="basemap_composite_desc">Primer pla: %1$s. Fons: %2$s. Opacitat del primer pla: %3$d %%.</string>
+    <string name="basemap_zoom_downloaded">Zooms baixats: %1$d - %2$d</string>
 </resources>

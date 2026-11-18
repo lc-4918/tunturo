@@ -916,20 +916,29 @@ class LocationService : Service() {
      * l'ecran de verrouillage et dans la barre de statut, la ou on la voit sans deverrouiller.
      */
     private fun watchAlertRing() = scope.launch {
-        val son = (application as TunturoApp).repository.settingsFlow
-            .map { Triple(it?.offTrackAlertSound ?: false, it?.offTrackAlertSoundUri ?: "", it?.offTrackAlertVibrate ?: false) }
+        val prefs = (application as TunturoApp).repository.settingsFlow
+            .map {
+                AlertPrefs(
+                    active = it?.offTrackAlertActive ?: true,
+                    sound = it?.offTrackAlertSound ?: false,
+                    soundUri = it?.offTrackAlertSoundUri ?: "",
+                    vibrate = it?.offTrackAlertVibrate ?: false,
+                )
+            }
             .distinctUntilChanged()
-            // Les reglages arrivent de la base un instant apres le service : sans ce premier couple, rien
+            // Les reglages arrivent de la base un instant apres le service : sans ce premier jeu, rien
             // ne serait combine tant qu'ils ne sont pas lus, et une alerte de la premiere seconde se
             // tairait. "Pas de son" est le bon repli - le son est un reglage qu'on allume.
-            .onStart { emit(Triple(false, "", false)) }
-        combine(TrackWatch.alerting, TrackWatch.silenced, TrackWatch.armed, son) { alerting, silenced, armed, (actif, uri, vibre) ->
+            .onStart { emit(AlertPrefs(active = true, sound = false, soundUri = "", vibrate = false)) }
+        combine(TrackWatch.alerting, TrackWatch.silenced, TrackWatch.armed, prefs) { alerting, silenced, armed, alertPrefs ->
+            // L'alerte eteinte dans les reglages vaut une cloche desarmee : ni notification, ni son.
+            val effectivelyArmed = OffTrack.armedWhenActive(alertPrefs.active, armed)
             Ring(
-                notifier = OffTrack.announcing(armed, alerting, silenced),
-                sonner = OffTrack.ringing(actif, armed, alerting, silenced),
-                uri = uri,
+                notifier = OffTrack.announcing(effectivelyArmed, alerting, silenced),
+                sonner = OffTrack.ringing(alertPrefs.sound, effectivelyArmed, alerting, silenced),
+                uri = alertPrefs.soundUri,
                 // La vibration obeit aux memes conditions que la sonnerie, sous son propre reglage.
-                vibrer = OffTrack.ringing(vibre, armed, alerting, silenced),
+                vibrer = OffTrack.ringing(alertPrefs.vibrate, effectivelyArmed, alerting, silenced),
             )
         }.distinctUntilChanged().collect { etat ->
             FixLog.write(this@LocationService) {
@@ -942,6 +951,9 @@ class LocationService : Service() {
     }
 
     /** Ce que l'alerte demande a cet instant : la notification, la sonnerie, et le son a jouer. */
+    /** Les reglages de l'alerte que la sonnerie consulte (cf. [watchAlertRing]). */
+    private data class AlertPrefs(val active: Boolean, val sound: Boolean, val soundUri: String, val vibrate: Boolean)
+
     private data class Ring(val notifier: Boolean, val sonner: Boolean, val uri: String, val vibrer: Boolean)
 
     /**

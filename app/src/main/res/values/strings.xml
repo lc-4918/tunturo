@@ -273,7 +273,7 @@
     <string name="settings_section_route_slope">Coloration par pente</string>
     <string name="settings_route_slope_info">Le parcours de l\'itinéraire calculé et l\'aire de son profil altimétrique seront colorés suivant la pente.</string>
     <string name="settings_route_slope_line">Colorer suivant la pente</string>
-    <string name="settings_group_track">Trace</string>
+    <string name="settings_group_track">Traces</string>
     <string name="settings_track_line_width">Largeur du trait</string>
     <string name="settings_track_line_width_info">Épaisseur du trait des traces et de l\'itinéraire calculé sur la carte.</string>
     <string name="settings_track_direction">Sens de parcours</string>
@@ -453,7 +453,7 @@
 
     <string name="profile_no_elevation">Parcours sans altimétrie</string>
 
-    <string name="settings_section_map_controls">Boutons et gestes</string>
+    <string name="settings_section_map_controls">Affichage des boutons</string>
     <string name="settings_sw_track_follow">Tableau de bord</string>
     <string name="settings_group_storage">Stockage</string>
     <string name="settings_group_interaction">Interaction</string>
@@ -827,4 +827,20 @@
     <string name="recording_finish_folder">Dossier</string>
     <string name="recording_notice_paused">Enregistrement en pause</string>
     <string name="settings_section_layer_manager">Gestionnaire de couches</string>
+    <string name="settings_section_map_dressing">Présentation</string>
+    <string name="settings_label_side_menu_access">Accès au menu latéral</string>
+    <string name="settings_label_basemap_access">Accès aux cartes</string>
+    <string name="settings_line_route_prefs">Préférences du calcul</string>
+    <string name="action_activate">Activer</string>
+    <string name="action_deactivate">Désactiver</string>
+    <string name="basemap_kind_raster">Carte en ligne, en tuiles images</string>
+    <string name="basemap_kind_vector">Carte en ligne vectorielle</string>
+    <string name="basemap_kind_overlay">Surcouche transparente, à poser sur un fond</string>
+    <string name="basemap_kind_relief">Ombrage du relief, calculé à partir d\'un modèle de terrain</string>
+    <string name="basemap_kind_offline">Carte hors ligne, enregistrée sur le téléphone</string>
+    <string name="basemap_coverage_world">Couverture mondiale</string>
+    <string name="basemap_coverage_country">Couverture : %1$s</string>
+    <string name="basemap_zoom_range">Zoom %1$d à %2$d</string>
+    <string name="basemap_composite_desc">Premier plan : %1$s. Arrière-plan : %2$s. Opacité du premier plan : %3$d %%.</string>
+    <string name="basemap_zoom_downloaded">Zooms téléchargés : %1$d - %2$d</string>
 </resources>

@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.core.app.ApplicationProvider
 import com.tunturo.app.R
@@ -61,18 +62,24 @@ class TrackDisplaySettingsUiTest {
     @Test fun `la rubrique Trace n'apparait qu'en mode expert`() {
         ouvrir(expert = false)
         defileVers(app.getString(R.string.settings_label_gps_marker_style))
-        assertFalse("rubrique Trace", present(app.getString(R.string.settings_group_track).uppercase()))
+        assertFalse("habillage de la carte", present(app.getString(R.string.settings_section_map_dressing)))
         assertFalse("largeur du trait", present(app.getString(R.string.settings_track_line_width)))
     }
 
-    /** En mode expert, la ligne "Trace" deplie la largeur du trait et le sens de parcours. */
+    /**
+     * En mode expert, la ligne "Trace", dans l'habillage de la carte, deplie la largeur du trait, le sens
+     * de parcours et la simplification des traces, venue de l'onglet Systeme.
+     */
     @Test fun `en mode expert, la ligne Trace deplie la largeur du trait et le sens de parcours`() {
         ouvrir(expert = true)
-        defileVers(app.getString(R.string.settings_group_track).uppercase())
+        defileVers(app.getString(R.string.settings_section_map_dressing))
+        defileVers(app.getString(R.string.settings_sw_rotation))
         assertFalse("replie", present(app.getString(R.string.settings_track_line_width)))
-        compose.onNodeWithText(app.getString(R.string.settings_group_track)).performClick()
+        compose.onNodeWithText(app.getString(R.string.settings_group_track)).performScrollTo().performClick()
         compose.waitUntil(5_000) { present(app.getString(R.string.settings_track_line_width)) }
         assertTrue(present(app.getString(R.string.settings_track_direction)))
+        defileVers(app.getString(R.string.settings_simplify_render))
+        assertTrue(present(app.getString(R.string.settings_simplify_render)))
     }
 
     /**
@@ -88,14 +95,16 @@ class TrackDisplaySettingsUiTest {
         assertFalse(present("Restant sur la trace"))
     }
 
-    /** Une seule ligne pour la pente de l'itineraire, qui dit dans son "i" qu'elle vaut trace et profil. */
-    @Test fun `l'onglet Trajets regle la coloration de l'itineraire d'une seule ligne`() {
-        // La coloration par pente est un reglage expert.
-        ouvrir(expert = true)
-        compose.onNodeWithText(app.getString(R.string.settings_tab_routes)).performClick()
+    /**
+     * Une seule ligne pour la pente de l'itineraire, tout en bas du calcul d'itineraire, qui dit dans son
+     * "i" qu'elle vaut trace et profil.
+     */
+    @Test fun `le calcul d'itineraire regle la coloration de l'itineraire d'une seule ligne`() {
+        ouvrir(expert = false)
+        defileVers(app.getString(R.string.settings_sw_planner))
+        compose.onNodeWithText(app.getString(R.string.settings_sw_planner)).performScrollTo().performClick()
         compose.waitForIdle()
         defileVers(app.getString(R.string.settings_route_slope_line))
-        assertTrue(present(app.getString(R.string.settings_section_route_slope).uppercase()))
         assertTrue(present("Colorer suivant la pente"))
         assertFalse("plus de ligne a part pour le profil", present("Trace de l'itinéraire calculé"))
         val info = app.getString(R.string.settings_route_slope_info)
@@ -111,7 +120,7 @@ class TrackDisplaySettingsUiTest {
         ouvrir(expert = true)
         compose.onNodeWithText(app.getString(R.string.settings_tab_routes)).performClick()
         compose.waitForIdle()
-        fun absent(res: Int) = compose.onAllNodesWithText(app.getString(res).uppercase()).fetchSemanticsNodes().isEmpty()
+        fun absent(res: Int) = compose.onAllNodesWithText(app.getString(res)).fetchSemanticsNodes().isEmpty()
         assertFalse(absent(R.string.settings_section_services))
         assertTrue("plus d'altimetrie ici", absent(R.string.settings_section_elevation_fill))
         assertTrue("plus de points d'interet ici", absent(R.string.settings_section_poi))

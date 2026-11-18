@@ -4,6 +4,8 @@ import com.tunturo.app.data.db.BasemapControlMode
 import com.tunturo.app.domain.geo.ResumeMode
 import com.tunturo.app.map.offline.TileMath
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.testTag
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.RestartAlt
 import android.app.Activity
@@ -80,37 +82,26 @@ import com.tunturo.app.ui.theme.TunturoIcons
     val ctx = LocalContext.current
     var confirmReset by remember { mutableStateOf(false) }
 
-    // Treize rubriques a plat devenaient une liste ou l'on cherchait. Quatre groupes : ce que ca donne a
-    // voir, ce qui repond au doigt, ou ca se range, et ce que l'application fait d'elle-meme.
-    GroupTitle(stringResource(R.string.settings_section_display), first = true)
     /*
-     * Garder l'ecran allume, venu de l'onglet Carte.
-     *
-     * Il y suivait le suivi de position, dont il partage le declencheur - le drapeau n'est pose que
-     * pendant le suivi (cf. KeepScreenOnEffect) - mais ce n'est pas un bouton ni un geste de carte : c'est
-     * l'ecran lui-meme qui reste visible ou s'eteint, une question d'affichage comme le theme et les
-     * boutons de carte qui suivent.
+     * Affichage : tout ce qui decide de ce que l'ecran montre, dans une seule carte - l'ecran allume, la
+     * barre d'etat, le theme, la langue, les unites (expert) et l'aspect des boutons de la carte (expert).
      */
+    GroupTitle(stringResource(R.string.settings_section_display), first = true)
+    var currentLang by remember { mutableStateOf(LocalePrefs.get(ctx)) }
     SettingsCard {
+        // Garder l'ecran allume : le drapeau n'est pose que pendant le suivi (cf. KeepScreenOnEffect).
         SwitchLine(
             stringResource(R.string.settings_sw_keep_screen_on), cur.keepScreenOn,
             info = stringResource(R.string.settings_sw_keep_screen_on_sub),
         ) { vm.save(cur.copy(keepScreenOn = it)) }
         RowDivider()
-        // Venue de la rubrique juste dessous : elle ne choisit pas une apparence, elle dit si la carte se
-        // voit derriere la barre de statut - la meme question que l'ecran garde allume ou non, dessine par
-        // le systeme plutot que par l'application.
+        // La carte se voit-elle derriere la barre de statut : la meme question que l'ecran garde allume,
+        // dessinee par le systeme plutot que par l'application.
         SwitchLine(
             stringResource(R.string.settings_status_bar_transparent), cur.statusBarTransparent,
             info = stringResource(R.string.settings_sw_status_bar_sub),
         ) { vm.save(cur.copy(statusBarTransparent = it)) }
-    }
-
-    // Le theme et la langue, sans rubrique a eux : une carte de plus dans le groupe Affichage. Les unites,
-    // en mode expert seulement - le systeme metrique convient a qui ne les cherche pas.
-    Spacer(Modifier.height(12.dp))
-    var currentLang by remember { mutableStateOf(LocalePrefs.get(ctx)) }
-    SettingsCard {
+        RowDivider()
         PickRow(
             stringResource(R.string.settings_label_theme), cur.theme,
             listOf("system", "light", "dark"),
@@ -131,87 +122,69 @@ import com.tunturo.app.ui.theme.TunturoIcons
             LocalePrefs.set(ctx, code)
             (ctx as? Activity)?.recreate()
         }
+        // Les unites et les boutons de carte : mode expert seulement - le metrique et la taille par defaut
+        // conviennent a qui ne les cherche pas.
         if (cur.expertMode) {
             RowDivider()
             PickRow(
                 stringResource(R.string.settings_label_units), cur.units, listOf("meters", "imperial"),
                 optionLabel = { stringResource(if (it == "imperial") R.string.unit_imperial else R.string.unit_metric) },
             ) { vm.save(cur.copy(units = it)) }
+            RowDivider()
+            MapButtonsRow(cur, vm)
         }
     }
 
     /*
-     * L'aspect des boutons de la carte, venu de l'onglet Carte.
-     *
-     * Ils y voisinaient les interrupteurs qui decident lesquels s'affichent, et les deux questions n'ont
-     * rien a voir : l'une dit CE QU'ON POSE sur la carte - et se regle donc la-bas, avec les gestes -,
-     * celle-ci dit a quoi cela ressemble, comme le theme et la barre d'etat juste au-dessus.
+     * Interaction : comment on ouvre le menu lateral et le gestionnaire de cartes - une ligne a select
+     * chacun, en miroir -, et en mode expert la tolerance du tap, repliee.
      */
-    // Reglages fins : mode expert seulement (cf. SettingsEntity.expertMode).
-    if (cur.expertMode) {
-        SectionTitle(stringResource(R.string.settings_section_map_buttons))
-        SettingsCard {
-            // Le curseur ne va pas au-dela du bouton Material plein : plus grand, il ne depasserait pas sa
-            // zone tactile, il deborderait dessus.
-            SliderRow(
-                label = stringResource(R.string.settings_label_map_button_size),
-                value = "${cur.mapButtonSizeDp} dp",
-                fraction = fractionOf(cur.mapButtonSizeDp, MinMapButtonSizeDp, MaxMapButtonSizeDp),
-                steps = MaxMapButtonSizeDp - MinMapButtonSizeDp - 1,
-                onFraction = { vm.save(cur.copy(mapButtonSizeDp = valueOf(it, MinMapButtonSizeDp, MaxMapButtonSizeDp))) },
-            )
-            RowDivider()
-            SliderRow(
-                label = stringResource(R.string.settings_label_buttons_bg_opacity),
-                value = "${cur.controlButtonsOpacityPct} %",
-                fraction = fractionOf(cur.controlButtonsOpacityPct, 0, 100),
-                onFraction = { vm.save(cur.copy(controlButtonsOpacityPct = valueOf(it, 0, 100))) },
-            )
-            CardAction(stringResource(R.string.action_reset_defaults)) {
-                vm.save(cur.copy(mapButtonSizeDp = MaxMapButtonSizeDp, controlButtonsOpacityPct = 100))
-            }
-        }
-    }
-
     GroupTitle(stringResource(R.string.settings_group_interaction))
-    SectionTitle(stringResource(R.string.settings_section_side_menu_open), tight = true)
     SettingsCard {
-        SegChips(
-            listOf("burger" to stringResource(R.string.side_menu_burger),
-                "swipe" to stringResource(R.string.side_menu_swipe),
-                "both" to stringResource(R.string.side_menu_both)),
-            cur.sideMenuMode,
+        PickRow(
+            stringResource(R.string.settings_label_side_menu_access), cur.sideMenuMode,
+            listOf("burger", "swipe", "both"),
+            optionLabel = {
+                stringResource(when (it) {
+                    "swipe" -> R.string.side_menu_swipe
+                    "both" -> R.string.side_menu_both
+                    else -> R.string.side_menu_burger
+                })
+            },
         ) { vm.save(cur.copy(sideMenuMode = it)) }
-    }
-    // Le gestionnaire de fonds s'ouvre comme le menu lateral, en miroir : bouton, glissement depuis le bord
-    // droit, ou les deux (cf. BasemapControlMode).
-    SectionTitle(stringResource(R.string.settings_section_basemap_control_open))
-    SettingsCard {
-        SegChips(
-            listOf(BasemapControlMode.BUTTON to stringResource(R.string.basemap_control_mode_button),
-                BasemapControlMode.SWIPE to stringResource(R.string.side_menu_swipe),
-                BasemapControlMode.BOTH to stringResource(R.string.side_menu_both)),
-            cur.basemapControlMode,
+        RowDivider()
+        // Le gestionnaire de cartes s'ouvre comme le menu lateral, en miroir : bouton, glissement depuis le
+        // bord droit, ou les deux (cf. BasemapControlMode).
+        PickRow(
+            stringResource(R.string.settings_label_basemap_access), cur.basemapControlMode,
+            listOf(BasemapControlMode.BUTTON, BasemapControlMode.SWIPE, BasemapControlMode.BOTH),
+            optionLabel = {
+                stringResource(when (it) {
+                    BasemapControlMode.SWIPE -> R.string.side_menu_swipe
+                    BasemapControlMode.BOTH -> R.string.side_menu_both
+                    else -> R.string.basemap_control_mode_button
+                })
+            },
         ) { vm.save(cur.copy(basemapControlMode = it)) }
-    }
-    // Deux tolerances : les marqueurs sont interroges avant les traces et l'emportent, une valeur large
-    // sur eux rend une trace qui passe a cote difficile a atteindre.
-    if (cur.expertMode) {
-        SectionTitle(stringResource(R.string.settings_section_tap_tolerance))
-        SettingsCard {
-            SliderRow(
-                stringResource(R.string.settings_label_waypoints), "${cur.tapToleranceDp} dp",
-                fractionOf(cur.tapToleranceDp, 4, 40), steps = 35,
-                onFraction = { vm.save(cur.copy(tapToleranceDp = valueOf(it, 4, 40))) },
-            )
+        // Deux tolerances : les marqueurs sont interroges avant les traces et l'emportent, une valeur large
+        // sur eux rend une trace qui passe a cote difficile a atteindre.
+        if (cur.expertMode) {
             RowDivider()
-            SliderRow(
-                stringResource(R.string.settings_label_tracks), "${cur.lineTapToleranceDp} dp",
-                fractionOf(cur.lineTapToleranceDp, 4, 40), steps = 35,
-                onFraction = { vm.save(cur.copy(lineTapToleranceDp = valueOf(it, 4, 40))) },
-            )
-            CardAction(stringResource(R.string.action_reset_defaults)) {
-                vm.save(cur.copy(tapToleranceDp = 10, lineTapToleranceDp = 16))
+            AccordionLine(stringResource(R.string.settings_section_tap_tolerance)) {
+                SliderRow(
+                    stringResource(R.string.settings_label_waypoints), "${cur.tapToleranceDp} dp",
+                    fractionOf(cur.tapToleranceDp, 4, 40), steps = 35,
+                    onFraction = { vm.save(cur.copy(tapToleranceDp = valueOf(it, 4, 40))) },
+                )
+                RowDivider()
+                SliderRow(
+                    stringResource(R.string.settings_label_tracks), "${cur.lineTapToleranceDp} dp",
+                    fractionOf(cur.lineTapToleranceDp, 4, 40), steps = 35,
+                    onFraction = { vm.save(cur.copy(lineTapToleranceDp = valueOf(it, 4, 40))) },
+                )
+                CardAction(stringResource(R.string.action_reset_defaults)) {
+                    vm.save(cur.copy(tapToleranceDp = 10, lineTapToleranceDp = 16))
+                }
             }
         }
     }
@@ -220,6 +193,8 @@ import com.tunturo.app.ui.theme.TunturoIcons
      * L'enregistrement de trace : ce que fait l'appui sur le bouton en pause. Un reglage et non plus une
      * question a chaque reprise - on reprend dix fois dans une sortie, et la reponse est toujours la meme.
      */
+    // Mode expert seulement : la reprise dans le meme segment convient a qui ne la cherche pas.
+    if (cur.expertMode) {
     GroupTitle(stringResource(R.string.settings_group_recording))
     SettingsCard {
         // Allume par defaut : la reprise continue le meme segment. Eteint, elle en ouvre un nouveau.
@@ -231,163 +206,51 @@ import com.tunturo.app.ui.theme.TunturoIcons
             vm.save(cur.copy(recordingResumeMode = (if (on) ResumeMode.SAME_SEGMENT else ResumeMode.NEW_SEGMENT).key))
         }
     }
+    }
 
-    GroupTitle(stringResource(R.string.settings_group_storage))
     /*
-     * CACHE en tete du groupe : ce que l'application a retenu toute seule, et de quoi le retirer.
-     *
-     * Les deux lignes viennent de l'onglet Trajets, ou elles suivaient la rubrique des categories de
-     * points d'interet - laquelle a quitte les reglages pour une bulle ouverte depuis la carte (cf.
-     * PoiFilterBubble). Elles n'avaient plus rien a y faire : ce ne sont pas des reglages de trajet mais
-     * des gestes d'entretien, et leur place est aupres du stockage et de la sauvegarde.
-     *
-     * Meme gabarit pour les deux - un compte en sous-titre, une corbeille, eteinte quand il n'y a rien -
-     * et la meme raison : ce qui s'inscrit sans qu'on le demande doit pouvoir se retirer sans
-     * reinitialiser tous les reglages. C'est la moindre des choses pour une application dont l'argument
-     * est que tout reste sur l'appareil.
-     *
-     * Sans confirmation ni l'une ni l'autre : huit lieux se reconstituent en une promenade, et un cache
-     * se remplit tout seul des qu'on rouvre la carte. La demander serait du ceremonial.
+     * Stockage : le cache, les dossiers et la sauvegarde, une ligne a accordeon chacun. Ce sont des gestes
+     * d'entretien, qu'on vient faire de loin en loin : replies, ils laissent voir d'un coup ce que le
+     * groupe sait faire.
      */
-    SectionTitle(stringResource(R.string.settings_section_cache), tight = true)
-    val poiEnCache by vm.poiCached.collectAsState()
-    val poiEmportes by vm.poiPinned.collectAsState()
-    val lieux = PlannerHistory.of(cur.plannerHistory).places
-    // Le poids du cache de carte se lit sur le disque, a l'ouverture de l'onglet et apres chaque
-    // effacement : la bibliotheque ne le publie pas (cf. AmbientCache).
-    val mapCache by vm.mapCacheBytes.collectAsState()
-    LaunchedEffect(Unit) { vm.refreshMapCache() }
+    GroupTitle(stringResource(R.string.settings_group_storage))
     SettingsCard {
-        SetRow(
-            stringResource(R.string.settings_clear_poi_cache),
-            sub = if (poiEnCache == 0) stringResource(R.string.settings_poi_cache_empty)
-            else stringResource(R.string.settings_poi_cache_count, poiEnCache),
-            onClick = if (poiEnCache == 0) null else ({ vm.clearPoiCache() }),
-            role = Role.Button,
-            info = stringResource(R.string.settings_poi_cache_hint),
-        ) {
-            Icon(
-                TunturoIcons.Trash, null,
-                tint = if (poiEnCache == 0) settingsPalette.subtle else settingsPalette.accent,
-            )
-        }
-        // Ce que le bouton ne touche pas, dit seulement quand il y a quelque chose a ne pas toucher.
-        if (poiEmportes > 0) Hint(stringResource(R.string.settings_poi_cache_pinned, poiEmportes))
-        RowDivider()
-        SetRow(
-            stringResource(R.string.settings_clear_planner_history),
-            sub = if (lieux.isEmpty()) stringResource(R.string.settings_planner_history_empty)
-            else stringResource(R.string.settings_planner_history_count, lieux.size),
-            onClick = if (lieux.isEmpty()) null else ({ vm.save(cur.copy(plannerHistory = "")) }),
-            role = Role.Button,
-            info = stringResource(R.string.settings_planner_history_hint),
-        ) {
-            Icon(
-                TunturoIcons.Trash, null,
-                tint = if (lieux.isEmpty()) settingsPalette.subtle else settingsPalette.accent,
-            )
-        }
-        RowDivider()
-        // Les tuiles gardees par la carte, avec leur poids : meme gabarit que les deux lignes du dessus -
-        // un etat en sous-titre, une corbeille eteinte quand il n'y a rien a effacer.
-        SetRow(
-            stringResource(R.string.settings_clear_map_cache),
-            sub = if (mapCache <= 0L) stringResource(R.string.settings_map_cache_empty)
-            else TileMath.formatSize(mapCache),
-            onClick = if (mapCache <= 0L) null else ({ vm.clearMapCache() }),
-            role = Role.Button,
-            info = stringResource(R.string.settings_map_cache_hint),
-        ) {
-            Icon(
-                TunturoIcons.Trash, null,
-                tint = if (mapCache <= 0L) settingsPalette.subtle else settingsPalette.accent,
-            )
+        AccordionLine(stringResource(R.string.settings_section_cache)) { CacheRows(cur, vm) }
+        // Dossiers et sauvegarde : mode expert seulement. Les emplacements par defaut conviennent a qui ne
+        // les a jamais regardes, et sauvegarder ou restaurer reste un geste d'entretien.
+        if (cur.expertMode) {
+            RowDivider()
+            AccordionLine(stringResource(R.string.settings_section_folders)) {
+                FolderRows(cur, vm, onPickImportDir, onPickMbtilesFolder, onPickBrouterFolder)
+            }
+            RowDivider()
+            // La contrepartie du "aucun compte, aucune synchronisation" : sans elle, un telephone change
+            // emporte tout.
+            AccordionLine(stringResource(R.string.settings_section_backup)) {
+                // Meme sens de fleche que partout ailleurs : la montante charge dans l'application
+                // (restaurer), la descendante en sort un fichier (enregistrer).
+                SetRow(stringResource(R.string.settings_backup_create)) {
+                    InlineButton(stringResource(R.string.action_save), Icons.Filled.FileDownload, onBackup)
+                }
+                RowDivider()
+                SetRow(stringResource(R.string.settings_backup_restore), info = stringResource(R.string.settings_backup_hint)) {
+                    InlineButton(stringResource(R.string.action_restore), Icons.Filled.FileUpload, onRestore)
+                }
+            }
         }
     }
 
-    // Dossiers et sauvegarde : mode expert seulement. Les emplacements par defaut conviennent a qui ne les a
-    // jamais regardes, et sauvegarder ou restaurer reste un geste d'entretien, pas de tous les jours.
-    if (cur.expertMode) {
-    SectionTitle(stringResource(R.string.settings_section_folders))
+    // Les mises a jour, un groupe a elles : c'est l'application qui se renouvelle, rien d'autre.
+    GroupTitle(stringResource(R.string.settings_label_updates))
+    SettingsCard { UpdatesRow(cur, vm) }
+
+    /*
+     * Reinitialiser, hors de tout groupe : une carte seule au bas de l'onglet. Elle ne touche pas a un
+     * groupe mais a TOUS les reglages, des trois onglets - la ranger sous un titre l'aurait fait lire comme
+     * le defaire de ce groupe-la.
+     */
+    Spacer(Modifier.height(26.dp))
     SettingsCard {
-        SetRow(
-            stringResource(R.string.settings_section_import_folder),
-            sub = if (cur.importDir.isBlank()) stringResource(R.string.settings_default_system)
-                else (cur.importDir.toUri().lastPathSegment ?: stringResource(R.string.settings_default_system)),
-        ) {
-            InlineButton(stringResource(R.string.action_browse), Icons.Filled.Folder, onPickImportDir)
-        }
-        RowDivider()
-        SetRow(
-            stringResource(R.string.settings_section_mbtiles_folder),
-            sub = if (cur.mbtilesDir.isBlank()) stringResource(R.string.settings_app_folder_default)
-                else StoragePaths.displayName(cur.mbtilesDir),
-        ) {
-            InlineButton(stringResource(R.string.action_browse), Icons.Filled.Folder, onPickMbtilesFolder)
-        }
-        RowDivider()
-        // Les donnees du calcul d'itineraire hors ligne : jusqu'a un gigaoctet par pays, qu'on peut vouloir
-        // ranger sur une carte SD. Changer de dossier y deplace ce qui est deja telecharge.
-        val brouterDir by vm.brouterDir.collectAsState()
-        SetRow(
-            stringResource(R.string.settings_section_brouter_folder),
-            sub = if (brouterDir.isBlank()) stringResource(R.string.settings_app_folder_default)
-                else StoragePaths.displayName(brouterDir),
-        ) {
-            InlineButton(stringResource(R.string.action_browse), Icons.Filled.Folder, onPickBrouterFolder)
-        }
-    }
-
-    // La contrepartie du "aucun compte, aucune synchronisation" : sans elle, un telephone change emporte
-    // tout. Rangee sous "Stockage" et non dans un groupe a elle : c'est de la meme matiere qu'il s'agit -
-    // ou vivent les donnees, et comment elles en sortent.
-    SectionTitle(stringResource(R.string.settings_section_backup))
-    SettingsCard {
-        // Meme sens de fleche que partout ailleurs : la montante charge dans l'application (restaurer),
-        // la descendante en sort un fichier (enregistrer).
-        SetRow(stringResource(R.string.settings_backup_create)) {
-            InlineButton(stringResource(R.string.action_save), Icons.Filled.FileDownload, onBackup)
-        }
-        RowDivider()
-        SetRow(stringResource(R.string.settings_backup_restore), info = stringResource(R.string.settings_backup_hint)) {
-            InlineButton(stringResource(R.string.action_restore), Icons.Filled.FileUpload, onRestore)
-        }
-    }
-    }
-
-    GroupTitle(stringResource(R.string.settings_group_application))
-    if (cur.expertMode) SettingsCard {
-        SwitchLine(
-            stringResource(R.string.settings_simplify_render), cur.simplifyRender,
-            // L'explication courte et la longue, ensemble derriere le "i" : ni l'une ni l'autre ne dit un etat.
-            info = stringResource(R.string.settings_sw_simplify_sub) + "\n\n" + stringResource(R.string.settings_simplify_render_hint),
-        ) { vm.save(cur.copy(simplifyRender = it)) }
-    }
-
-    // Le titre du menu lateral : mode expert seulement, celui par defaut convient a qui ne le cherche pas.
-    var titleText by remember(cur.customTitle) { mutableStateOf(cur.customTitle) }
-    if (cur.expertMode) SectionTitle(stringResource(R.string.settings_section_personalisation))
-    if (cur.expertMode) SettingsCard {
-        FieldRow(stringResource(R.string.settings_label_side_title)) {
-            // La disquette n'apparait qu'apres une modification, DANS le champ : l'action d'enregistrer
-            // appartient a ce qu'on vient de taper, et non au bas de la carte, ou elle se lisait comme
-            // l'action de la rubrique entiere.
-            SettingsTextField(
-                titleText, stringResource(R.string.drawer_default_title),
-                trailing = if (titleText == cur.customTitle) null else ({
-                    RowIcon(Icons.Filled.Save, stringResource(R.string.action_save)) {
-                        vm.save(cur.copy(customTitle = titleText))
-                    }
-                }),
-            ) { titleText = it }
-        }
-    }
-
-    SettingsCard {
-        UpdatesRow(cur, vm)
-        // Un bouton a contour plutot qu'une action de fin de carte : il ne touche pas a la carte ou il se
-        // trouve mais a TOUS les reglages, des quatre onglets. Un texte cale a droite, comme
-        // "Reinitialiser" ailleurs, l'aurait fait lire comme le defaire de la ligne du dessus.
         CardOutlinedButton(stringResource(R.string.action_reset_all_settings), Icons.Filled.RestartAlt) {
             confirmReset = true
         }
@@ -407,6 +270,137 @@ import com.tunturo.app.ui.theme.TunturoIcons
             },
             dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(stringResource(R.string.action_cancel)) } },
         )
+    }
+}
+
+/**
+ * "Boutons de la carte" : une seule ligne pour leur taille et leur opacite, a la maniere de la ligne
+ * "Symbole" de l'onglet Carte - les deux valeurs au bout, chacune ouvrant son curseur dans une bulle.
+ */
+@Composable private fun ColumnScopeMarker.MapButtonsRow(cur: SettingsEntity, vm: SettingsViewModel) {
+    var sizeBubble by remember { mutableStateOf(false) }
+    var opacityBubble by remember { mutableStateOf(false) }
+    SetRow(stringResource(R.string.settings_section_map_buttons)) {
+        Box {
+            Box(Modifier.clip(MaterialTheme.shapes.small).clickable { sizeBubble = true }
+                .padding(horizontal = 4.dp, vertical = 6.dp).testTag("map_buttons_size")) {
+                ValueText("${cur.mapButtonSizeDp} dp")
+            }
+            if (sizeBubble) {
+                // Le curseur ne va pas au-dela du bouton Material plein : plus grand, il ne depasserait pas
+                // sa zone tactile, il deborderait dessus.
+                ValueBubble(
+                    label = stringResource(R.string.settings_label_map_button_size),
+                    value = "${cur.mapButtonSizeDp} dp",
+                    fraction = fractionOf(cur.mapButtonSizeDp, MinMapButtonSizeDp, MaxMapButtonSizeDp),
+                    steps = MaxMapButtonSizeDp - MinMapButtonSizeDp - 1,
+                    onFraction = { vm.save(cur.copy(mapButtonSizeDp = valueOf(it, MinMapButtonSizeDp, MaxMapButtonSizeDp))) },
+                    onDismiss = { sizeBubble = false },
+                    tag = "map_buttons_size_bubble",
+                )
+            }
+        }
+        Box {
+            Box(Modifier.clip(MaterialTheme.shapes.small).clickable { opacityBubble = true }
+                .padding(horizontal = 4.dp, vertical = 6.dp).testTag("map_buttons_opacity")) {
+                ValueText("${cur.controlButtonsOpacityPct} %")
+            }
+            if (opacityBubble) {
+                ValueBubble(
+                    label = stringResource(R.string.settings_label_buttons_bg_opacity),
+                    value = "${cur.controlButtonsOpacityPct} %",
+                    fraction = fractionOf(cur.controlButtonsOpacityPct, 0, 100),
+                    steps = 0,
+                    onFraction = { vm.save(cur.copy(controlButtonsOpacityPct = valueOf(it, 0, 100))) },
+                    onDismiss = { opacityBubble = false },
+                    tag = "map_buttons_opacity_bubble",
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Le cache : ce que l'application a retenu toute seule, et de quoi le retirer.
+ *
+ * Meme gabarit pour les trois lignes - un compte en sous-titre, une corbeille, eteinte quand il n'y a
+ * rien - et la meme raison : ce qui s'inscrit sans qu'on le demande doit pouvoir se retirer sans
+ * reinitialiser tous les reglages. Sans confirmation : huit lieux se reconstituent en une promenade, et un
+ * cache se remplit tout seul des qu'on rouvre la carte.
+ */
+@Composable private fun ColumnScopeMarker.CacheRows(cur: SettingsEntity, vm: SettingsViewModel) {
+    val poiEnCache by vm.poiCached.collectAsState()
+    val poiEmportes by vm.poiPinned.collectAsState()
+    val lieux = PlannerHistory.of(cur.plannerHistory).places
+    // Le poids du cache de carte se lit sur le disque, a l'ouverture et apres chaque effacement : la
+    // bibliotheque ne le publie pas (cf. AmbientCache).
+    val mapCache by vm.mapCacheBytes.collectAsState()
+    LaunchedEffect(Unit) { vm.refreshMapCache() }
+    SetRow(
+        stringResource(R.string.settings_clear_poi_cache),
+        sub = if (poiEnCache == 0) stringResource(R.string.settings_poi_cache_empty)
+        else stringResource(R.string.settings_poi_cache_count, poiEnCache),
+        onClick = if (poiEnCache == 0) null else ({ vm.clearPoiCache() }),
+        role = Role.Button,
+        info = stringResource(R.string.settings_poi_cache_hint),
+    ) {
+        Icon(TunturoIcons.Trash, null, tint = if (poiEnCache == 0) settingsPalette.subtle else settingsPalette.accent)
+    }
+    // Ce que le bouton ne touche pas, dit seulement quand il y a quelque chose a ne pas toucher.
+    if (poiEmportes > 0) Hint(stringResource(R.string.settings_poi_cache_pinned, poiEmportes))
+    RowDivider()
+    SetRow(
+        stringResource(R.string.settings_clear_planner_history),
+        sub = if (lieux.isEmpty()) stringResource(R.string.settings_planner_history_empty)
+        else stringResource(R.string.settings_planner_history_count, lieux.size),
+        onClick = if (lieux.isEmpty()) null else ({ vm.save(cur.copy(plannerHistory = "")) }),
+        role = Role.Button,
+        info = stringResource(R.string.settings_planner_history_hint),
+    ) {
+        Icon(TunturoIcons.Trash, null, tint = if (lieux.isEmpty()) settingsPalette.subtle else settingsPalette.accent)
+    }
+    RowDivider()
+    SetRow(
+        stringResource(R.string.settings_clear_map_cache),
+        sub = if (mapCache <= 0L) stringResource(R.string.settings_map_cache_empty) else TileMath.formatSize(mapCache),
+        onClick = if (mapCache <= 0L) null else ({ vm.clearMapCache() }),
+        role = Role.Button,
+        info = stringResource(R.string.settings_map_cache_hint),
+    ) {
+        Icon(TunturoIcons.Trash, null, tint = if (mapCache <= 0L) settingsPalette.subtle else settingsPalette.accent)
+    }
+}
+
+/** Les dossiers : celui des imports, celui des cartes hors ligne, celui des donnees d'itineraire. */
+@Composable private fun ColumnScopeMarker.FolderRows(
+    cur: SettingsEntity, vm: SettingsViewModel,
+    onPickImportDir: () -> Unit, onPickMbtilesFolder: () -> Unit, onPickBrouterFolder: () -> Unit,
+) {
+    SetRow(
+        stringResource(R.string.settings_section_import_folder),
+        sub = if (cur.importDir.isBlank()) stringResource(R.string.settings_default_system)
+            else (cur.importDir.toUri().lastPathSegment ?: stringResource(R.string.settings_default_system)),
+    ) {
+        InlineButton(stringResource(R.string.action_browse), Icons.Filled.Folder, onPickImportDir)
+    }
+    RowDivider()
+    SetRow(
+        stringResource(R.string.settings_section_mbtiles_folder),
+        sub = if (cur.mbtilesDir.isBlank()) stringResource(R.string.settings_app_folder_default)
+            else StoragePaths.displayName(cur.mbtilesDir),
+    ) {
+        InlineButton(stringResource(R.string.action_browse), Icons.Filled.Folder, onPickMbtilesFolder)
+    }
+    RowDivider()
+    // Les donnees du calcul d'itineraire hors ligne : jusqu'a un gigaoctet par pays, qu'on peut vouloir
+    // ranger sur une carte SD. Changer de dossier y deplace ce qui est deja telecharge.
+    val brouterDir by vm.brouterDir.collectAsState()
+    SetRow(
+        stringResource(R.string.settings_section_brouter_folder),
+        sub = if (brouterDir.isBlank()) stringResource(R.string.settings_app_folder_default)
+            else StoragePaths.displayName(brouterDir),
+    ) {
+        InlineButton(stringResource(R.string.action_browse), Icons.Filled.Folder, onPickBrouterFolder)
     }
 }
 

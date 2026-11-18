@@ -24,7 +24,7 @@ object TileHttp {
      * ressemble a un robot anonyme. La version en dur n'apprenait rien a personne, et l'adresse donne a un
      * administrateur de quoi nous joindre plutot que de nous bloquer.
      */
-    private val USER_AGENT =
+    internal val USER_AGENT =
         "Tunturo/${BuildConfig.VERSION_NAME} (Android; +https://github.com/lc-4918/tunturo)"
 
     /** Statut HTTP et corps de la réponse. [status] vaut 0 quand la requête n'a pas abouti du tout

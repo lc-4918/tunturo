@@ -38,7 +38,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.FlipToBack
 import androidx.compose.material.icons.filled.FlipToFront
@@ -82,6 +81,21 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Terrain
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
+import coil3.network.NetworkHeaders
+import coil3.network.httpHeaders
+import coil3.request.ImageRequest
+import com.tunturo.app.map.offline.TileHttp
+import com.tunturo.app.map.offline.TileUrl
+import java.util.Locale
+import androidx.compose.ui.draw.alpha
+import kotlin.math.roundToInt
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import com.tunturo.app.R
 import com.tunturo.app.data.db.CompositeEntity
 import com.tunturo.app.data.db.CompositeSortOrder
@@ -124,6 +138,11 @@ class BasemapSettingsState internal constructor(
     var editingComposite by mutableStateOf<CompositeEntity?>(null)
     /** Le fond affiche ne se telecharge pas : la boite qui le dit, en le nommant. */
     var downloadRefused by mutableStateOf(false)
+    /**
+     * Le fond dont la bulle est ouverte, ou null. Un seul a la fois : en ouvrir une autre ferme la
+     * precedente, comme la bulle des points d'interet se ferme quand on ouvre autre chose.
+     */
+    var bubbleProviderId by mutableStateOf<String?>(null)
     internal var importProviders: () -> Unit = {}
     internal var exportProviders: () -> Unit = {}
     internal var importMbtiles: () -> Unit = {}
@@ -216,33 +235,42 @@ internal fun SettingsTabScope.basemapBlocs(
 
     // ---- Cartes en ligne : le catalogue, que l'on rouvre le plus souvent (activer un fond, une cle d'API).
     bloc(key = "basemaps-online") {
-        CardSegment(top = true, bottom = !state.onlineOpen) {
+        CardSegment(top = true, bottom = !state.onlineOpen || online.isEmpty()) {
             SetRow(
                 stringResource(R.string.settings_line_online_maps),
-                info = stringResource(R.string.settings_providers_subtitle),
                 onClick = { state.onlineOpen = !state.onlineOpen }, role = Role.Button,
-            ) { AccordionChevron(state.onlineOpen) }
+            ) {
+                /*
+                 * Ouverte, la ligne porte ses deux gestes, a la hauteur d'une ligne ordinaire : ils
+                 * avaient un en-tete a eux, une bande de plus entre la ligne et les fonds.
+                 */
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (state.onlineOpen) {
+                        // La fleche montante charge dans l'application (importer), la descendante en sort
+                        // un fichier (exporter) : meme sens que dans le tiroir principal.
+                        CompactHeaderAction(Icons.Filled.FileUpload, stringResource(R.string.action_import)) { state.importProviders() }
+                        CompactHeaderAction(Icons.Filled.FileDownload, stringResource(R.string.action_export)) { state.exportProviders() }
+                    }
+                    AccordionChevron(state.onlineOpen)
+                }
+            }
         }
     }
     if (state.onlineOpen) {
-        enTeteCollant("basemaps-online-header") {
-            CardSegment(top = false, bottom = online.isEmpty()) {
-                AccordionHeader {
-                    // La fleche montante charge dans l'application (importer), la descendante en sort un
-                    // fichier (exporter) : meme sens que dans le tiroir principal.
-                    HeaderAction(rememberVectorPainter(Icons.Filled.FileUpload), stringResource(R.string.action_import)) { state.importProviders() }
-                    HeaderAction(rememberVectorPainter(Icons.Filled.FileDownload), stringResource(R.string.action_export)) { state.exportProviders() }
-                }
-            }
-        }
         online.forEachIndexed { i, p ->
             bloc(key = "basemaps-online-${p.id}") {
                 CardSegment(top = false, bottom = i == online.lastIndex) {
-                    AccordionItem { ProviderRow(p, onSave = vm::saveProvider) }
+                    AccordionItem {
+                        ProviderRow(
+                            p, bubbleOpen = state.bubbleProviderId == p.id,
+                            onOpenBubble = { state.bubbleProviderId = p.id },
+                            onCloseBubble = { if (state.bubbleProviderId == p.id) state.bubbleProviderId = null },
+                            onSave = vm::saveProvider,
+                        )
+                    }
                 }
             }
         }
-        finCollant("basemaps-online-end")
     }
 
     // ---- Cartes hors ligne : ce qu'on a soi-meme apporte - importe, telecharge ou compose.
@@ -261,7 +289,8 @@ internal fun SettingsTabScope.basemapBlocs(
         val empty = mbtiles.isEmpty() && composites.isEmpty()
         enTeteCollant("basemaps-offline-header") {
             CardSegment(top = false, bottom = false) {
-                AccordionHeader {
+                // Les trois gestes repartis sur toute la largeur, a egale distance.
+                AccordionHeader(arrangement = Arrangement.SpaceEvenly) {
                     HeaderAction(painterResource(R.drawable.ic_settings_import), stringResource(R.string.action_import)) {
                         state.importMbtiles()
                     }
@@ -296,7 +325,12 @@ internal fun SettingsTabScope.basemapBlocs(
                 CardSegment(top = false, bottom = composites.isEmpty() && i == mbtiles.lastIndex) {
                     AccordionItem {
                         val onDelete: (() -> Unit)? = if (!p.builtin) { { vm.deleteProvider(p) } } else null
-                        ProviderRow(p, onSave = vm::saveProvider, onDelete = onDelete, mbtilesDirPath = dir)
+                        ProviderRow(
+                            p, bubbleOpen = state.bubbleProviderId == p.id,
+                            onOpenBubble = { state.bubbleProviderId = p.id },
+                            onCloseBubble = { if (state.bubbleProviderId == p.id) state.bubbleProviderId = null },
+                            onSave = vm::saveProvider, onDelete = onDelete, mbtilesDirPath = dir,
+                        )
                     }
                 }
             }
@@ -305,8 +339,15 @@ internal fun SettingsTabScope.basemapBlocs(
             bloc(key = "basemaps-composite-${c.id}") {
                 CardSegment(top = false, bottom = i == composites.lastIndex) {
                     AccordionItem {
-                        CompositeRow(c, onToggle = { vm.saveComposite(c.copy(enabled = it)) },
-                            onEdit = { state.editingComposite = c }, onDelete = { vm.deleteComposite(c) })
+                        val bubbleKey = "composite-${c.id}"
+                        CompositeRow(
+                            c, providers, bubbleOpen = state.bubbleProviderId == bubbleKey,
+                            onOpenBubble = { state.bubbleProviderId = bubbleKey },
+                            onCloseBubble = { if (state.bubbleProviderId == bubbleKey) state.bubbleProviderId = null },
+                            onToggle = { vm.saveComposite(c.copy(enabled = it)) },
+                            onEdit = { state.bubbleProviderId = null; state.editingComposite = c },
+                            onDelete = { state.bubbleProviderId = null; vm.deleteComposite(c) },
+                        )
                     }
                 }
             }
@@ -315,14 +356,17 @@ internal fun SettingsTabScope.basemapBlocs(
     }
 }
 
-/** L'en-tete d'un accordeon a gestes : un filet, puis les gestes cales a droite. */
+/** L'en-tete d'un accordeon a gestes : un filet, puis les gestes, cales a droite par defaut. */
 @Composable
-private fun ColumnScopeMarker.AccordionHeader(actions: @Composable RowScope.() -> Unit) {
+private fun ColumnScopeMarker.AccordionHeader(
+    arrangement: Arrangement.Horizontal = Arrangement.spacedBy(4.dp, Alignment.End),
+    actions: @Composable RowScope.() -> Unit,
+) {
     Column(Modifier.padding(start = AccordionIndent)) {
         RowDivider()
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+            horizontalArrangement = arrangement,
             verticalAlignment = Alignment.CenterVertically,
             content = actions,
         )
@@ -339,23 +383,25 @@ private fun ColumnScopeMarker.AccordionItem(content: @Composable ColumnScopeMark
 }
 
 /**
- * Le gestionnaire de couches, en mode expert, au bas de l'onglet Carte : la largeur et l'opacite du
- * panneau des fonds.
+ * Le gestionnaire de couches, en mode expert : une ligne en accordeon, en tete du groupe Presentation de
+ * l'onglet Carte. Dessous, la largeur et l'opacite du panneau des fonds, dont les curseurs s'ouvrent en
+ * bulle.
  */
 @Composable
-internal fun LayerManagerSettings(cur: SettingsEntity, vm: SettingsViewModel) {
-    SectionTitle(stringResource(R.string.settings_section_layer_manager))
-    SettingsCard {
-        SliderRow(
+internal fun ColumnScopeMarker.LayerManagerLine(cur: SettingsEntity, vm: SettingsViewModel) {
+    AccordionLine(stringResource(R.string.settings_section_layer_manager)) {
+        BubbleValueRow(
             stringResource(R.string.settings_label_panel_width), "${cur.basemapControlWidthPct} %",
             fractionOf(cur.basemapControlWidthPct, 20, 90),
             { vm.save(cur.copy(basemapControlWidthPct = valueOf(it, 20, 90))) },
+            tag = "layer_manager_width",
         )
         RowDivider()
-        SliderRow(
+        BubbleValueRow(
             stringResource(R.string.settings_label_panel_opacity), "${cur.basemapControlOpacityPct} %",
             fractionOf(cur.basemapControlOpacityPct, 30, 100),
             { vm.save(cur.copy(basemapControlOpacityPct = valueOf(it, 30, 100))) },
+            tag = "layer_manager_opacity",
         )
         CardAction(stringResource(R.string.action_reset_defaults)) {
             vm.save(cur.copy(basemapControlWidthPct = 70, basemapControlOpacityPct = 90))
@@ -363,18 +409,43 @@ internal fun LayerManagerSettings(cur: SettingsEntity, vm: SettingsViewModel) {
     }
 }
 
-/** Ligne d'un composite : meme grammaire qu'un fond (cf. ProviderRow) - symbole, nom, actions, etat. */
-@Composable private fun ColumnScopeMarker.CompositeRow(c: CompositeEntity, onToggle: (Boolean) -> Unit, onEdit: () -> Unit, onDelete: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().defaultMinSize(minHeight = 46.dp).padding(horizontal = 14.dp, vertical = 9.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(painterResource(R.drawable.ic_settings_layers), null, Modifier.size(16.dp), tint = settingsPalette.subtle)
-        Text(c.name, style = MaterialTheme.typography.bodyMedium, color = settingsPalette.label, modifier = Modifier.weight(1f))
-        RowIcon(Icons.Filled.Edit, stringResource(R.string.action_edit), onClick = onEdit)
-        RowIcon(TunturoIcons.Trash, stringResource(R.string.action_delete), onClick = onDelete)
-        SettingsSwitch(c.enabled, onToggle)
+/**
+ * Ligne d'un composite : meme grammaire qu'un fond (cf. ProviderRow) - symbole, nom, interrupteur. Un tap
+ * ouvre sa bulle : ses deux couches et l'opacite, puis Editer, Supprimer et (Des)activer.
+ */
+@Composable private fun ColumnScopeMarker.CompositeRow(
+    c: CompositeEntity, providers: List<ProviderEntity>,
+    bubbleOpen: Boolean, onOpenBubble: () -> Unit, onCloseBubble: () -> Unit,
+    onToggle: (Boolean) -> Unit, onEdit: () -> Unit, onDelete: () -> Unit,
+) {
+    Box(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpenBubble)
+                .testTag("composite_row_${c.id}")
+                .defaultMinSize(minHeight = 46.dp).padding(horizontal = 14.dp, vertical = 9.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(painterResource(R.drawable.ic_settings_layers), null, Modifier.size(16.dp), tint = settingsPalette.subtle)
+            Text(c.name, style = MaterialTheme.typography.bodyMedium, color = settingsPalette.label, modifier = Modifier.weight(1f))
+            SettingsSwitch(c.enabled, onToggle)
+        }
+        if (bubbleOpen) {
+            RowBubble(onDismiss = onCloseBubble, modifier = Modifier.testTag("basemap_bubble")) {
+                val background = providers.firstOrNull { it.id == c.backgroundProviderId }
+                val foreground = providers.firstOrNull { it.id == c.foregroundProviderId }
+                BasemapSummaryLayout(
+                    name = c.name,
+                    thumbnail = { CompositeThumbnail(background, foreground, c.foregroundOpacity) },
+                    description = stringResource(
+                        R.string.basemap_composite_desc,
+                        foreground?.name ?: c.foregroundProviderId, background?.name ?: c.backgroundProviderId,
+                        (c.foregroundOpacity * 100).roundToInt(),
+                    ),
+                    enabled = c.enabled, onEdit = onEdit, onDelete = onDelete, onToggle = { onToggle(!c.enabled) },
+                )
+            }
+        }
     }
 }
 
@@ -523,28 +594,47 @@ internal fun LayerManagerSettings(cur: SettingsEntity, vm: SettingsViewModel) {
     }
 }
 
-/** Ligne d'un fond dans une carte de reglages, depliable en editeur. Extension de la portee d'une carte :
- *  elle en emprunte les filets, ses champs et son action de fin. */
+/**
+ * Un geste d'en-tete a la hauteur d'une ligne : l'icone sur son libelle, comme [HeaderAction], resserre
+ * dans les 32 dp que laisse une ligne ordinaire - pose dans la ligne "Cartes en ligne", il ne doit pas la
+ * faire grandir.
+ */
+@Composable
+private fun CompactHeaderAction(icon: ImageVector, label: String, onClick: () -> Unit) {
+    val color = settingsPalette.accent
+    Column(
+        Modifier.width(56.dp).height(32.dp).clip(MaterialTheme.shapes.small)
+            .clickable(role = Role.Button, onClickLabel = label, onClick = onClick)
+            .testTag("header_action_$label"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.CenterVertically),
+    ) {
+        Icon(icon, null, Modifier.size(16.dp), tint = color)
+        Text(label, style = MaterialTheme.typography.labelSmall, letterSpacing = 0.sp, color = color,
+            maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/**
+ * Ligne d'un fond dans une carte de reglages : drapeau, nom, interrupteur. Supprimer un fond importe se
+ * fait depuis sa bulle.
+ *
+ * **Un tap sur la ligne ouvre sa bulle** (cf. [BasemapBubble]) : l'apercu du fond, ce qu'il est, et ses
+ * reglages. Le crayon qui depliait l'editeur sous la ligne a disparu - il allongeait la liste de dix champs,
+ * au milieu des autres fonds.
+ */
 @Composable private fun ColumnScopeMarker.ProviderRow(
-    p: ProviderEntity, onSave: (ProviderEntity) -> Unit, onDelete: (() -> Unit)? = null,
+    p: ProviderEntity, bubbleOpen: Boolean, onOpenBubble: () -> Unit, onCloseBubble: () -> Unit,
+    onSave: (ProviderEntity) -> Unit, onDelete: (() -> Unit)? = null,
     mbtilesDirPath: String? = null,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    var name by remember(p.id) { mutableStateOf(p.name) }
-    var url by remember(p.id) { mutableStateOf(p.urlTemplate) }
-    var key by remember(p.id) { mutableStateOf(p.apiKey ?: "") }
-    var zoom by remember(p.id) { mutableStateOf(p.minZoom.toFloat()..p.maxZoom.toFloat()) }
-    val isMbtiles = p.type == "MBTILES"
     val flagCode = flagCodeFor(p)
-    fun resetFields() {
-        name = p.name; url = p.urlTemplate; key = p.apiKey ?: ""
-        zoom = p.minZoom.toFloat()..p.maxZoom.toFloat()
-    }
-    Column(Modifier.fillMaxWidth()) {
-        // Meme grammaire que les lignes des onglets : drapeau ou rien, libelle, actions a droite, l'etat
-        // en dernier.
+    // La bulle se pose par rapport a cette boite : sous la ligne ou au-dessus (cf. RowBubble).
+    Box(Modifier.fillMaxWidth()) {
         Row(
-            Modifier.fillMaxWidth().defaultMinSize(minHeight = 46.dp).padding(horizontal = 14.dp, vertical = 9.dp),
+            Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpenBubble)
+                .testTag("provider_row_${p.id}")
+                .defaultMinSize(minHeight = 46.dp).padding(horizontal = 14.dp, vertical = 9.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -554,119 +644,299 @@ internal fun LayerManagerSettings(cur: SettingsEntity, vm: SettingsViewModel) {
             }
             // Le nom seul : le type du fond (XYZ, VECTOR...) ne disait rien a qui choisit une carte.
             Text(p.name, style = MaterialTheme.typography.bodyMedium, color = settingsPalette.label, modifier = Modifier.weight(1f))
-            RowIcon(
-                if (expanded) Icons.Filled.Close else Icons.Filled.Edit,
-                if (expanded) stringResource(R.string.action_close) else stringResource(R.string.action_edit),
-            ) {
-                // Fermer sans "Enregistrer" annule les modifications en cours.
-                if (expanded) resetFields()
-                expanded = !expanded
-            }
-            if (onDelete != null) {
-                RowIcon(TunturoIcons.Trash, stringResource(R.string.action_delete), onClick = onDelete)
-            }
             SettingsSwitch(p.enabled) { onSave(p.copy(enabled = it)) }
         }
-        if (expanded) {
-            // Champs de l'editeur : le cadre de 42 dp de l'ecran, avec sa legende au-dessus. Les memes
-            // que ceux des URL de services, pour qu'un fond se corrige comme un service se regle.
-            RowDivider()
-            FieldRow(stringResource(R.string.settings_field_name)) {
-                SettingsTextField(name, "") { name = it }
-            }
-            // Pour un MBTILES, le fichier est fixe (résolu via le dossier mbtiles) et son emplacement est
-            // affiché plus bas en lecture seule : pas de champ éditable. 'url' conserve sa valeur d'origine.
-            if (!isMbtiles) {
-                FieldRow(stringResource(R.string.settings_field_url)) { SettingsTextField(url, "") { url = it } }
-                FieldRow(stringResource(R.string.settings_field_api_key)) { SettingsTextField(key, "") { key = it } }
-                // Plage de zoom servie par le fond, au curseur double plutot qu'en deux nombres a saisir :
-                // les niveaux vont de 0 a 22 et se choisissent l'un par rapport a l'autre, ce qu'une paire
-                // de champs ne montre pas. Elle remplace la taille de tuile, qui vaut 256 partout sauf de
-                // rares exceptions et qu'on ne corrigeait jamais. (Meme libelle que l'ecran de
-                // telechargement : c'est la meme plage, dite de la meme facon.)
-                RangeSliderRow(
-                    label = stringResource(R.string.offline_config_zoom_label),
-                    value = "${zoom.start.toInt()} - ${zoom.endInclusive.toInt()}",
-                    range = zoom, bounds = 0f..22f, steps = 21,
-                    onRange = { zoom = it },
+        if (bubbleOpen) {
+            RowBubble(onDismiss = onCloseBubble, modifier = Modifier.testTag("basemap_bubble")) {
+                BasemapBubble(
+                    p, onSave = onSave, mbtilesDirPath = mbtilesDirPath,
+                    // Supprimer ferme la bulle : elle decrivait un fond qui n'existe plus.
+                    onDelete = onDelete?.let { delete -> { onCloseBubble(); delete() } },
                 )
             }
-            // Force de l'ombrage, propre au relief : c'est le seul rendu qu'un fond DEM expose, ses tuiles
-            // brutes n'étant pas des images à regarder. Enregistrée au relâché du curseur plutôt qu'à
-            // chaque pixel : chaque valeur reconstruit le style de la carte.
-            if (p.type == "DEM") {
-                var opacity by remember(p.id, p.opacityPct) { mutableFloatStateOf(p.opacityPct.toFloat()) }
-                SliderRow(
-                    stringResource(R.string.settings_label_opacity), "${opacity.toInt()} %",
-                    fraction = opacity / 100f, onFraction = { opacity = it * 100f },
-                )
-                LaunchedEffect(opacity) {
-                    // Ecrit apres un court repos du doigt : chaque valeur reconstruit le style de la carte.
-                    kotlinx.coroutines.delay(200)
-                    if (opacity.toInt() != p.opacityPct) onSave(p.copy(opacityPct = opacity.toInt()))
+        }
+    }
+}
+
+/** Les deux vues de la bulle d'un fond : son apercu, ou son editeur. */
+internal enum class BasemapBubbleView { SUMMARY, EDIT }
+
+/**
+ * Le contenu de la bulle d'un fond : par defaut son apercu - miniature, nom, description, et les boutons
+ * "Editer" et "Activer" -, et apres "Editer" son editeur, sous un en-tete a bouton retour.
+ */
+@Composable private fun BasemapBubble(
+    p: ProviderEntity, onSave: (ProviderEntity) -> Unit, mbtilesDirPath: String?, onDelete: (() -> Unit)?,
+) {
+    var view by remember(p.id) { mutableStateOf(BasemapBubbleView.SUMMARY) }
+    when (view) {
+        BasemapBubbleView.SUMMARY -> BasemapSummaryLayout(
+            name = p.name, thumbnail = { BasemapThumbnail(p) }, description = basemapDescription(p),
+            enabled = p.enabled, onEdit = { view = BasemapBubbleView.EDIT }, onDelete = onDelete,
+            onToggle = { onSave(p.copy(enabled = !p.enabled)) },
+        )
+        BasemapBubbleView.EDIT -> BasemapEditor(
+            p, onBack = { view = BasemapBubbleView.SUMMARY },
+            onSave = { onSave(it); view = BasemapBubbleView.SUMMARY },
+            mbtilesDirPath = mbtilesDirPath,
+        )
+    }
+}
+
+/** Cote de la miniature d'un fond, dans sa bulle. */
+private val BasemapThumbnailSize = 64.dp
+
+/**
+ * L'apercu d'un fond dans sa bulle, le meme pour tous - en ligne, hors ligne, composite : la miniature et
+ * le nom cote a cote, la description, puis les boutons. Supprimer ne parait que pour ce qui se supprime :
+ * un fond importe ou telecharge, un composite.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable private fun BasemapSummaryLayout(
+    name: String, thumbnail: @Composable () -> Unit, description: String,
+    enabled: Boolean, onEdit: () -> Unit, onDelete: (() -> Unit)?, onToggle: () -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().padding(16.dp).testTag("basemap_bubble_summary"),
+        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            thumbnail()
+            Text(name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f),
+                maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+        Text(description, style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // Trois boutons ne tiennent pas toujours sur une ligne, en allemand surtout : ils passent alors a la
+        // suivante plutot que de se tasser.
+        FlowRow(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            OutlinedButton(onClick = onEdit) { Text(stringResource(R.string.action_edit)) }
+            if (onDelete != null) {
+                OutlinedButton(onClick = onDelete) {
+                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
                 }
-                if (p.opacityPct != DefaultDemOpacityPct) {
-                    CardAction(stringResource(R.string.action_reset_defaults)) {
-                        onSave(p.copy(opacityPct = DefaultDemOpacityPct))
+            }
+            // "Activer" range le fond parmi ceux du gestionnaire, comme l'interrupteur de sa ligne.
+            Button(onClick = onToggle) {
+                Text(stringResource(if (enabled) R.string.action_deactivate else R.string.action_activate))
+            }
+        }
+    }
+}
+
+/**
+ * La miniature d'un fond : une tuile prise a un endroit representatif (cf. [BasemapPreview]), ou l'apercu
+ * precis d'une carte telechargee - celui que montre son editeur. Le relief, qui ne se montre pas en une
+ * tuile, porte son icone ; les autres fonds sans image (vectoriels) laissent le cadre nu.
+ */
+@Composable private fun BasemapThumbnail(p: ProviderEntity) {
+    val model = rememberThumbnailModel(p)
+    ThumbnailFrame {
+        if (p.type == "DEM") Icon(Icons.Filled.Terrain, null, Modifier.size(24.dp), tint = settingsPalette.subtle)
+        if (model != null) {
+            AsyncImage(model = model, contentDescription = null, contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize())
+        }
+    }
+}
+
+/**
+ * La miniature d'un composite : ses deux couches superposees, l'arriere-plan dessous et le premier plan
+ * dessus, a l'opacite du composite - ce qu'on verra sur la carte.
+ */
+@Composable private fun CompositeThumbnail(background: ProviderEntity?, foreground: ProviderEntity?, foregroundOpacity: Float) {
+    val backgroundModel = background?.let { rememberThumbnailModel(it) }
+    val foregroundModel = foreground?.let { rememberThumbnailModel(it) }
+    ThumbnailFrame {
+        if (backgroundModel == null && foregroundModel == null) {
+            Icon(painterResource(R.drawable.ic_settings_layers), null, Modifier.size(24.dp), tint = settingsPalette.subtle)
+        }
+        if (backgroundModel != null) {
+            AsyncImage(model = backgroundModel, contentDescription = null, contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize())
+        }
+        if (foregroundModel != null) {
+            AsyncImage(model = foregroundModel, contentDescription = null, contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize().alpha(foregroundOpacity.coerceIn(0f, 1f)))
+        }
+    }
+}
+
+/** Ce que la miniature d'un fond charge : son apercu enregistre, sa tuile d'apercu, ou rien. */
+@Composable private fun rememberThumbnailModel(p: ProviderEntity): Any? {
+    val ctx = LocalContext.current
+    return remember(p.id, p.urlTemplate, p.apiKey, p.minZoom, p.maxZoom) {
+        if (p.type == "MBTILES") {
+            OfflineThumbnails.files(ctx, p.urlTemplate).second.takeIf { it.exists() }?.let { "file://${it.absolutePath}" }
+        } else {
+            BasemapPreview.tile(p)?.let { tile ->
+                // Les serveurs de tuiles demandent qu'on se presente : le meme nom que pour le telechargement.
+                ImageRequest.Builder(ctx)
+                    .data(TileUrl.build(p, tile.x, tile.y, tile.z))
+                    .httpHeaders(NetworkHeaders.Builder().set("User-Agent", TileHttp.USER_AGENT).build())
+                    .build()
+            }
+        }
+    }
+}
+
+/** Le cadre d'une miniature de bulle : un carre aux coins arrondis, sur le fond des champs. */
+@Composable private fun ThumbnailFrame(content: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit) {
+    Box(
+        Modifier.size(BasemapThumbnailSize).clip(MaterialTheme.shapes.small).background(settingsPalette.fieldBg)
+            .testTag("basemap_thumbnail"),
+        contentAlignment = Alignment.Center,
+        content = content,
+    )
+}
+
+/** Ce qu'est un fond, en quelques mots : sa nature, ce qu'il couvre, ses niveaux de zoom. */
+@Composable private fun basemapDescription(p: ProviderEntity): String {
+    val kind = BasemapPreview.kind(p)
+    val locale = LocalConfiguration.current.locales[0]
+    val parts = mutableListOf(
+        stringResource(when (kind) {
+            BasemapPreview.Kind.RASTER -> R.string.basemap_kind_raster
+            BasemapPreview.Kind.VECTOR -> R.string.basemap_kind_vector
+            BasemapPreview.Kind.OVERLAY -> R.string.basemap_kind_overlay
+            BasemapPreview.Kind.RELIEF -> R.string.basemap_kind_relief
+            BasemapPreview.Kind.OFFLINE -> R.string.basemap_kind_offline
+        }),
+    )
+    if (kind == BasemapPreview.Kind.RASTER || kind == BasemapPreview.Kind.VECTOR) {
+        val country = flagCodeFor(p)?.let { Locale.Builder().setRegion(it.uppercase()).build().getDisplayCountry(locale) }
+        when {
+            country != null -> parts += stringResource(R.string.basemap_coverage_country, country)
+            p.groupName == "Monde" -> parts += stringResource(R.string.basemap_coverage_world)
+        }
+    }
+    // Un fond vectoriel decrit ses niveaux dans son style, pas dans sa fiche : rien de juste a en dire. Une
+    // carte telechargee dit les niveaux qu'elle contient.
+    when (kind) {
+        BasemapPreview.Kind.VECTOR -> Unit
+        BasemapPreview.Kind.OFFLINE -> parts += stringResource(R.string.basemap_zoom_downloaded, p.minZoom, p.maxZoom)
+        else -> parts += stringResource(R.string.basemap_zoom_range, p.minZoom, p.maxZoom)
+    }
+    return parts.joinToString(". ", postfix = ".")
+}
+
+/**
+ * L'editeur d'un fond, dans sa bulle : un en-tete - le retour et le nom de la carte -, puis l'URL, la cle
+ * d'API et la plage de zoom. "Enregistrer" n'apparait qu'une fois un champ change ; revenir sans
+ * enregistrer annule.
+ */
+@Composable private fun BasemapEditor(
+    p: ProviderEntity, onBack: () -> Unit, onSave: (ProviderEntity) -> Unit, mbtilesDirPath: String?,
+) {
+    var name by remember(p.id) { mutableStateOf(p.name) }
+    var url by remember(p.id) { mutableStateOf(p.urlTemplate) }
+    var key by remember(p.id) { mutableStateOf(p.apiKey ?: "") }
+    var zoom by remember(p.id) { mutableStateOf(p.minZoom.toFloat()..p.maxZoom.toFloat()) }
+    val isMbtiles = p.type == "MBTILES"
+    Column(Modifier.fillMaxWidth().testTag("basemap_bubble_editor")) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 4.dp, end = 16.dp, top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            IconButton(onClick = onBack, modifier = Modifier.testTag("basemap_bubble_back")) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.action_back))
+            }
+            Text(p.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f),
+                maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Column(Modifier.fillMaxWidth().heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+            with(ColumnScopeMarker) {
+                if (isMbtiles) {
+                    // Un MBTILES n'a ni URL ni cle : son fichier est fixe. Seul son nom se change.
+                    FieldRow(stringResource(R.string.settings_field_name)) { SettingsTextField(name, "") { name = it } }
+                } else {
+                    FieldRow(stringResource(R.string.settings_field_url)) { SettingsTextField(url, "") { url = it } }
+                    FieldRow(stringResource(R.string.settings_field_api_key)) { SettingsTextField(key, "") { key = it } }
+                    // Plage de zoom servie par le fond, au curseur double : les niveaux vont de 0 a 22 et se
+                    // choisissent l'un par rapport a l'autre. Meme libelle que l'ecran de telechargement.
+                    RangeSliderRow(
+                        label = stringResource(R.string.offline_config_zoom_label),
+                        value = "${zoom.start.toInt()} - ${zoom.endInclusive.toInt()}",
+                        range = zoom, bounds = 0f..22f, steps = 21,
+                        onRange = { zoom = it },
+                    )
+                }
+                // Force de l'ombrage, propre au relief : enregistree apres un court repos du doigt, chaque
+                // valeur reconstruisant le style de la carte.
+                if (p.type == "DEM") {
+                    var opacity by remember(p.id, p.opacityPct) { mutableFloatStateOf(p.opacityPct.toFloat()) }
+                    SliderRow(
+                        stringResource(R.string.settings_label_opacity), "${opacity.toInt()} %",
+                        fraction = opacity / 100f, onFraction = { opacity = it * 100f },
+                    )
+                    LaunchedEffect(opacity) {
+                        kotlinx.coroutines.delay(200)
+                        if (opacity.toInt() != p.opacityPct) onSave(p.copy(opacityPct = opacity.toInt()))
+                    }
+                    if (p.opacityPct != DefaultDemOpacityPct) {
+                        CardAction(stringResource(R.string.action_reset_defaults)) {
+                            onSave(p.copy(opacityPct = DefaultDemOpacityPct))
+                        }
                     }
                 }
+                if (isMbtiles) MbtilesDetails(p, mbtilesDirPath)
             }
-            // Plage de zoom réellement contenue dans le MBTiles (fixée au téléchargement/import) : en
-            // lecture seule, l'éditer ne changerait pas les tuiles présentes.
-            if (isMbtiles) {
-                Text(
-                    stringResource(R.string.settings_field_zoom_levels, p.minZoom, p.maxZoom),
-                    style = MaterialTheme.typography.bodyMedium, color = settingsPalette.subtle,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 2.dp),
-                )
-                // Chemin réel du fichier (urlTemplate ne porte que le nom, résolu via le dossier mbtiles).
-                val fullPath = when {
-                    p.urlTemplate.startsWith("mbtiles://") -> p.urlTemplate.removePrefix("mbtiles://")
-                    mbtilesDirPath != null -> "$mbtilesDirPath/${p.urlTemplate}"
-                    else -> p.urlTemplate
-                }
-                Text(
-                    stringResource(R.string.settings_field_mbtiles_location, fullPath),
-                    style = MaterialTheme.typography.bodySmall, color = settingsPalette.subtle,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
-                )
-                // Miniatures générées à la fin du téléchargement (SPEC section 6), affichées si présentes.
-                val ctx = LocalContext.current
-                val (locFile, detailFile) = remember(p.id) { OfflineThumbnails.files(ctx, p.urlTemplate) }
-                if (locFile.exists() || detailFile.exists()) {
-                    Spacer(Modifier.height(8.dp))
-                    // Empilées : localisation compacte, puis l'aperçu détail sur toute la largeur disponible.
-                    Column(
-                        Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        if (locFile.exists()) {
-                            ThumbColumn(stringResource(R.string.offline_thumb_location_title), locFile, Modifier.fillMaxWidth(0.6f))
-                        }
-                        if (detailFile.exists()) {
-                            ThumbColumn(stringResource(R.string.offline_thumb_detail_title), detailFile, Modifier.fillMaxWidth())
-                        }
-                    }
-                }
-            }
-            // "Enregistrer" (outlined, centré) seulement si un champ a changé par rapport à l'enregistré.
-            // (Pour un MBTILES, url/clé/zoom sont masqués et conservent leur valeur : seul le nom peut varier.)
-            val minZ = zoom.start.toInt()
-            val maxZ = zoom.endInclusive.toInt()
+            val minZoom = zoom.start.toInt()
+            val maxZoom = zoom.endInclusive.toInt()
             val dirty = name != p.name || url != p.urlTemplate ||
-                key != (p.apiKey ?: "") || minZ != p.minZoom || maxZ != p.maxZoom
+                key != (p.apiKey ?: "") || minZoom != p.minZoom || maxZoom != p.maxZoom
             if (dirty) {
-                Spacer(Modifier.height(8.dp))   // léger espacement au-dessus du bouton
+                Spacer(Modifier.height(8.dp))
                 OutlinedButton(
                     onClick = {
                         onSave(p.copy(name = name, urlTemplate = url, apiKey = key.ifBlank { null },
-                            minZoom = minZ, maxZoom = maxZ))
-                        expanded = false
+                            minZoom = minZoom, maxZoom = maxZoom))
                     },
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                 ) { Text(stringResource(R.string.action_save)) }
             }
-            Spacer(Modifier.height(12.dp))   // margin-bottom de l'éditeur
+            Spacer(Modifier.height(12.dp))
+        }
+    }
+}
+
+/** Ce qu'un MBTILES dit de lui en lecture seule : ses niveaux, son fichier, ses miniatures. */
+@Composable private fun MbtilesDetails(p: ProviderEntity, mbtilesDirPath: String?) {
+    // Plage de zoom reellement contenue dans le fichier (fixee au telechargement ou a l'import).
+    Text(
+        stringResource(R.string.settings_field_zoom_levels, p.minZoom, p.maxZoom),
+        style = MaterialTheme.typography.bodyMedium, color = settingsPalette.subtle,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 2.dp),
+    )
+    // Chemin reel du fichier (urlTemplate ne porte que le nom, resolu via le dossier mbtiles).
+    val fullPath = when {
+        p.urlTemplate.startsWith("mbtiles://") -> p.urlTemplate.removePrefix("mbtiles://")
+        mbtilesDirPath != null -> "$mbtilesDirPath/${p.urlTemplate}"
+        else -> p.urlTemplate
+    }
+    Text(
+        stringResource(R.string.settings_field_mbtiles_location, fullPath),
+        style = MaterialTheme.typography.bodySmall, color = settingsPalette.subtle,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+    )
+    // Miniatures generees a la fin du telechargement (SPEC section 6), affichees si presentes.
+    val ctx = LocalContext.current
+    val (locationFile, detailFile) = remember(p.id) { OfflineThumbnails.files(ctx, p.urlTemplate) }
+    if (locationFile.exists() || detailFile.exists()) {
+        Spacer(Modifier.height(8.dp))
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (locationFile.exists()) {
+                ThumbColumn(stringResource(R.string.offline_thumb_location_title), locationFile, Modifier.fillMaxWidth(0.6f))
+            }
+            if (detailFile.exists()) {
+                ThumbColumn(stringResource(R.string.offline_thumb_detail_title), detailFile, Modifier.fillMaxWidth())
+            }
         }
     }
 }

@@ -11,12 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -94,7 +89,7 @@ import kotlinx.coroutines.launch
  *
  * Les groupes, dans l'ordre ou l'on decouvre la carte : ce qui s'y commande, le repere de position,
  * le dessin des traces, le tableau de bord, les points d'interet, puis ce qui decrit le relief parcouru.
- * Tous portent un titre de groupe, y compris le premier. "Boutons et gestes" reunit les interrupteurs
+ * Tous portent un titre de groupe, y compris le premier. "Affichage des boutons" reunit les interrupteurs
  * de la carte sous une seule rubrique sans titre ; l'affichage des boutons de carte (fonds, echelle,
  * rotation) n'apparait qu'en mode expert.
  *
@@ -115,6 +110,8 @@ import kotlinx.coroutines.launch
 internal fun LazyListScope.mapTab(
     cur: SettingsEntity, vm: SettingsViewModel, groupes: TabGroups,
     providers: List<ProviderEntity>, composites: List<CompositeEntity>, basemaps: BasemapSettingsState,
+    /** On arrive pour les zones de l'itineraire hors ligne : le calcul d'itineraire s'ouvre d'office. */
+    revealRoutingZones: Boolean = false,
 ) {
     val onglet = SettingsTabScope(this, groupes)
     onglet.run {
@@ -136,7 +133,7 @@ internal fun LazyListScope.mapTab(
         bloc {
             Column {
                 Spacer(Modifier.height(MapCardGap))
-                MapButtonCards(cur, vm)
+                MapButtonCards(cur, vm, revealRoutingZones)
             }
         }
         bloc {
@@ -150,40 +147,31 @@ internal fun LazyListScope.mapTab(
     bloc(R.string.settings_section_map_controls) {
         GroupTitle(stringResource(R.string.settings_section_map_controls))
         SettingsCard {
-            mapButtonRows(cur, vm).forEachIndexed { index, row ->
+            mapButtonRows(cur, vm, revealRoutingZones).forEachIndexed { index, row ->
                 if (index > 0) RowDivider()
                 row()
             }
         }
     }
 
-    // Affichage : les boutons de carte qui ne servent qu'aux reglages fins.
-    bloc {
-        SectionTitle(stringResource(R.string.settings_section_display))
+    /*
+     * Presentation : ce qui se dessine sur la carte sans etre un bouton - l'echelle, la rotation, et
+     * le trait des traces. La trace etait une rubrique a elle, d'une seule ligne.
+     */
+    bloc(R.string.settings_section_map_dressing) {
+        GroupTitle(stringResource(R.string.settings_section_map_dressing))
         SettingsCard {
-            // Le bouton du gestionnaire de fonds n'est plus un interrupteur d'ici : il suit le mode d'ouverture
-            // du panneau, choisi a cote de celui du menu lateral (onglet Systeme, Interaction).
+            // Le gestionnaire de couches en tete : le panneau des fonds est ce qui se pose le plus sur la carte.
+            LayerManagerLine(cur, vm)
+            RowDivider()
+            // Le bouton du gestionnaire de fonds n'est plus un interrupteur d'ici : il suit le mode d'acces
+            // aux cartes, choisi a cote de celui du menu lateral (onglet Systeme, Interaction).
             SwitchLine(stringResource(R.string.settings_sw_scale), cur.showScale) { vm.save(cur.copy(showScale = it)) }
             RowDivider()
             SwitchLine(stringResource(R.string.settings_sw_rotation), cur.rotateGesturesEnabled) { vm.save(cur.copy(rotateGesturesEnabled = it)) }
-        }
-    }
-
-    // GPS : une rubrique de deux lignes, le recentrage a l'allumage puis le repere qu'on voit.
-    bloc {
-        GpsMarkerSettings(cur, vm, expert = true)
-    }
-
-    /*
-     * Trace, points d'interet, profil altimetrique : des rubriques et non plus des groupes, chacune quelques
-     * lignes dont le detail se deplie. Trois groupes d'une ou deux rubriques allongeaient l'onglet de titres
-     * qui ne disaient rien de plus que leurs lignes.
-     */
-    bloc {
-        // Comment les traces et l'itineraire se dessinent : le trait de chaque trace garde sa couleur, reglee
-        // dans le menu lateral ; ce qui est reglable ici vaut pour toutes.
-        SectionTitle(stringResource(R.string.settings_group_track))
-        SettingsCard {
+            RowDivider()
+            // Comment les traces et l'itineraire se dessinent : le trait de chaque trace garde sa couleur,
+            // reglee dans le menu lateral ; ce qui est reglable ici vaut pour toutes.
             AccordionLine(stringResource(R.string.settings_group_track)) {
                 StepperLine(
                     stringResource(R.string.settings_track_line_width), cur.trackLineWidth,
@@ -196,11 +184,23 @@ internal fun LazyListScope.mapTab(
                     stringResource(R.string.settings_track_direction), cur.trackDirectionArrows,
                     info = stringResource(R.string.settings_track_direction_info),
                 ) { vm.save(cur.copy(trackDirectionArrows = it)) }
+                RowDivider()
+                // Venue de l'onglet Systeme : c'est le dessin des traces qu'elle allege, pas l'application.
+                SwitchLine(
+                    stringResource(R.string.settings_simplify_render), cur.simplifyRender,
+                    // L'explication courte et la longue, ensemble derriere le "i" : ni l'une ni l'autre ne dit un etat.
+                    info = stringResource(R.string.settings_sw_simplify_sub) + "\n\n" + stringResource(R.string.settings_simplify_render_hint),
+                ) { vm.save(cur.copy(simplifyRender = it)) }
             }
         }
     }
 
-    bloc {
+    // GPS : deux lignes, le recentrage a l'allumage puis le repere qu'on voit.
+    bloc(R.string.settings_group_gps) {
+        GpsMarkerSettings(cur, vm, expert = true)
+    }
+
+    bloc(R.string.settings_group_pois) {
         SectionTitle(stringResource(R.string.settings_group_pois))
         SettingsCard {
             StepperLine(stringResource(R.string.settings_label_marker_size), cur.markerSize, 16, 80) {
@@ -235,14 +235,11 @@ internal fun LazyListScope.mapTab(
         }
     }
 
-    bloc {
+    bloc(R.string.settings_group_elevation_profile) {
         SectionTitle(stringResource(R.string.settings_group_elevation_profile))
         ProfileSettings(cur, vm)
     }
 
-    // Le gestionnaire de couches - largeur et opacite du panneau des fonds - tout en bas : il se regle une
-    // fois pour toutes.
-    bloc { LayerManagerSettings(cur, vm) }
         publier()
     }
 }
@@ -254,9 +251,9 @@ internal val MapCardGap = 12.dp
  * Les boutons de la carte, hors mode expert : une carte par interrupteur, espacees de [MapCardGap] - rien
  * avant la premiere, rien apres la derniere.
  */
-@Composable private fun MapButtonCards(cur: SettingsEntity, vm: SettingsViewModel) {
+@Composable private fun MapButtonCards(cur: SettingsEntity, vm: SettingsViewModel, revealRoutingZones: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(MapCardGap)) {
-        mapButtonRows(cur, vm).forEach { row -> SettingsCard { row() } }
+        mapButtonRows(cur, vm, revealRoutingZones).forEach { row -> SettingsCard { row() } }
     }
 }
 
@@ -265,10 +262,13 @@ internal val MapCardGap = 12.dp
  * expert, une seule carte en mode expert. Le calcul d'itineraire d'abord, puis ce qui sert pendant la
  * sortie (enregistrement, tableau de bord, points d'interet), puis les outils.
  */
-private fun mapButtonRows(cur: SettingsEntity, vm: SettingsViewModel): List<@Composable ColumnScopeMarker.() -> Unit> = listOf(
-    { PlannerSwitch(cur, vm) },
+private fun mapButtonRows(
+    cur: SettingsEntity, vm: SettingsViewModel, revealRoutingZones: Boolean,
+): List<@Composable ColumnScopeMarker.() -> Unit> = listOf(
+    { PlannerSwitch(cur, vm, revealRoutingZones) },
     { RecordingSwitch(cur, vm) },
     { DashboardSwitch(cur, vm) },
+    { OffTrackAlertSwitch(cur, vm) },
     { PoiSwitch(cur, vm) },
     {
         SwitchLine(stringResource(R.string.settings_sw_geocoding), cur.geocodingEnabled) { vm.save(cur.copy(geocodingEnabled = it)) }
@@ -285,14 +285,16 @@ private fun mapButtonRows(cur: SettingsEntity, vm: SettingsViewModel): List<@Com
 )
 
 /**
- * L'interrupteur du calcul d'itineraire, et dessous en accordeon ce qui le regle : la discipline par
- * defaut, les numeros des etapes (mode expert) et les zones de l'itineraire hors ligne. Ils vivaient dans
- * l'onglet Trajets, loin du bouton qu'ils accompagnent.
+ * Le calcul d'itineraire : un interrupteur et un chevron, et dessous en accordeon ce qui le regle - la
+ * discipline par defaut, les numeros des etapes (mode expert), les zones de l'itineraire hors ligne, et
+ * tout en bas la coloration par pente de l'itineraire, venue de l'onglet Parcours.
  */
-@Composable private fun ColumnScopeMarker.PlannerSwitch(cur: SettingsEntity, vm: SettingsViewModel) {
-    SwitchLine(stringResource(R.string.settings_sw_planner), cur.routePlannerEnabled) { vm.save(cur.copy(routePlannerEnabled = it)) }
-    CardAccordion(visible = cur.routePlannerEnabled) {
-        RowDivider()
+@Composable private fun ColumnScopeMarker.PlannerSwitch(cur: SettingsEntity, vm: SettingsViewModel, reveal: Boolean) {
+    ToggleAccordionLine(
+        stringResource(R.string.settings_sw_planner), cur.routePlannerEnabled,
+        onEnabledChange = { vm.save(cur.copy(routePlannerEnabled = it)) },
+        reveal = reveal,
+    ) {
         InCardHeading(stringResource(R.string.settings_section_default_discipline))
         RoutingProfilePicker(RoutingProfile.of(cur.routingProfile)) { vm.save(cur.copy(routingProfile = it.key)) }
         // Libelles A, 1, 2, B devant les etapes du planificateur : mode expert seulement.
@@ -304,6 +306,16 @@ private fun mapButtonRows(cur: SettingsEntity, vm: SettingsViewModel): List<@Com
         }
         RowDivider()
         OfflineRoutingRows(vm)
+        RowDivider()
+        /*
+         * La coloration par pente de l'itineraire CALCULE : un seul interrupteur, pour son trace sur la carte
+         * ET l'aire de son profil - la couleur du trait se lit sur le profil, les deux vont ensemble. Celle
+         * des traces se regle trace par trace, dans le menu de chaque couche.
+         */
+        SwitchLine(
+            stringResource(R.string.settings_route_slope_line), cur.routeSlopeLine,
+            info = stringResource(R.string.settings_route_slope_info),
+        ) { vm.save(cur.copy(routeSlopeLine = it)) }
     }
 }
 
@@ -315,8 +327,7 @@ private fun mapButtonRows(cur: SettingsEntity, vm: SettingsViewModel): List<@Com
 }
 
 /**
- * L'interrupteur du tableau de bord, et ce qu'il commande en accordeon dessous, dans la meme carte :
- * l'alerte d'eloignement que sa cloche arme, puis - en mode expert - les champs affiches.
+ * L'interrupteur du tableau de bord, et en mode expert les champs affiches, en accordeon dessous.
  *
  * Ces reglages formaient un groupe a part, loin de l'interrupteur, et ne disaient rien tant qu'il etait
  * eteint, sinon ou l'allumer. Ils se deplient desormais sous lui, et seulement allume : des reglages qui ne
@@ -328,16 +339,29 @@ private fun mapButtonRows(cur: SettingsEntity, vm: SettingsViewModel): List<@Com
 @Composable private fun ColumnScopeMarker.DashboardSwitch(cur: SettingsEntity, vm: SettingsViewModel) {
     // Le tableau de bord suit la position du telephone : il n'a pas de bouton de localisation a allumer
     // ni a couper, le capteur du telephone en est la seule condition.
-    SwitchLine(stringResource(R.string.settings_sw_track_follow), cur.offTrackAlertEnabled) {
-        vm.save(cur.copy(offTrackAlertEnabled = it))
-    }
-    CardAccordion(visible = cur.offTrackAlertEnabled) {
-        RowDivider()
-        OffTrackAlertRows(cur, vm)
-        if (cur.expertMode) {
-            RowDivider()
+    val label = stringResource(R.string.settings_sw_track_follow)
+    val onChange: (Boolean) -> Unit = { vm.save(cur.copy(offTrackAlertEnabled = it)) }
+    // En mode expert, ses champs se deplient sous lui : une ligne a interrupteur et chevron. Hors mode
+    // expert, il n'a rien a deplier, et reste un simple interrupteur.
+    if (cur.expertMode) {
+        ToggleAccordionLine(label, cur.offTrackAlertEnabled, onEnabledChange = onChange) {
             DashboardFieldRows(cur, vm)
         }
+    } else {
+        SwitchLine(label, cur.offTrackAlertEnabled, onChange = onChange)
+    }
+}
+
+/**
+ * L'alerte d'eloignement : une ligne a elle, juste apres le tableau de bord - son interrupteur, et ses
+ * reglages en accordeon. Elle vivait dans l'accordeon du tableau de bord ; elle a desormais sa carte.
+ */
+@Composable private fun ColumnScopeMarker.OffTrackAlertSwitch(cur: SettingsEntity, vm: SettingsViewModel) {
+    ToggleAccordionLine(
+        stringResource(R.string.settings_section_off_track), cur.offTrackAlertActive,
+        onEnabledChange = { vm.save(cur.copy(offTrackAlertActive = it)) },
+    ) {
+        OffTrackAlertRows(cur, vm)
     }
 }
 
@@ -349,12 +373,12 @@ private fun mapButtonRows(cur: SettingsEntity, vm: SettingsViewModel): List<@Com
  * se choisissent depuis la carte (cf. PoiFilterBubble).
  */
 @Composable private fun ColumnScopeMarker.PoiSwitch(cur: SettingsEntity, vm: SettingsViewModel) {
-    SwitchLine(
+    // Interrupteur et chevron, comme le calcul d'itineraire : allume, un tap ouvre ou ferme ses reglages.
+    ToggleAccordionLine(
         stringResource(R.string.settings_sw_poi), cur.poiEnabled,
+        onEnabledChange = { vm.save(cur.copy(poiEnabled = it)) },
         info = stringResource(R.string.settings_sw_poi_sub),
-    ) { vm.save(cur.copy(poiEnabled = it)) }
-    CardAccordion(visible = cur.poiEnabled) {
-        RowDivider()
+    ) {
         PoiRows(cur, vm)
     }
 }
@@ -422,7 +446,6 @@ private fun mapButtonRows(cur: SettingsEntity, vm: SettingsViewModel): List<@Com
     val soundLabel = remember(cur.offTrackAlertSoundUri) { alertSoundTitle(ctx, cur.offTrackAlertSoundUri) }
     val defaultSoundLabel = stringResource(R.string.settings_off_track_sound_default)
 
-    InCardHeading(stringResource(R.string.settings_section_off_track))
     run {
         // Le curseur va par pas de dix metres : au metre pres, on reglerait la precision du capteur, pas
         // la distance a laquelle on veut etre prevenu.
@@ -539,11 +562,7 @@ private fun ringtonePickerIntent(ctx: android.content.Context, current: String):
          * Trois lignes pour trois proprietes d'un meme repere en faisaient une rubrique ; la taille, qui se
          * regle rarement, ouvre son curseur dans une bulle (cf. [SizeBubble]).
          */
-        SetRow(
-            stringResource(R.string.settings_label_gps_marker_style),
-            // L'orientation des fleches, dite au "i" du symbole plutot qu'en bas de la carte.
-            info = stringResource(R.string.settings_gps_marker_heading_hint),
-        ) {
+        SetRow(stringResource(R.string.settings_label_gps_marker_style)) {
             // Changer de symbole rend sa couleur ET sa taille au nouveau : chacun a les siennes (bleu et 20 dp
             // pour la puce, rouge et 30 dp pour les fleches, qui doivent montrer une direction), et les heriter
             // du precedent donnerait une fleche bleue et minuscule a qui vient de quitter la puce.
@@ -574,13 +593,14 @@ private fun ringtonePickerIntent(ctx: android.content.Context, current: String):
                     ValueText("${cur.gpsMarkerSizeDp} dp")
                 }
                 if (sizeBubble) {
-                    SizeBubble(
+                    ValueBubble(
                         label = stringResource(R.string.settings_label_gps_marker_size),
                         value = "${cur.gpsMarkerSizeDp} dp",
                         fraction = fractionOf(cur.gpsMarkerSizeDp, MinGpsMarkerSizeDp, MaxGpsMarkerSizeDp),
                         steps = MaxGpsMarkerSizeDp - MinGpsMarkerSizeDp - 1,
                         onFraction = { vm.save(cur.copy(gpsMarkerSizeDp = valueOf(it, MinGpsMarkerSizeDp, MaxGpsMarkerSizeDp))) },
                         onDismiss = { sizeBubble = false },
+                        tag = "gps_marker_size_bubble",
                     )
                 }
             }
@@ -594,31 +614,6 @@ private fun ringtonePickerIntent(ctx: android.content.Context, current: String):
             // Le repere de position n'est pas une trace : toutes les couleurs lui restent permises.
             excludeReserved = false,
         )
-    }
-}
-
-/**
- * La bulle d'un curseur, ouverte d'un appui sur sa valeur : le libelle, la valeur qui suit le doigt, et la
- * piste. Elle se referme d'un appui a cote.
- */
-@Composable private fun SizeBubble(
-    label: String, value: String, fraction: Float, steps: Int,
-    onFraction: (Float) -> Unit, onDismiss: () -> Unit,
-) {
-    Popup(
-        alignment = Alignment.BottomEnd,
-        offset = IntOffset(0, 0),
-        onDismissRequest = onDismiss,
-        properties = PopupProperties(focusable = true),
-    ) {
-        Card(
-            modifier = Modifier.width(240.dp).testTag("gps_marker_size_bubble"),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            shape = MaterialTheme.shapes.large,
-            colors = CardDefaults.cardColors(containerColor = settingsPalette.card),
-        ) {
-            ColumnScopeMarker.SliderRow(label, value, fraction, onFraction, steps = steps)
-        }
     }
 }
 
@@ -676,12 +671,54 @@ private fun ringtonePickerIntent(ctx: android.content.Context, current: String):
 }
 
 /**
- * Les reglages des points d'interet, sous leur interrupteur (cf. [PoiSwitch]) : le complement
- * OpenStreetMap (mode expert), le couloir des traces, et l'attribution des donnees.
+ * Les reglages des points d'interet, sous leur interrupteur (cf. [PoiSwitch]) : le couloir des traces, le
+ * complement OpenStreetMap (mode expert) juste dessous, et l'attribution des donnees.
  */
 @Composable private fun ColumnScopeMarker.PoiRows(cur: SettingsEntity, vm: SettingsViewModel) {
+    /*
+     * Le couloir des traces : au-dela de cette distance d'une trace AFFICHEE, un lieu n'est plus
+     * montre (cf. ui/poi/PoiCorridor).
+     *
+     * Ce qu'il repare : le zoom de chargement etait haut - une ville et ses abords - parce qu'a
+     * l'echelle d'une region la vue porte des milliers de lieux dont le service ne rend que les
+     * premiers. Le couloir retire ce qui ne borde aucun trajet, et c'est lui qui rend le zoom plus bas
+     * supportable (cf. PoiLoading.MIN_ZOOM).
+     *
+     * Eteint par defaut, ici comme en base : c'est un filtre qui RETIRE de la carte, et une couche
+     * qui montre moins qu'on ne lui a demande sans l'avoir dit se lit comme une panne.
+     *
+     * Une ligne et sa valeur ("5 km"), dont le curseur s'ouvre dans une bulle d'un appui sur la valeur,
+     * comme la taille du symbole de position : on le regle une fois, il n'a pas a tenir une ligne entiere.
+     */
+    // Le curseur parcourt les crans, et non les metres : "Sans limite" vaut zero en base, mais se
+    // tient tout a DROITE, au-dela de la plus grande distance - c'est la plus large de toutes.
+    val crans = PoiCorridorSteps
+    val cran = crans.indexOf(cur.poiTrackCorridorM).takeIf { it >= 0 }
+        ?: crans.indices.minBy { kotlin.math.abs(crans[it] - cur.poiTrackCorridorM) }
+    var corridorBubble by remember { mutableStateOf(false) }
+    val corridorLabel = stringResource(R.string.settings_label_poi_corridor)
+    val corridorValue = poiCorridorLabel(cur.poiTrackCorridorM)
+    SetRow(corridorLabel, info = stringResource(R.string.settings_poi_corridor_hint)) {
+        Box {
+            Box(Modifier.clip(MaterialTheme.shapes.small).clickable { corridorBubble = true }
+                .padding(horizontal = 4.dp, vertical = 6.dp).testTag("poi_corridor_value")) {
+                ValueText(corridorValue)
+            }
+            if (corridorBubble) {
+                ValueBubble(
+                    label = corridorLabel, value = corridorValue,
+                    fraction = fractionOf(cran, 0, crans.lastIndex),
+                    steps = crans.size - 2,
+                    onFraction = { vm.save(cur.copy(poiTrackCorridorM = crans[valueOf(it, 0, crans.lastIndex)])) },
+                    onDismiss = { corridorBubble = false },
+                    tag = "poi_corridor_bubble",
+                )
+            }
+        }
+    }
     // Le choix des sources : mode expert seulement, le complement garde sinon son reglage.
     if (cur.expertMode) {
+        RowDivider()
         SwitchLine(
             stringResource(R.string.settings_sw_poi_osm), cur.poiOsmComplement,
             info = stringResource(R.string.settings_sw_poi_osm_sub),
@@ -690,42 +727,7 @@ private fun ringtonePickerIntent(ctx: android.content.Context, current: String):
             // (cf. PoiCellEntity), et basculer le complement ne fait que demander les autres.
             vm.save(cur.copy(poiOsmComplement = it))
         }
-        RowDivider()
     }
-    /*
-     * Le couloir des traces : au-dela de cette distance d'une trace AFFICHEE, un lieu n'est plus
-     * montre (cf. ui/poi/PoiCorridor).
-     *
-     * Ce qu'il repare : le zoom de chargement etait haut - une ville et ses abords - parce qu'a
-     * l'echelle d'une region la vue porte des milliers de lieux dont le service ne rend que les
-     * premiers. On zoomait donc beaucoup pour voir quoi que ce soit. Le couloir retire ce qui ne
-     * borde aucun trajet, et c'est lui qui rend le zoom plus bas supportable (cf.
-     * PoiLoading.MIN_ZOOM).
-     *
-     * Une poignee de distances plutot qu'un curseur : le choix se fait entre "le long du chemin" et
-     * "dans le coin", pas au decametre pres.
-     *
-     * Eteint par defaut, ici comme en base : c'est un filtre qui RETIRE de la carte, et une couche
-     * qui montre moins qu'on ne lui a demande sans l'avoir dit se lit comme une panne.
-     */
-    // Le curseur parcourt les crans, et non les metres : "Sans limite" vaut zero en base, mais se
-    // tient tout a DROITE, au-dela de la plus grande distance - c'est la plus large de toutes.
-    val crans = PoiCorridorSteps
-    val cran = crans.indexOf(cur.poiTrackCorridorM).takeIf { it >= 0 }
-        ?: crans.indices.minBy { kotlin.math.abs(crans[it] - cur.poiTrackCorridorM) }
-    SliderRow(
-        label = stringResource(R.string.settings_label_poi_corridor),
-        value = poiCorridorLabel(cur.poiTrackCorridorM),
-        fraction = fractionOf(cran, 0, crans.lastIndex),
-        steps = crans.size - 2,
-        onFraction = {
-            vm.save(cur.copy(poiTrackCorridorM = crans[valueOf(it, 0, crans.lastIndex)]))
-        },
-        info = stringResource(R.string.settings_poi_corridor_hint),
-        // L'attribution suit immediatement : elle appartient a ce qui est au-dessus, et l'ecart
-        // normal l'en aurait detachee.
-        bottomPadding = 6.dp,
-    )
     // Sans filet au-dessus : un filet separe deux reglages, et l'attribution n'en est pas un - c'est
     // la mention que les donnees imposent, au bas de ce qui les affiche.
     Hint(stringResource(R.string.settings_poi_attribution))

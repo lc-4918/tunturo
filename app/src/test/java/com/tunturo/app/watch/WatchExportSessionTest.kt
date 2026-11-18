@@ -21,7 +21,6 @@ import org.robolectric.annotation.GraphicsMode
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.HttpURLConnection
-import java.net.ServerSocket
 import java.net.URL
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -39,9 +38,10 @@ class WatchExportSessionTest {
 
 
     private val scope = TestScope()
-    private val port = ServerSocket(0).use { it.localPort }
     private var startedCount = 0
-    private val session = WatchExportSession(scope, onStarted = { startedCount++ }, port = port)
+    // Port 0 : le systeme choisit un port libre au premier envoi, sans fenetre ou un autre processus de test
+    // pourrait le prendre (cf. WatchExportSession.boundPort).
+    private val session = WatchExportSession(scope, onStarted = { startedCount++ }, port = 0)
     private val mbtilesFile = File.createTempFile("export", ".mbtiles").apply { delete() }
 
     // La tuile standard (16, 16918, 11771), source du niveau FINE (grille de zoom 16) : rouge en haut a gauche, vert en haut a droite, bleu en bas. : rouge en haut a gauche, vert en haut a droite, bleu en bas.
@@ -61,7 +61,7 @@ class WatchExportSessionTest {
         }
     }
 
-    private fun get(path: String): HttpURLConnection =
+    private fun get(path: String, port: Int = session.boundPort): HttpURLConnection =
         URL("http://127.0.0.1:$port$path").openConnection() as HttpURLConnection
 
     @After fun cleanUp() {
@@ -91,10 +91,11 @@ class WatchExportSessionTest {
 
     @Test fun `stopping closes the server`() {
         writeMbtiles()
-        session.start("Tour", tiles, provider, mbtilesFile, detail = WatchTiles.Detail.FINE)
+        assertTrue(session.start("Tour", tiles, provider, mbtilesFile, detail = WatchTiles.Detail.FINE))
+        val port = session.boundPort
         session.stop()
         assertNull(session.state.value)
-        assertFalse(runCatching { get("/watch/manifest").responseCode }.isSuccess)
+        assertFalse(runCatching { get("/watch/manifest", port).responseCode }.isSuccess)
     }
 
     @Test fun `the export closes itself after a long silence from the watch`() {
@@ -110,8 +111,10 @@ class WatchExportSessionTest {
 
     @Test fun `a second export replaces the first on the same port`() {
         writeMbtiles()
-        session.start("Premier", tiles, provider, mbtilesFile)
+        assertTrue(session.start("Premier", tiles, provider, mbtilesFile))
+        val firstPort = session.boundPort
         assertTrue(session.start("Second", tiles.take(1), provider, mbtilesFile))
+        assertEquals("le second envoi reprend le port du premier", firstPort, session.boundPort)
         assertEquals("Second", session.state.value?.name)
         assertEquals(200, get("/watch/manifest").responseCode)
     }
@@ -121,7 +124,7 @@ class WatchExportSessionTest {
         val realTile = javaClass.getResourceAsStream("/watch/openmaptiles/14_8257_5982.pbf")!!.readBytes()
         val tileJson = """{"tiles":["https://tiles.example.org/planet/v1/{z}/{x}/{y}.pbf"]}"""
         val asked = mutableListOf<String>()
-        val osmSession = WatchExportSession(scope, onStarted = {}, port = port, vectorFetch = { url ->
+        val osmSession = WatchExportSession(scope, onStarted = {}, port = 0, vectorFetch = { url ->
             asked.add(url)
             when {
                 url == com.tunturo.app.watch.vector.WatchOsmSource.TILEJSON_URL -> tileJson.toByteArray()
@@ -133,7 +136,7 @@ class WatchExportSessionTest {
             val osmProvider = com.tunturo.app.watch.vector.WatchOsmSource.provider("Trailmap")
             val tile = WatchTile(132119, 95726)
             assertTrue(osmSession.start("Ville", listOf(tile), osmProvider, null, detail = WatchTiles.Detail.ULTRA_FINE))
-            val connection = get("/watch/tile/17/${tile.x}/${tile.y}")
+            val connection = get("/watch/tile/17/${tile.x}/${tile.y}", osmSession.boundPort)
             assertEquals(200, connection.responseCode)
             val body = connection.inputStream.use { it.readBytes() }.toString(Charsets.UTF_8)
             val indices = WatchTilePixels.unpack(Base64.decode(Regex(""""pixels":"([^"]+)"""").find(body)!!.groupValues[1]))
@@ -149,13 +152,13 @@ class WatchExportSessionTest {
     @Test fun `the vector basemap is drawn from plan ign tiles and sent to the watch`() {
         val realTile = javaClass.getResourceAsStream("/watch/planign/17_66062_47861.pbf")!!.readBytes()
         val asked = mutableListOf<String>()
-        val vectorSession = WatchExportSession(scope, onStarted = {}, port = port,
+        val vectorSession = WatchExportSession(scope, onStarted = {}, port = 0,
             vectorFetch = { url -> asked.add(url); if (url.endsWith("/17/66062/47861.pbf")) realTile else null })
         try {
             val vectorProvider = com.tunturo.app.watch.vector.WatchVectorSource.provider("Scan 25 vectoriel")
             val tile = WatchTile(2 * 66062, 2 * 47861 + 1)
             assertTrue(vectorSession.start("Ville", listOf(tile), vectorProvider, null, detail = WatchTiles.Detail.ULTRA_FINE))
-            val connection = get("/watch/tile/17/${tile.x}/${tile.y}")
+            val connection = get("/watch/tile/17/${tile.x}/${tile.y}", vectorSession.boundPort)
             assertEquals(200, connection.responseCode)
             val body = connection.inputStream.use { it.readBytes() }.toString(Charsets.UTF_8)
             val indices = WatchTilePixels.unpack(Base64.decode(Regex(""""pixels":"([^"]+)"""").find(body)!!.groupValues[1]))
@@ -169,11 +172,11 @@ class WatchExportSessionTest {
     }
 
     @Test fun `a vector tile the service cannot give is not found`() {
-        val vectorSession = WatchExportSession(scope, onStarted = {}, port = port, vectorFetch = { null })
+        val vectorSession = WatchExportSession(scope, onStarted = {}, port = 0, vectorFetch = { null })
         try {
             val tile = WatchTile(10, 10)
             vectorSession.start("Mer", listOf(tile), com.tunturo.app.watch.vector.WatchVectorSource.provider("v"), null, detail = WatchTiles.Detail.ULTRA_FINE)
-            assertEquals(404, get("/watch/tile/17/${tile.x}/${tile.y}").responseCode)
+            assertEquals(404, get("/watch/tile/17/${tile.x}/${tile.y}", vectorSession.boundPort).responseCode)
         } finally {
             vectorSession.stop()
         }

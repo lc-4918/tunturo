@@ -4,6 +4,7 @@ import java.io.BufferedReader
 import java.io.Closeable
 import java.io.InputStreamReader
 import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
@@ -33,7 +34,12 @@ class WatchTileServer(private val routes: WatchRoutes, private val port: Int = D
     val localPort: Int get() = serverSocket?.localPort ?: -1
 
     fun start() {
-        val socket = ServerSocket(port, 8, InetAddress.getLoopbackAddress())
+        // SO_REUSEADDR avant de lier : un nouvel envoi rouvre le port que le precedent vient de fermer, et des
+        // connexions de la montre encore en TIME_WAIT ne doivent pas l'en empecher.
+        val socket = ServerSocket().apply {
+            reuseAddress = true
+            bind(InetSocketAddress(InetAddress.getLoopbackAddress(), port), 8)
+        }
         serverSocket = socket
         thread(name = "watch-tile-server", isDaemon = true) {
             while (!socket.isClosed) {

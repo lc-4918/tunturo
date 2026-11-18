@@ -50,6 +50,14 @@ class WatchExportSession(
     /** null quand aucun envoi n'est ouvert. */
     val state: StateFlow<State?> = mutableState.asStateFlow()
 
+    /**
+     * Le port ou les envois se servent. Fixe en vrai ([WatchTileServer.DEFAULT_PORT], connu de la montre) ;
+     * a 0, le systeme en choisit un libre au premier envoi, que les suivants reprennent. C'est ce que font les
+     * tests : choisir un port puis le relacher laissait un autre processus de test le prendre entre-temps.
+     */
+    var boundPort: Int = port
+        private set
+
     private var server: WatchTileServer? = null
     private var source: Closeable? = null
     private var idleTimer: Job? = null
@@ -123,12 +131,13 @@ class WatchExportSession(
                 restartIdleTimer()
             },
         )
-        val tileServer = WatchTileServer(routes, port)
+        val tileServer = WatchTileServer(routes, boundPort)
         val opened = runCatching { tileServer.start() }.isSuccess
         if (!opened) {
             tileSource.close()
             return false
         }
+        boundPort = tileServer.localPort
         server = tileServer
         source = tileSource
         mutableState.value = State(name, 0, tiles.size)
